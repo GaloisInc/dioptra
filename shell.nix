@@ -6,10 +6,12 @@ let
   openfhe = pkgs.python3Packages.callPackage ./nix/openfhe-python.nix {
     openfhe-development = openfhe-development;
   };
+  dioptra = pkgs.python3Packages.callPackage ./build.nix { };
 in
 
 pkgs.mkShellNoCC {
   packages = [
     (pkgs.python3.withPackages (_: [ openfhe ]))
+    dioptra
   ];
 }
