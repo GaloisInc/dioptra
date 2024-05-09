@@ -13,7 +13,11 @@ buildPythonApplication rec {
 
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = ./.;
+    fileset = lib.fileset.unions [
+      ./pyproject.toml
+      ./README.md
+      ./src
+    ];
   };
 
   nativeBuildInputs = [ setuptools wheel ];
