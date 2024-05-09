@@ -1,0 +1,25 @@
+[build-system]
+requires = [
+  "setuptools>=61.0",
+  "pybind11",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dioptra"
+version = "0.0.1"
+authors = [
+  { name="Rawane Issa", email="rissa@galois.com" },
+  { name="Chris Phifer", email="cphifer@galois.com" },
+]
+description = "A platform for running and analyzing FHE applications."
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+]
+
+[project.scripts]
+dioptra = "dioptra:main"
