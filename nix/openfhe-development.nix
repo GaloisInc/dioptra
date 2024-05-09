@@ -4,9 +4,13 @@
   autoconf,
   cmake,
   gmp,
+  llvmPackages,
   ntl,
 }:
 
+let
+  ompInput = if stdenv.isDarwin then [ llvmPackages.openmp ] else [];
+in
 stdenv.mkDerivation rec {
   pname = "openfhe-development";
   version = "1.1.4";
@@ -24,6 +28,11 @@ stdenv.mkDerivation rec {
     "-DWITH_NTL=ON"
   ];
 
-  nativeBuildInputs = [ autoconf cmake gmp ntl ];
-  propagatedBuildInputs = [ cmake gmp ntl ];
+  nativeBuildInputs = [
+    autoconf
+    cmake
+    gmp
+    ntl
+  ] ++ ompInput;
+  propagatedBuildInputs = [ gmp ntl ] ++ ompInput;
 }

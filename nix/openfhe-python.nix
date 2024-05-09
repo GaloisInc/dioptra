@@ -2,6 +2,7 @@
   stdenv,
   toPythonModule,
   fetchFromGitHub,
+  cmake,
   python,
   python3,
   openfhe-development,
@@ -18,7 +19,7 @@ toPythonModule (stdenv.mkDerivation rec {
     sha256 = "sha256-X3a6iGoqf40ZZPj8H8TjJMjoY+rm0z270oqn2Bj/Iwo=";
   };
 
-  nativeBuildInputs = [ openfhe-development (python3.withPackages (ps: [ ps.pybind11 ])) ];
+  nativeBuildInputs = [ cmake openfhe-development (python3.withPackages (ps: [ ps.pybind11 ])) ];
 
   # make install does the wrong thing, and this can't be changed via
   # cmakeFlags (the package's CMakeLists.txt computes the Python site-packages,
