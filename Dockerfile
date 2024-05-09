@@ -40,9 +40,9 @@ RUN git clone https://github.com/openfheorg/openfhe-python.git \
 
 # Install Dioptra
 WORKDIR /dioptra
-COPY ../pyproject.toml .
-COPY ../src/ .
-COPY ../README.md .
+COPY pyproject.toml .
+COPY src/ .
+COPY README.md .
 RUN python3 -m build
 RUN pip3 install dist/dioptra-0.0.1-py3-none-any.whl --break-system-packages
 
