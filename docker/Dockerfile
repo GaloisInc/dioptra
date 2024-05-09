@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip3 install "pybind11[global]" --break-system-packages
 
-RUN python3 -m pip install --no-cache-dir jupyterlab --break-system-packages
+RUN pip3 install --no-cache-dir jupyterlab --break-system-packages
 
 RUN git clone https://github.com/openfheorg/openfhe-development.git \
     && cd openfhe-development \
