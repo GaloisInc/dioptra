@@ -16,7 +16,7 @@ You can check that the image built successfully by running:
 
 ## Create a container
 
-A container running Jupyterlab can be started by running:
+A container running JupyterLab can be started by running:
 
 ```console
 > docker run -d -p 8888:8888 dioptra-docker
@@ -37,10 +37,10 @@ You can check that the container is indeed running using:
 > docker ps
 ```
 
-## Accessing the Jupyterlab
+## Accessing the JupyterLab
 
 With the container running, you can navigate to
-[`localhost:8888`](http://localhost:8888) to run code via the Jupyterlab.
+[`localhost:8888`](http://localhost:8888) to run code via the JupyterLab.
 
 ## Entering and using the container
 
