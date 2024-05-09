@@ -71,3 +71,27 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Nix results
+result
+result-*
+
+# IDE
+.vscode/
+.idea/
+
+# OSX
+.DS_STORE
+
+# Misc
+*.a
+*.o
+*.o.tmp
+*.so
+*.dylib
+*.dll
+*.exe
+*.dep
+*~
+*.pc
+*.plist
