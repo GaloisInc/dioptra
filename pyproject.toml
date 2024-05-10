@@ -39,3 +39,8 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = "click_log"
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = [
+  "--import-mode=importlib",
+]
