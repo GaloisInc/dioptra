@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.scripts]
-dioptra = "dioptra:cli"
+dioptra = "dioptra:cli.cli"
 
 [tool.mypy]
 disallow_untyped_defs = true
