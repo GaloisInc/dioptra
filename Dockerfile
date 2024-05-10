@@ -21,6 +21,7 @@ RUN pip3 install --no-cache-dir \
                  build \
                  mypy \
                  ruff \
+                 pytest \
                  --break-system-packages
 
 # OpenFHE C++ bindings

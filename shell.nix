@@ -9,10 +9,10 @@ let
   dioptra = pkgs.python3Packages.callPackage ./build.nix { };
 in
 
-pkgs.mkShellNoCC {
+with pkgs; mkShellNoCC {
   packages = [
-    (pkgs.python3.withPackages (ps: [ ps.mypy openfhe ]))
-    pkgs.ruff
+    (python3.withPackages (ps: [ openfhe ps.mypy ps.pytest ]))
+    ruff
     dioptra
   ];
 }
