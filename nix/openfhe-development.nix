@@ -3,9 +3,7 @@
   fetchgit,
   autoconf,
   cmake,
-  gmp,
   llvmPackages,
-  ntl,
 }:
 
 let
@@ -25,14 +23,11 @@ stdenv.mkDerivation rec {
     "-DBUILD_UNITTESTS=OFF"
     "-DBUILD_EXAMPLES=OFF"
     "-DBUILD_BENCHMARKS=OFF"
-    "-DWITH_NTL=ON"
   ];
 
   nativeBuildInputs = [
     autoconf
     cmake
-    gmp
-    ntl
   ] ++ ompInput;
-  propagatedBuildInputs = [ gmp ntl ] ++ ompInput;
+  propagatedBuildInputs = ompInput;
 }
