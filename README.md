@@ -2,68 +2,70 @@
 
 TODO: Summarize Dipotra platform
 
-## Prerequisites
+## Installation
 
 **Disclaimer:** The following has only been tested on Darwin/OSX and Linux
-systems. If you encounter any problems, please let us know!
+systems, and there is no intention to support Windows at this time.
+If you encounter any problems, please let us know!
 
-Installing Dioptra natively requires an installation of
-[`openfhe-python`](https://github.com/openfheorg/openfhe-python) be present in
-the Python environment before installation. Please follow the installation
-instructions in that repository to install these bindings to your system before
-attempting to install and use Dioptra locally.
+### In a fresh system environment
 
-Alternatively, consider installing the
-[Nix package manager](https://nixos.org/download/), and running `nix-shell` at
-this repository's root. This will build and install OpenFHE and the Python
-bindings to your Nix store, and start a shell with a Python installation ready
-to use these OpenFHE bindings, as well as the `dioptra` executable which can
-immediately be used to run/analyze OpenFHE applications.
+The `dioptra` platform can be installed directly to your system with relative
+ease. The following assumes you have at least Python 3.9 installed.
 
-Finally, if a Docker container is preferable, see
-[`README.Docker.md`](README.Docker.md) for instructions on building the Dioptra
-Docker image, running a container with JupyterLab and Dioptra ready to use,
-and accessing a shell within the container to clone OpenFHE applications / if
-no browser is available to use the JupyterLab.
+First, clone
+[the OpenFHE repository](https://github.com/openfheorg/openfhe-development) and
+follow the instructions
+[here](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html)
+to install for your platform (Linux or MacOS).
 
-Using either of these alternative approaches, the following section on
-Installation can be skipped.
+For simplicity, we recommend that GMP, NTL, and tcmalloc **not** be installed.
+GMP/NTL have almost the same performance as the default backends for all
+schemes, and tcmalloc improves performance only when `OMP_NUM_THREADS > 1`. In
+this "building from scratch" case, you are free to utilize these features; but
+take note that the Nix and Docker options described below do not use these
+features.
 
-## Installation (System)
+Next, we recommend creating a Python virtual environment to use for OpenFHE
+development (or a suitable alternative, such as a `conda` environment). For
+convenience, you can clone this repo and create the virtual environment at its
+root (`python -m venv .venv`). Activate the environment
+(`source .venv/bin/activate` in most cases).
 
-First, make sure that the OpenFHE Python bindings have been properly installed.
-An easy way to check is to start a Python interpreter, and run:
+Follow the instructions to install
+[`openfhe-python`](https://github.com/openfheorg/openfhe-python). This will
+install the OpenFHE Python bindings to your virtual environment, which are
+required by `dioptra` (despite not being captured as a dependency in
+`pyproject.toml`).
 
-```python
-from openfhe import *
-```
+Finally, run `pip install .` (or `pip install -e .` if you're a developer) at
+the root of this repository. This will install the `dioptra` binary to your
+virtual environment. In cases where you already have an environment suitable for
+building and running OpenFHE Python applications, this step is all that's
+required to install the `dioptra` platform.
 
-If no errors are reported, you're good to go.
+### Nix shell
 
-If you don't have it already, install `build`:
+We have included Nix expressions to package `openfhe-development` and
+`openfhe-python` in the `nix/` directory. Note that these may become obsolete, if
+these packages are added to `NixOS/nixpkgs`. This would clean up this repository
+quite significantly, since the packages could be fetched directly from the
+`nixpkgs` repository.
 
-```console
-> pip install --upgrade build
-```
+Running `nix-shell` at the repository root will drop you into an environment
+with a Python installation suitable for OpenFHE development, a small handful of
+Python static analysis tools (`mypy` and `ruff`), and the `dioptra` platform.
+No complicated install steps needed; this should "just work".
 
-(Note that you may need to use `pip3` instead.)
+The [Nix package manager](https://nixos.org/download/) is the only other
+requirement to take advantage of this.
 
-Then, run:
+### Docker
 
-```console
-> python -m build
-```
-
-(As before, you may need to use `python3` instead.)
-
-This will generate a directory `dist`, containing a `.whl` file. If you wish to
-install Dioptra to your system, you can `pip install` this wheel:
-
-```console
-> pip install dist/dioptra-0.0.1-py3-none-any.whl
-```
-
-Which will automatically make the `dioptra` binary available on your `$PATH`.
+See [the Docker README](README.Docker.md) for build/use details. Containers
+provide a JupyterLab web interface to build and run OpenFHE applications, and
+the `dioptra` platform is installed to be used interactively with shared volumes
+or scripts cloned to the container.
 
 ## Quickstart
 
