@@ -10,33 +10,33 @@ click_log.basic_config(logger)
 
 @click.group()
 @click_log.simple_verbosity_option(logger)
-def cli():
+def cli() -> None:
     """The Dioptra FHE platform."""
     pass
 
 
 @cli.command()
 @click.argument("script", type=click.Path(exists=True))
-def run(script):
+def run(script: click.Path) -> None:
     """Run an OpenFHE program normally."""
     click.echo("Running OpenFHE program...")
 
 
 @cli.group()
-def estimate():
+def estimate() -> None:
     """Estimate properties of an OpenFHE program."""
     pass
 
 
 @estimate.command()
 @click.argument("script", type=click.File("r"))
-def peakmem(script):
+def peakmem(script: click.File) -> None:
     """Estimate peak memory usage of an OpenFHE program."""
     click.echo("Estimating memory...")
 
 
 @estimate.command()
 @click.argument("script", type=click.File("r"))
-def runtime(script):
+def runtime(script: click.File) -> None:
     """Estimate the runtime of an OpenFHE program."""
     click.echo("Estimating runtime...")
