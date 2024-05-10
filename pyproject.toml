@@ -19,6 +19,9 @@ classifiers = [
   "Operating System :: POSIX :: Linux",
   "Operating System :: MacOS :: MacOS X",
 ]
+dependencies = [
+  "click",
+]
 
 [project.scripts]
-dioptra = "dioptra:main"
+dioptra = "dioptra:cli"
