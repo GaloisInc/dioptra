@@ -11,7 +11,7 @@ in
 
 pkgs.mkShellNoCC {
   packages = [
-    (pkgs.python3.withPackages (_: [ openfhe ]))
+    (pkgs.python3.withPackages (ps: [ ps.mypy openfhe ]))
     dioptra
   ];
 }
