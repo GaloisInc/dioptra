@@ -1,7 +1,42 @@
 import click
+import click_log
+
+import logging
 
 
-@click.command()
+logger = logging.getLogger(__name__)
+click_log.basic_config(logger)
+
+
+@click.group()
+@click_log.simple_verbosity_option(logger)
 def cli():
-    """Prints a greeting."""
-    click.echo("Hello, World!")
+    """The Dioptra FHE platform."""
+    pass
+
+
+@cli.command()
+@click.argument("script", type=click.Path(exists=True))
+def run(script):
+    """Run an OpenFHE program normally."""
+    click.echo("Running OpenFHE program...")
+
+
+@cli.group()
+def estimate():
+    """Estimate properties of an OpenFHE program."""
+    pass
+
+
+@estimate.command()
+@click.argument("script", type=click.File("r"))
+def peakmem(script):
+    """Estimate peak memory usage of an OpenFHE program."""
+    click.echo("Estimating memory...")
+
+
+@estimate.command()
+@click.argument("script", type=click.File("r"))
+def runtime(script):
+    """Estimate the runtime of an OpenFHE program."""
+    click.echo("Estimating runtime...")
