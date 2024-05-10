@@ -5,6 +5,7 @@
   setuptools,
   wheel,
   click,
+  click-log,
 }:
 
 buildPythonApplication rec {
@@ -22,5 +23,5 @@ buildPythonApplication rec {
   };
 
   nativeBuildInputs = [ setuptools wheel ];
-  propagatedBuildInputs = [ click ];
+  propagatedBuildInputs = [ click click-log ];
 }
