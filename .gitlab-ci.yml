@@ -37,8 +37,8 @@ before_script:
   - python --version
   - python -m venv venv
   - source venv/bin/activate
-  - *install_openfhe_python
   - pip install "pybind11[global]" mypy ruff pytest
+  - *install_openfhe_python  
   - pip install .
 
 stages:
