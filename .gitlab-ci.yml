@@ -4,7 +4,7 @@ cache:
   paths:
     - deps_cache
     - venv/
-    - openfhe-deveopment
+    - openfhe-development
 
 .install_dependencies: &install_dependencies
   - apt-get update
