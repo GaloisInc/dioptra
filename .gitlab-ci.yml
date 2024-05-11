@@ -11,7 +11,7 @@ cache:
   - apt-get install -y cmake
 
 .install_openfhe_development: &install_openfhe_development
-  - git pull ./openfhe-development || git clone https://github.com/openfheorg/openfhe-development.git ./openfhe-development
+  - git -C openfhe-development pull || git clone https://github.com/openfheorg/openfhe-development.git openfhe-development
   - cd openfhe-development
   - mkdir build 
   - cd build
@@ -22,7 +22,7 @@ cache:
 
 .install_openfhe_python: &install_openfhe_python
   - pip install "pybind11[global]"
-  - git pull ./openfhe-python || git clone https://github.com/openfheorg/openfhe-python.git ./openfhe-python
+  - git -C openfhe-python pull || git clone https://github.com/openfheorg/openfhe-python.git openfhe-python
   - cd openfhe-python
   - mkdir build
   - cd build
