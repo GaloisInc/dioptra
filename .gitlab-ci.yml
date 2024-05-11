@@ -2,8 +2,14 @@ image: "python:3.9-bookworm"
 
 cache:
   paths:
+    - .apt
     - deps_cache
     - venv/
+
+.install_dependencies: &install_dependencies
+  - rm -f /etc/apt/apt.conf.d/docker-clean
+  - mkdir .apt && mkdir /var/cache/apt/archives && mount --bind .apt /var/cache/apt/archives/
+  - apt-get install -y git cmake
 
 .install_openfhe_development: &install_openfhe_development
   - git clone https://github.com/openfheorg/openfhe-development.git
@@ -25,6 +31,7 @@ cache:
   - make install
 
 before_script:
+  - *install_dependencies
   - *install_openfhe_development
   - python --version
   - python -m venv venv
