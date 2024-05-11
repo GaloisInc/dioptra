@@ -26,6 +26,7 @@ cache:
   - cd openfhe-python
   - mkdir -p build
   - cd build
+  - ls
   - cmake ..
   - make -j$(nproc)
   - make install
