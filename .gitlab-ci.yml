@@ -4,7 +4,7 @@ cache:
   paths:
     - deps_cache
     - venv/
-    - ../openfhe-deveopment
+    - openfhe-deveopment
 
 .install_dependencies: &install_dependencies
   - apt-get update
@@ -32,10 +32,9 @@ cache:
 
 before_script:
   - *install_dependencies
-  - cd ..
   - *install_openfhe_development
   - *install_openfhe_python
-  - cd ../../../../dioptra
+  - cd ../../../..
   - python --version
   - python -m venv venv
   - source venv/bin/activate
