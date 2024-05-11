@@ -21,7 +21,7 @@ cache:
   - export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 .install_openfhe_python: &install_openfhe_python
-  - pip install "pybind11[global]"
+  - pip install "pybind11[global]" --cache-dir deps_cache
   - git -C openfhe-python pull || git clone https://github.com/openfheorg/openfhe-python.git openfhe-python
   - cd openfhe-python
   - mkdir -p build
