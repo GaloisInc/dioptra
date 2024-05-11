@@ -55,7 +55,7 @@ mypy:
     - merge_requests
   allow_failure: true
   script:
-    - mypy .
+    - mypy -p dioptra
 
 ruff:
   stage: Static Analysis
@@ -64,7 +64,7 @@ ruff:
     - merge_requests
   allow_failure: true
   script:
-    - ruff check .
+    - ruff check
 
 pytest:
   stage: Test
