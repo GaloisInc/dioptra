@@ -95,3 +95,6 @@ line-ending = "auto"
 addopts = [
   "--import-mode=importlib",
 ]
+testpaths = [
+  "tests",
+]
