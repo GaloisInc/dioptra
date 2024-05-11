@@ -61,6 +61,7 @@ ruff:
     - merge_requests
   allow_failure: true
   script:
+    - ruff format --check
     - ruff check
 
 pytest:
