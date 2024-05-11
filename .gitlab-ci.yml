@@ -13,6 +13,7 @@ cache:
   - apt-get install -y git cmake
 
 .install_openfhe_development: &install_openfhe_development
+  - cd ..
   - git clone https://github.com/openfheorg/openfhe-development.git
   - cd openfhe-development
   - mkdir build 
@@ -31,6 +32,7 @@ cache:
   - cmake ..
   - make -j$(nproc)
   - make install
+  - cd dioptra
 
 before_script:
   - *install_dependencies
