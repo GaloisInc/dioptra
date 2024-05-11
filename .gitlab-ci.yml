@@ -13,7 +13,7 @@ cache:
 .install_openfhe_development: &install_openfhe_development
   - git -C openfhe-development pull || git clone https://github.com/openfheorg/openfhe-development.git openfhe-development
   - cd openfhe-development
-  - mkdir build 
+  - mkdir -p build 
   - cd build
   - cmake -DBUILD_UNITTESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BENCHMARKS=OFF ..
   - make -j$(nproc)
@@ -24,7 +24,7 @@ cache:
   - pip install "pybind11[global]"
   - git -C openfhe-python pull || git clone https://github.com/openfheorg/openfhe-python.git openfhe-python
   - cd openfhe-python
-  - mkdir build
+  - mkdir -p build
   - cd build
   - cmake ..
   - make -j$(nproc)
