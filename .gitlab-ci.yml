@@ -38,7 +38,8 @@ before_script:
   - python -m venv venv
   - source venv/bin/activate
   - pip install "pybind11[global]" mypy ruff pytest
-  - *install_openfhe_python  
+  - *install_openfhe_python
+  - cd ../../../..
   - pip install .
 
 stages:
