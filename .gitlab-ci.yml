@@ -23,6 +23,7 @@ cache:
   - export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 .install_openfhe_python: &install_openfhe_python
+  - pip install "pybind11[global]"
   - git clone https://github.com/openfheorg/openfhe-python.git
   - cd openfhe-python
   - mkdir build
@@ -34,13 +35,13 @@ cache:
 before_script:
   - *install_dependencies
   - *install_openfhe_development
+  - *install_openfhe_python
+  - cd ../../../..
   - python --version
   - python -m venv venv
   - source venv/bin/activate
-  - pip install "pybind11[global]" mypy ruff pytest
-  - *install_openfhe_python
-  - cd ../../../..
-  - pip install .
+  - pip install mypy ruff pytest --cache-dir deps_cache
+  - pip install . --cache-dir deps_cache
 
 stages:
   - Static Analysis
