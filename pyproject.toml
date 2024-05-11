@@ -22,6 +22,7 @@ classifiers = [
 dependencies = [
   "click",
   "click-log",
+  "openfhe",
 ]
 
 [project.scripts]
