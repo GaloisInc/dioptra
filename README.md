@@ -35,8 +35,7 @@ root (`python -m venv .venv`). Activate the environment
 Follow the instructions to install
 [`openfhe-python`](https://github.com/openfheorg/openfhe-python). This will
 install the OpenFHE Python bindings to your virtual environment, which are
-required by `dioptra` (despite not being captured as a dependency in
-`pyproject.toml`).
+required by `dioptra`.
 
 Finally, run `pip install .` (or `pip install -e .` if you're a developer) at
 the root of this repository. This will install the `dioptra` binary to your
