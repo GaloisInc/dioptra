@@ -54,7 +54,10 @@ quite significantly, since the packages could be fetched directly from the
 Running `nix-shell` at the repository root will drop you into an environment
 with a Python installation suitable for OpenFHE development, a small handful of
 Python static analysis tools (`mypy` and `ruff`), and the `dioptra` platform.
-No complicated install steps needed; this should "just work".
+No complicated install steps needed; this should "just work". Note that the
+first time `nix-shell` is run, it may take a while to download and install the
+relevant `nixpkgs`. Subsequent runs will be significantly faster / nearly
+instantaneous.
 
 The [Nix package manager](https://nixos.org/download/) is the only other
 requirement to take advantage of this.
