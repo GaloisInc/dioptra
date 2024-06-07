@@ -1,0 +1,100 @@
+[build-system]
+requires = [
+  "setuptools>=61.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dioptra"
+version = "0.0.1"
+authors = [
+  { name="Rawane Issa", email="rissa@galois.com" },
+  { name="Chris Phifer", email="cphifer@galois.com" },
+]
+description = "A platform for running and analyzing FHE applications."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+]
+dependencies = [
+  "click",
+  "click-log",
+  "openfhe",
+]
+
+[project.scripts]
+dioptra = "dioptra:cli.cli"
+
+[tool.mypy]
+files = [
+  "src",
+  "tests",
+]
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "click_log"
+ignore_missing_imports = true
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "openfhe-development",
+]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+addopts = [
+  "--import-mode=importlib",
+]
+testpaths = [
+  "tests",
+]
