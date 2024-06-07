@@ -1,0 +1,74 @@
+image: "python:3.9-bookworm"
+
+cache:
+  paths:
+    - deps_cache
+    - venv/
+    - openfhe-development
+
+.install_dependencies: &install_dependencies
+  - apt-get update
+  - apt-get install -y cmake
+
+.install_openfhe_development: &install_openfhe_development
+  - git -C openfhe-development pull || git clone https://github.com/openfheorg/openfhe-development.git openfhe-development
+  - cd openfhe-development
+  - mkdir -p build 
+  - cd build
+  - cmake -DBUILD_UNITTESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BENCHMARKS=OFF ..
+  - make -j$(nproc)
+  - make install
+  - export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+
+.install_openfhe_python: &install_openfhe_python
+  - pip install "pybind11[global]" --cache-dir ../../deps_cache
+  - git -C openfhe-python pull || git clone https://github.com/openfheorg/openfhe-python.git openfhe-python
+  - cd openfhe-python
+  - mkdir -p build
+  - cd build
+  - cmake ..
+  - make -j$(nproc)
+  - make install
+
+before_script:
+  - *install_dependencies
+  - *install_openfhe_development
+  - *install_openfhe_python
+  - cd ../../../..
+  - python --version
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install mypy ruff pytest --cache-dir deps_cache
+  - pip install . --cache-dir deps_cache
+
+stages:
+  - Static Analysis
+  - Test
+
+mypy:
+  stage: Static Analysis
+  only:
+    - main
+    - merge_requests
+  allow_failure: true
+  script:
+    - mypy
+
+ruff:
+  stage: Static Analysis
+  only:
+    - main
+    - merge_requests
+  allow_failure: true
+  script:
+    - ruff format --check
+    - ruff check
+
+pytest:
+  stage: Test
+  only:
+    - main
+    - merge_requests
+  allow_failure: true
+  script:
+   - pytest
