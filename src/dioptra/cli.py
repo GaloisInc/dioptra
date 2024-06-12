@@ -4,6 +4,8 @@ import click_log
 import logging
 from pathlib import Path
 
+from .core.openfhe_script import OpenFHEScript
+
 
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
@@ -34,6 +36,8 @@ def estimate() -> None:
 def peakmem(script: Path) -> None:
     """Estimate peak memory usage of an OpenFHE SCRIPT."""
     click.echo("Estimating memory...")
+    s = OpenFHEScript(script)
+    s.show_ast()
 
 
 @estimate.command()
@@ -41,3 +45,5 @@ def peakmem(script: Path) -> None:
 def runtime(script: Path) -> None:
     """Estimate the runtime of an OpenFHE SCRIPT."""
     click.echo("Estimating runtime...")
+    s = OpenFHEScript(script)
+    s.show_ast()
