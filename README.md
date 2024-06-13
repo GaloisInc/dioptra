@@ -92,6 +92,16 @@ shell:
 >>> from openfhe import *
 ```
 
+## Note for developers
+
+Note that changes to `dioptra` source code will **not** automatically result in
+a rebuild within an existing Nix shell - you will need to `exit` and re-run
+`nix-shell`.
+
+Similarly, the `Docker` image must be rebuilt and a new container started as the
+code changes. This makes Nix a relatively 'cheaper' option while developing
+`dioptra`, in terms of time spent rebuilding/reinstalling the tool for testing.
+
 ## Quickstart
 
 TODO: Show a small FHE script (OpenFHE example maybe?) and how to use the tool on it
