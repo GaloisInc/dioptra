@@ -8,6 +8,14 @@ TODO: Summarize Dipotra platform
 systems, and there is no intention to support Windows at this time.
 If you encounter any problems, please let us know!
 
+There are three installation methods described below:
+
+1. ["From scratch" / if you already have OpenFHE installed](#in-a-fresh-system-environment)
+2. [Via Nix](#nix-shell)
+3. [Via Docker](#docker)
+
+**You need only pick one method!**
+
 ### In a fresh system environment
 
 The `dioptra` platform can be installed directly to your system with relative
@@ -68,6 +76,21 @@ See [the Docker README](README.Docker.md) for build/use details. Containers
 provide a JupyterLab web interface to build and run OpenFHE applications, and
 the `dioptra` platform is installed to be used interactively with shared volumes
 or scripts cloned to the container.
+
+## Checking the installation
+
+To check that `dioptra` was installed in your environment, run:
+
+```shell
+> dioptra --help
+```
+
+You can check that OpenFHE is installed and available in an interactive Python
+shell:
+
+```shell
+>>> from openfhe import *
+```
 
 ## Quickstart
 
