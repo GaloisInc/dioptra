@@ -1,4 +1,4 @@
-from openfhe import *
+from openfhe import CCParamsBFVRNS, GenCryptoContext, PKESchemeFeature
 
 # Sample Program: Step 1: Set CryptoContext
 parameters = CCParamsBFVRNS()
