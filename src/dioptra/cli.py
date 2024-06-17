@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from .core.openfhe_script import OpenFHEScript
+from .run import passthrough
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ def cli() -> None:
 def run(script: Path) -> None:
     """Run an OpenFHE SCRIPT normally."""
     click.echo("Running OpenFHE program...")
+    passthrough(script)
 
 
 @cli.group()
