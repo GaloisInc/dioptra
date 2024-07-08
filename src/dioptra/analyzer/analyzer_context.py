@@ -1,43 +1,34 @@
-# from openfhe import CryptoContext, Ciphertext
-
-import traceback
-import sys
-
+import code_loc
+import inspect
+import dis
 
 class Value:
     value_id = 0
 
     @staticmethod
-    def fresh_id():
+    def fresh_id() -> int:
         id = Value.value_id
         Value.value_id += 1
+        return id
 
-    def __init__(self, id: int):
-        self.id = id
+    def __init__(self) -> None:
+        self.id = Value.fresh_id()
 
     def __hash__(self) -> int:
         return self.id.__hash__()
 
 
 class PrivateKey(Value):
-    @staticmethod
-    def fresh():
-        return PrivateKey(Value.fresh_id())
+    pass
 
 class Ciphertext(Value):
-    @staticmethod
-    def fresh():
-        return Ciphertext(Value.fresh_id())
+    pass
 
 class Plaintext(Value):
-    @staticmethod
-    def fresh():
-        return Plaintext(Value.fresh_id())
+    pass
 
 class PublicKey(Value):
-    @staticmethod
-    def fresh():
-        return PublicKey(Value.fresh_id())
+    pass
 
 class KeyPair:
     publicKey: PublicKey
@@ -46,52 +37,26 @@ class KeyPair:
     def __init__(self, sk: PrivateKey, pk: PublicKey):
         self.publicKey = pk
         self.secretKey = sk
-
-
-class OverloadResolution:
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = dict(kwargs)  # maybe a bit of an oversimplification but...
-
-    # simple fn with
-    def resolve(self, *args, **kwargs):
-        if len(self.args) != len(args):
-            return False
-        
-        if len(self.kwargs) != len(kwargs):
-            return False
-        
-        if not all([isinstance(self.args[x], args[x]) for x in range(0, len(args))]):
-            return False
-        
-        # check that all specified args have the correct type
-        for (name, ty) in kwargs:
-            if not isinstance(self.kwargs[name], ty):
-                return False
-            
-        # check that all kwargs are specified
-        names = set([n for (n, _) in kwargs])
-        return all([n in names for n in self.kwargs.keys()])
     
 
 class AnalysisBase:
-    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext):
+    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback) -> None:
         pass
 
 
 class MultDepth(AnalysisBase):
     depth : dict[Ciphertext, int]
     max_depth : int
-    where : list[traceback.StackSummary]
+    where : list[tuple[int, str, dis.Positions]]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.depth = {}
         self.max_depth = 0
         self.where = []
 
-    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext):
+    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback) -> None:
         new_depth = max(self.depth_of(ct1), self.depth_of(ct2)) + 1
-        self.set_depth(dest, new_depth)
+        self.set_depth(dest, new_depth, call_loc)
 
 
     def depth_of(self, ct: Ciphertext) -> int:
@@ -100,20 +65,26 @@ class MultDepth(AnalysisBase):
         
         return 0
     
-    def set_depth(self, ct: Ciphertext, depth: int):
+    def set_depth(self, ct: Ciphertext, depth: int, call_loc: inspect.Traceback) -> None:
         if depth == 0:
             return
-
         self.depth[ct] = depth
 
-        if depth == self.max_depth:
-            self.where.append(traceback.extract_stack())
+        self.where.append((depth, call_loc.filename, call_loc.positions)) # type: ignore
+        print(self.where)
+        self.max_depth = max(depth, self.max_depth)
 
-        elif depth > self.max_depth:
-            self.max_depth = depth
-            self.where = [traceback.extract_stack()]
+class Runtime(AnalysisBase):
+    total_runtime : int
+    runtime_table : dict[str, int]
 
+    def __init__(self, runtime_table: dict[str, int]) -> None:
+        self.total_runtime = 0
+        self.runtime_table = runtime_table
 
+    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, where: inspect.Traceback) -> None:
+        self.total_runtime += self.runtime_table["mult_ctct"]
+        pass
 class Analyzer:
     analysis_list : list[AnalysisBase]
 
@@ -121,17 +92,13 @@ class Analyzer:
         self.analysis_list = analysis_list
 
     def MakePackedPlaintext(self, value: list[int], noise_scale_deg: int = 1, level: int = 0) -> Plaintext:
-        return Plaintext.fresh()
+        return Plaintext()
 
-    def MakeCKKSPackedPlaintext(self, *args, **kwargs) -> Plaintext:
-        resolver = OverloadResolution(args, kwargs)
-
-        # TODO: params should be of type Openfhe.ParmType
-        if resolver.resolve(list[float], scaleDeg = int, level = int, params = any, slots = int):
-            return Plaintext.fresh()
+    def MakeCKKSPackedPlaintext(self, *args, **kwargs) -> Plaintext:#type: ignore
+        return Plaintext()
     
     def KeyGen(self) -> KeyPair:
-        return KeyPair(PrivateKey.fresh(), PublicKey.fresh())
+        return KeyPair(PrivateKey(), PublicKey())
     
     def EvalMultKeyGen(self, sk: PrivateKey) -> None:
         pass
@@ -140,45 +107,47 @@ class Analyzer:
         pass
 
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
-        return Ciphertext.fresh()
+        return Ciphertext()
     
-    def EvalMult(self, *args, **kwargs) -> Ciphertext:
+    def EvalMult(self, *args, **kwargs) -> Ciphertext:#type: ignore
         # resolver = OverloadResolution(args, kwargs)
-        print(get_caller())
+        # print(get_caller())
+        caller_loc = code_loc.calling_frame()
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
-            new = Ciphertext.fresh()
+            new = Ciphertext()
             for analysis in self.analysis_list:
-                analysis.trace_mul_ctct(new, args[0], args[1])
+                analysis.trace_mul_ctct(new, args[0], args[1], caller_loc)
             return new
         
         raise NotImplementedError("EvalMult: analyzer does not implement this overload")
 
-call_loc = None
-trace = True
-def hello(frame, event, arg):
-    print(frame)
-    if trace and event == 'call':
-        call_loc = frame
+# call_loc = None
+# trace = True
+# def hello(frame, event, arg):
+#     print(frame)
+#     if trace and event == 'call':
+#         call_loc = frame
 
-    return hello
+#     return hello
 
-def get_caller():
-    trace = False
-    print(call_loc)
-    loc = call_loc.f_back.f_back
-    trace = True
-    return loc
+# def get_caller():
+#     trace = False
+#     print(call_loc)
+#     loc = call_loc.f_back.f_back
+#     trace = True
+#     return loc
 
-def runexample():
-    sys.settrace(hello)
+def runexample() -> None:
     md = MultDepth()
     analyzer = Analyzer([md])
     example(analyzer)
     print(f"Max Depth: {md.max_depth}")
-    newline = "\n"
-    print(f"Location: {newline.join(md.where[0].format())}")
+    print(f"Where Depths: {md.where}")
 
-def example(crypto_context):
+def square(crypto_context: Analyzer, c1: Ciphertext) -> Ciphertext:
+    return crypto_context.EvalMult(c1, c1)
+
+def example(crypto_context: Analyzer) -> None:
     key_pair = crypto_context.KeyGen()
 
     # Generate the relinearization key
@@ -203,8 +172,10 @@ def example(crypto_context):
 
     v = crypto_context.EvalMult(ciphertext1, ciphertext2)
     v2 = crypto_context.EvalMult(v, v)
-    v3 = crypto_context.EvalMult(v, v2)
-    v4 = crypto_context.EvalMult(ciphertext1, ciphertext1)
+    _v3 = crypto_context.EvalMult(v, v2)
+    _v4 = crypto_context.EvalMult(ciphertext1, ciphertext1)
+    _v6 = square(crypto_context, v)
+    _v7 = square(crypto_context, _v6)
 
 # class AnalyzerContext:
 #     def __init__(self, crypto_context):# type: ignore
