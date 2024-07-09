@@ -74,6 +74,22 @@ class MultDepth(AnalysisBase):
         print(self.where)
         self.max_depth = max(depth, self.max_depth)
 
+    def anotate_depth(self) -> None:
+        anotated_files: dict[str, list[str]] = dict()
+        for mults in self.where:
+            (depth, file_name, position) = mults
+            lines = []
+            if file_name in anotated_files.keys():
+                lines = anotated_files[file_name]
+            else:
+                with open(file_name, "r") as file:
+                    lines = file.readlines()
+            lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # Multiplicative Depth: " + str(depth) + "\n"
+            anotated_files[file_name] = lines
+            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
+            with open(file_name_anotated, 'w') as file_edited:
+                file_edited.writelines(lines)
+
 class Runtime(AnalysisBase):
     total_runtime : int
     runtime_table : dict[str, int]
@@ -136,74 +152,3 @@ class Analyzer:
 #     loc = call_loc.f_back.f_back
 #     trace = True
 #     return loc
-
-def runexample() -> None:
-    md = MultDepth()
-    analyzer = Analyzer([md])
-    example(analyzer)
-    print(f"Max Depth: {md.max_depth}")
-    print(f"Where Depths: {md.where}")
-
-def square(crypto_context: Analyzer, c1: Ciphertext) -> Ciphertext:
-    return crypto_context.EvalMult(c1, c1)
-
-def example(crypto_context: Analyzer) -> None:
-    key_pair = crypto_context.KeyGen()
-
-    # Generate the relinearization key
-    crypto_context.EvalMultKeyGen(key_pair.secretKey)
-
-    # Generate the rotation evaluation keys
-    crypto_context.EvalRotateKeyGen(key_pair.secretKey, [1, 2, -1, -2])
-
-    # Sample Program: Step 3: Encryption
-
-    # First plaintext vector is encoded
-    vector_of_ints1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    plaintext1 = crypto_context.MakePackedPlaintext(vector_of_ints1)
-
-    # Second plaintext vector is encoded
-    vector_of_ints2 = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    plaintext2 = crypto_context.MakePackedPlaintext(vector_of_ints2)
-
-    # The encoded vectors are encrypted
-    ciphertext1 = crypto_context.Encrypt(key_pair.publicKey, plaintext1)
-    ciphertext2 = crypto_context.Encrypt(key_pair.publicKey, plaintext2)
-
-    v = crypto_context.EvalMult(ciphertext1, ciphertext2)
-    v2 = crypto_context.EvalMult(v, v)
-    _v3 = crypto_context.EvalMult(v, v2)
-    _v4 = crypto_context.EvalMult(ciphertext1, ciphertext1)
-    _v6 = square(crypto_context, v)
-    _v7 = square(crypto_context, _v6)
-
-# class AnalyzerContext:
-#     def __init__(self, crypto_context):# type: ignore
-#         self.crypto_context = crypto_context
-        
-#     def __getattr__(self, name):# type: ignore
-#         try: 
-#             getattr(self.crypto_context, name)
-#         except AttributeError:
-#             raise Exception(f"Attribute {name} is not implemented in OpenFHE")   
-#         raise Exception(f"Attribute {name} is not implemented in Dioptra") 
-    
-#     def EvalAdd(*args, **kwargs):# type: ignore
-#         print("EvalAdd!")
-#     def EvalNegate(self: CryptoContext, ciphertext: Ciphertext):# type: ignore
-#         print("EvalNegate!")
-
-#     def EvalMult(*args, **kwargs):# type: ignore
-#         print("EvalMult!")
-
-#     def EvalBootstrap(self: CryptoContext, ciphertext: Ciphertext, numIterations: int = 1, precision: int = 0):# type: ignore
-#         print("EvalBootstrap")
-
-#     def EvalDivide(self: CryptoContext, ciphertext: Ciphertext, a: float, b: float, degree: int):# type: ignore
-#         print("EvalDivide")
-
-#     def EvalSub(*args, **kwargs):# type: ignore
-#         print("EvalSub")
-
-#     def EvalSum(self: CryptoContext, ciphertext: Ciphertext, batchSize: int):# type: ignore
-#         print("EvalSum")
