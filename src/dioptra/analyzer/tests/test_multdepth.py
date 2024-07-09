@@ -1,5 +1,5 @@
-
-from analyzer_context import *
+from dioptra.analyzer.metrics.analysis_base import Analyzer, Ciphertext
+from dioptra.analyzer.metrics.multdepth import MultDepth
 
 def runexample(fun) -> None:#type: ignore
     md = MultDepth()
@@ -10,7 +10,7 @@ def runexample(fun) -> None:#type: ignore
     md.anotate_depth()
 
 def square(crypto_context: Analyzer, c1: Ciphertext) -> Ciphertext:
-    return crypto_context.EvalMult(c1, c1) # Multiplicative Depth: 2 # Multiplicative Depth: 3
+    return crypto_context.EvalMult(c1, c1)
 
 @runexample
 def example(crypto_context: Analyzer) -> None:
@@ -36,9 +36,9 @@ def example(crypto_context: Analyzer) -> None:
     ciphertext1 = crypto_context.Encrypt(key_pair.publicKey, plaintext1)
     ciphertext2 = crypto_context.Encrypt(key_pair.publicKey, plaintext2)
 
-    v = crypto_context.EvalMult(ciphertext1, ciphertext2) # Multiplicative Depth: 1
-    v2 = crypto_context.EvalMult(v, v) # Multiplicative Depth: 2
-    _v3 = crypto_context.EvalMult(v, v2) # Multiplicative Depth: 3
-    _v4 = crypto_context.EvalMult(ciphertext1, ciphertext1)  # Multiplicative Depth: 1
+    v = crypto_context.EvalMult(ciphertext1, ciphertext2)
+    v2 = crypto_context.EvalMult(v, v)
+    _v3 = crypto_context.EvalMult(v, v2)
+    _v4 = crypto_context.EvalMult(ciphertext1, ciphertext1) 
     _v6 = square(crypto_context, v)
     _v7 = square(crypto_context, _v6)
