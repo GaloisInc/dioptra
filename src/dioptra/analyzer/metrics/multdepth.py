@@ -1,19 +1,22 @@
-from analysis_base import AnalysisBase, Ciphertext
+from dioptra.analyzer.metrics.analysisbase import AnalysisBase, Ciphertext
 import dis
 from inspect import Traceback
 
 class MultDepth(AnalysisBase):
     depth : dict[Ciphertext, int]
     max_depth : int
-    where : list[tuple[int, str, dis.Positions]]
+    where : dict[int, tuple[int, str, dis.Positions]]
+    instruction_num: int
 
     def __init__(self) -> None:
         self.depth = {}
         self.max_depth = 0
-        self.where = []
+        self.where = {}
+        self.instruction_num = 0
 
     def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
         new_depth = max(self.depth_of(ct1), self.depth_of(ct2)) + 1
+        self.instruction_num += 1
         self.set_depth(dest, new_depth, call_loc)
 
 
@@ -28,13 +31,12 @@ class MultDepth(AnalysisBase):
             return
         self.depth[ct] = depth
 
-        self.where.append((depth, call_loc.filename, call_loc.positions)) # type: ignore
-        print(self.where)
+        self.where[self.instruction_num] = (depth, call_loc.filename, call_loc.positions) # type: ignore
         self.max_depth = max(depth, self.max_depth)
 
     def anotate_depth(self) -> None:
         anotated_files: dict[str, list[str]] = dict()
-        for mults in self.where:
+        for mults in self.where.values():
             (depth, file_name, position) = mults
             lines = []
             if file_name in anotated_files.keys():
