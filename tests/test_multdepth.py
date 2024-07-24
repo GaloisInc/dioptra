@@ -1,4 +1,4 @@
-from dioptra.analyzer.metrics.analysis_base import Analyzer, Ciphertext
+from dioptra.analyzer.metrics.analysisbase import Analyzer, Ciphertext
 from dioptra.analyzer.metrics.multdepth import MultDepth
 
 def runexample(fun) -> None:#type: ignore
