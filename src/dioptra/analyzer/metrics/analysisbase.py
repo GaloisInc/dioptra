@@ -1,5 +1,6 @@
 import inspect
 import dioptra.analyzer.utils.code_loc as code_loc
+import dis
 
 class Value:
     value_id = 0
@@ -39,8 +40,25 @@ class KeyPair:
     
 
 class AnalysisBase:
+    where : dict[int, tuple[int, str, dis.Positions]]
+    unit: str
     def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
         pass
+    def anotate_metric(self) -> None:
+        anotated_files: dict[str, list[str]] = dict()
+        for metrics in self.where.values():
+            (value, file_name, position) = metrics
+            lines = []
+            if file_name in anotated_files.keys():
+                lines = anotated_files[file_name]
+            else:
+                with open(file_name, "r") as file:
+                    lines = file.readlines()
+            lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # "+type(self).__name__ +": " + str(value) + " " + self.unit + "\n"
+            anotated_files[file_name] = lines
+            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
+            with open(file_name_anotated, 'w') as file_edited:
+                file_edited.writelines(lines)
 
 class Analyzer:
     analysis_list : list[AnalysisBase]

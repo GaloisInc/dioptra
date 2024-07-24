@@ -6,6 +6,7 @@ class MultDepth(AnalysisBase):
     depth : dict[Ciphertext, int]
     max_depth : int
     where : dict[int, tuple[int, str, dis.Positions]]
+    unit: str
     instruction_num: int
 
     def __init__(self) -> None:
@@ -13,6 +14,7 @@ class MultDepth(AnalysisBase):
         self.max_depth = 0
         self.where = {}
         self.instruction_num = 0
+        self.unit = ""
 
     def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
         new_depth = max(self.depth_of(ct1), self.depth_of(ct2)) + 1
@@ -33,19 +35,3 @@ class MultDepth(AnalysisBase):
 
         self.where[self.instruction_num] = (depth, call_loc.filename, call_loc.positions) # type: ignore
         self.max_depth = max(depth, self.max_depth)
-
-    def anotate_depth(self) -> None:
-        anotated_files: dict[str, list[str]] = dict()
-        for mults in self.where.values():
-            (depth, file_name, position) = mults
-            lines = []
-            if file_name in anotated_files.keys():
-                lines = anotated_files[file_name]
-            else:
-                with open(file_name, "r") as file:
-                    lines = file.readlines()
-            lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # Multiplicative Depth: " + str(depth) + "\n"
-            anotated_files[file_name] = lines
-            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
-            with open(file_name_anotated, 'w') as file_edited:
-                file_edited.writelines(lines)
