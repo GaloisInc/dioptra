@@ -42,7 +42,13 @@ class KeyPair:
 class AnalysisBase:
     where : dict[int, tuple[int, str, dis.Positions]]
     unit: str
+    def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+        pass
     def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+        pass
+    def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+        pass
+    def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
         pass
     def anotate_metric(self) -> None:
         anotated_files: dict[str, list[str]] = dict()
@@ -95,3 +101,38 @@ class Analyzer:
             return new
         
         raise NotImplementedError("EvalMult: analyzer does not implement this overload")
+    
+    def EvalAdd(self, *args, **kwargs) -> Ciphertext:#type: ignore
+        # resolver = OverloadResolution(args, kwargs)
+        # print(get_caller())
+        caller_loc = code_loc.calling_frame()
+        if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
+            new = Ciphertext()
+            for analysis in self.analysis_list:
+                analysis.trace_add_ctct(new, args[0], args[1], caller_loc)
+            return new
+        
+        raise NotImplementedError("EvalAdd: analyzer does not implement this overload")
+    
+    def EvalSub(self, *args, **kwargs) -> Ciphertext:#type: ignore
+        # resolver = OverloadResolution(args, kwargs)
+        # print(get_caller())
+        caller_loc = code_loc.calling_frame()
+        if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
+            new = Ciphertext()
+            for analysis in self.analysis_list:
+                analysis.trace_sub_ctct(new, args[0], args[1], caller_loc)
+            return new
+        
+        raise NotImplementedError("EvalSub: analyzer does not implement this overload")
+    
+    def EvalBootstrap(self, *args, **kwargs) -> Ciphertext: 
+        caller_loc = code_loc.calling_frame()
+        if isinstance(args[0], Ciphertext):
+            new = Ciphertext()
+            for analysis in self.analysis_list:
+                analysis.trace_bootstrap(new, args[0], caller_loc)
+            return new
+        
+        raise NotImplementedError("EvalSub: analyzer does not implement this overload")
+        pass
