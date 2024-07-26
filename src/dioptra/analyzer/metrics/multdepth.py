@@ -21,11 +21,22 @@ class MultDepth(AnalysisBase):
         self.instruction_num += 1
         self.set_depth(dest, new_depth, call_loc)
 
+    def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
+        self.instruction_num += 1
+        self.set_depth(dest, self.max_depth, call_loc)
 
+    def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
+        self.instruction_num += 1
+        self.set_depth(dest, self.max_depth, call_loc)
+
+    def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, call_loc: Traceback | None) -> None:
+        new_depth = 0
+        self.instruction_num += 1
+        self.set_depth(dest, new_depth, call_loc)
+    
     def depth_of(self, ct: Ciphertext) -> int:
         if ct in self.depth:
-            return self.depth[ct]
-        
+            return self.depth[ct]   
         return 0
     
     def set_depth(self, ct: Ciphertext, depth: int, call_loc: Traceback) -> None:

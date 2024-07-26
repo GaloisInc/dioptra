@@ -25,6 +25,24 @@ class Runtime(AnalysisBase):
         (mult_depth, _, _) = self.multiplicative_depth.where[self.instruction_num]
         self.total_runtime += self.runtime_table[("mult_ctct", mult_depth)]
         self.set_runtime(dest, self.total_runtime, call_loc)
+    
+    def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
+        self.instruction_num += 1
+        (mult_depth, _, _) = self.multiplicative_depth.where[self.instruction_num]
+        self.total_runtime += self.runtime_table[("add_ctct", mult_depth)]
+        self.set_runtime(dest, self.total_runtime, call_loc)
+
+    def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
+        self.instruction_num += 1
+        (mult_depth, _, _) = self.multiplicative_depth.where[self.instruction_num]
+        self.total_runtime += self.runtime_table[("sub_ctct", mult_depth)]
+        self.set_runtime(dest, self.total_runtime, call_loc)
+
+    def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, call_loc: Traceback | None) -> None:
+        self.instruction_num += 1
+        (mult_depth, _, _) = self.multiplicative_depth.where[self.instruction_num]
+        self.total_runtime += self.runtime_table[("bootstrap", -1)]
+        self.set_runtime(dest, self.total_runtime, call_loc)
 
     def set_runtime(self, _ct: Ciphertext, runtime: int, call_loc: Traceback) -> None:
         self.where[self.instruction_num] = (runtime, call_loc.filename, call_loc.positions) # type: ignore
