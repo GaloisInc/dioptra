@@ -1,10 +1,26 @@
+import os
 import openfhe
 import time
-from typing import Any, Iterator, TextIO
+from typing import IO, Any, Callable, Iterator, TextIO
 import random
 import enum
 import json
 import sys
+
+def format_ns(ns: int) -> str:
+  micro = ns // 1000
+  milli = micro // 1000
+  second = milli // 1000
+
+  tstr = f"{ns % 1000:03}n"
+  if micro > 0:
+    tstr = f"{micro%1000:03}u" + tstr
+  if milli > 0:
+    tstr = f"{milli%1000:03}m" + tstr
+  if second > 0:
+    tstr = f"{second}s" + tstr
+
+  return tstr
 
 # range function with step that always includes endpoints
 def ep_range(start: int, end: int, step: int) -> Iterator[int]:
@@ -44,22 +60,86 @@ class Event:
   def __hash__(self) -> int:
     return hash((self.kind, self.arg_depth1, self.arg_depth2))
   
+class RuntimeTable:
+  def __init__(self, runtimes: dict[Event, int]):
+    self.runtimes = runtimes
+
+  def get_runtime_ns(self, e: Event) -> int:
+    return self.runtimes[e]
 
 class RuntimeSamples:
-  def __init__(self, samples: list[tuple[Event, int]]):
-    self.samples = samples
+  def __init__(self):
+    self.samples: dict[Event, list[int]] = {}
+
+  def add_sample(self, e: Event, ns: int) -> None:
+    if e not in self.samples:
+      self.samples[e] = []
+
+    self.samples[e].append(ns)
+
+  def write_json(self, f: str):
+    lst = [(self.event_to_dict(evt), ts) for (evt, ts) in self.samples.items()]
+    with open(f, "w") as fh:
+      json.dump(lst, fh)
+
+  def read_json(self, f: str):
+    with open(f, "r") as fh:
+      lst = [(self.event_from_dict(evt), ts) for (evt, ts) in json.load(fh)]
+      self.samples = dict(lst)
+
+  def avg_runtime_table(self) -> RuntimeTable:
+    table = {}
+    for (event, runtimes) in self.samples.items():
+      table[event] = sum(runtimes) // len(runtimes)
+
+    return RuntimeTable(table)
+  
+  def event_to_dict(self, e: Event) -> dict[str, Any]:
+    r: dict[str, Any] = {"kinddesc": e.kind.name, "kindid": e.kind.value }
+    if e.arg_depth1 is not None:
+      r["depth1"] = e.arg_depth1
+
+    if e.arg_depth2 is not None:
+      r["depth2"] = e.arg_depth2
+
+    return r
+  
+  def event_from_dict(self, r: dict[str, Any]) -> Event:
+    kind = EventKind(r["kindid"])
+    depth1 = r.get("depth1", None)
+    depth2 = r.get("depth2", None)
+    return Event(kind, depth1, depth2)
+  
+  def __eq__(self, value: object) -> bool:
+    def sorted(l: list) -> list:
+      s = list(l)
+      s.sort()
+      return s
+    
+    def key_eq(k: Event) -> bool:
+      return  isinstance(value, RuntimeSamples) and \
+              k in self.samples and k in value.samples and \
+              sorted(self.samples[k]) == value.samples[k]
+
+    return isinstance(value, RuntimeSamples) and \
+           all(key_eq(k) for k in self.samples.keys()) and \
+           all(key_eq(k) for k in value.samples.keys())
 
 class RuntimeSample:
-  def __init__(self, label: Event, samples: list[tuple[Event, int]]) -> None:
+  def __init__(self, label: Event, samples: RuntimeSamples, on_exit: Callable[[int], None] | None = None) -> None:
     self.label = label
     self.samples = samples
+    self.on_exit = on_exit
 
   def __enter__(self):
-    self.begin = time.process_time_ns()
+    self.begin = time.perf_counter_ns()
 
   def __exit__(self, exc_type, exc_value, traceback):
-    end = time.process_time_ns()
-    self.samples.append((self.label, end - self.begin))
+    end = time.perf_counter_ns()
+    t = end - self.begin
+    self.samples.add_sample(self.label, t)
+    if self.on_exit is not None:
+      self.on_exit(t)
 
 
 class Calibration:
@@ -67,12 +147,10 @@ class Calibration:
     params: openfhe.CCParamsBFVRNS | openfhe.CCParamsBGVRNS | openfhe.CCParamsCKKSRNS, 
     out: TextIO | None = None,
     sample_count: int = 5,
-    depth_interval: int = 1,
   ) -> None:
     self.params = params
     self.out = out
     self.sample_count = sample_count
-    self.depth_interval = depth_interval
 
   def log(self, msg: str) -> None:
     if self.out is not None:
@@ -85,9 +163,7 @@ class Calibration:
   def calibrate_ckks(self) -> RuntimeSamples:
     self.log("Scheme: CKKS")
 
-
-
-    samples: list[tuple[Event, int]] = []
+    samples = RuntimeSamples()
     def measure(label: EventKind, a1: int | None = None, a2: int | None = None):
       if a1 is None and a2 is None:
         self.log(f"Measuring {label}")
@@ -98,7 +174,10 @@ class Calibration:
       else:
         self.log(f"Measuring {label} depth1={a1} depth2={a2}")
       
-      return RuntimeSample(Event(label, a1, a2), samples)
+      def on_exit(ns: int):
+        self.log(f"   [{format_ns(ns)}]")
+
+      return RuntimeSample(Event(label, a1, a2), samples, on_exit=on_exit)
 
     cc = openfhe.GenCryptoContext(self.params)
     cc.Enable(openfhe.PKESchemeFeature.PKE)
@@ -127,8 +206,13 @@ class Calibration:
     for iteration in range(0, self.sample_count):
       self.log(f"Iteration {iteration}")
 
+      pt = cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots())
+      ct = cc.Encrypt(key_pair.publicKey, pt)
+      with measure(EventKind.EVAL_BOOTSTRAP):
+        cc.EvalBootstrap(ct)
+
       ct_by_depth = []
-      for depth in ep_range(0, max_mult_depth, self.depth_interval):
+      for depth in range(0, max_mult_depth):
         with measure(EventKind.ENCODE, depth):
           pt = cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=depth)
 
@@ -141,13 +225,10 @@ class Calibration:
         with measure(EventKind.DECODE, depth):
           pt.GetRealPackedValue()
 
-        with measure(EventKind.EVAL_BOOTSTRAP, depth):
-          cc.EvalBootstrap(ct)
-
         ct_by_depth.append(ct)
 
-      for depth1 in ep_range(0, max_mult_depth, self.depth_interval):
-        for depth2 in ep_range(depth1, max_mult_depth, self.depth_interval):
+      for depth1 in range(0, max_mult_depth):
+        for depth2 in range(depth1, max_mult_depth):
           with measure(EventKind.EVAL_ADD, depth1, depth2):
             cc.EvalAdd(ct_by_depth[depth1], ct_by_depth[depth2])
 
@@ -157,7 +238,7 @@ class Calibration:
           with measure(EventKind.EVAL_SUB, depth1, depth2):
             cc.EvalSub(ct_by_depth[depth1], ct_by_depth[depth2])
 
-    return RuntimeSamples(samples)
+    return samples
   
   def calibrate(self) -> RuntimeSamples:
     self.log("Beginning calibration...")
@@ -190,28 +271,17 @@ def run_example():
   depth = 10 + openfhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist) + (num_iterations - 1)
 
   parameters.SetMultiplicativeDepth(depth)
-  c = Calibration(parameters, sys.stdout, depth_interval=5)
+  c = Calibration(parameters, sys.stdout, sample_count=1)
   samples = c.calibrate()
+  samples.write_json("balanced.samples")
+  s = RuntimeSamples()
+  s.read_json("balanced.samples")
+  assert s == samples
 
 
-run_example()
 
 
 
-# def format_ns(ns: int) -> str:
-#   micro = ns // 1000
-#   milli = micro // 1000
-#   second = milli // 1000
-
-#   tstr = f"{ns % 1000}n"
-#   if micro > 0:
-#     tstr = f"{micro%1000}u" + tstr
-#   if milli > 0:
-#     tstr = f"{milli%1000}m" + tstr
-#   if second > 0:
-#     tstr = f"{second}s" + tstr
-
-#   return tstr
 
 # def call_with_time(f, *args, **kwargs):
 #   begin = time.process_time_ns()
