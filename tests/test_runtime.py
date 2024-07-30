@@ -3,20 +3,12 @@ from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
 
 def runexample(fun) -> None:#type: ignore
-    runtime_table = {
-        ("mult_ctct", 1): 1, 
-        ("mult_ctct", 2): 2, 
-        ("mult_ctct", 3): 3, 
-        ("mult_ctct", 4): 4,
-        ("add_ctct", 1): 1, 
-        ("add_ctct", 2): 2, 
-        ("add_ctct", 3): 3, 
-        ("add_ctct", 4): 4,
-        ("sub_ctct", 1): 1, 
-        ("sub_ctct", 2): 2, 
-        ("sub_ctct", 3): 3, 
-        ("sub_ctct", 4): 4,
-        ("bootstrap", -1): 10,
+    runtime_table = {("mult_ctct", 1): 1, ("mult_ctct", 2): 2, ("mult_ctct", 3): 3,  ("mult_ctct", 4): 4,
+        ("add_ctct", 1): 1, ("add_ctct", 2): 2,  ("add_ctct", 3): 3, ("add_ctct", 4): 4,
+        ("add_ctpt", 1): 1, ("add_ctpt", 2): 2,  ("add_ctpt", 3): 3, ("add_ctpt", 4): 4,
+        ("sub_ctct", 1): 1, ("sub_ctct", 2): 2, ("sub_ctct", 3): 3, ("sub_ctct", 4): 4,
+        ("sub_ctpt", 1): 1, ("sub_ctpt", 2): 2, ("sub_ctpt", 3): 3, ("sub_ctpt", 4): 4,
+        ("bootstrap", 1): 10, ("bootstrap", 2): 10, ("bootstrap", 3): 10, ("bootstrap", 4): 10,
         }
     md = MultDepth()
     rt = Runtime(md, runtime_table)
