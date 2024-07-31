@@ -8,11 +8,10 @@ TODO: Summarize Dipotra platform
 systems, and there is no intention to support Windows at this time.
 If you encounter any problems, please let us know!
 
-There are three installation methods described below:
+There are two installation methods described below:
 
 1. ["From scratch" / if you already have OpenFHE installed](#in-a-fresh-system-environment)
-2. [Via Nix](#nix-shell)
-3. [Via Docker](#docker)
+2. [Via Docker](#docker)
 
 **You need only pick one method!**
 
@@ -50,25 +49,6 @@ the root of this repository. This will install the `dioptra` binary to your
 virtual environment. In cases where you already have an environment suitable for
 building and running OpenFHE Python applications, this step is all that's
 required to install the `dioptra` platform.
-
-### Nix shell
-
-We have included Nix expressions to package `openfhe-development` and
-`openfhe-python` in the `nix/` directory. Note that these may become obsolete, if
-these packages are added to `NixOS/nixpkgs`. This would clean up this repository
-quite significantly, since the packages could be fetched directly from the
-`nixpkgs` repository.
-
-Running `nix-shell` at the repository root will drop you into an environment
-with a Python installation suitable for OpenFHE development, a small handful of
-Python static analysis tools (`mypy` and `ruff`), and the `dioptra` platform.
-No complicated install steps needed; this should "just work". Note that the
-first time `nix-shell` is run, it may take a while to download and install the
-relevant `nixpkgs`. Subsequent runs will be significantly faster / nearly
-instantaneous.
-
-The [Nix package manager](https://nixos.org/download/) is the only other
-requirement to take advantage of this.
 
 ### Docker
 
