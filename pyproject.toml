@@ -9,6 +9,7 @@ name = "dioptra"
 version = "0.0.1"
 authors = [
   { name="Rawane Issa", email="rissa@galois.com" },
+  { name="James LaMar", email="james.lamar@galois.com"},
   { name="Chris Phifer", email="cphifer@galois.com" },
 ]
 description = "A platform for running and analyzing FHE applications."
