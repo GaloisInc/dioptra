@@ -1,27 +1,22 @@
 from dioptra.analyzer.metrics.analysisbase import AnalysisBase, Ciphertext, Plaintext, PublicKey, PrivateKey
 from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.calibration import RuntimeTable, Event, EventKind
+from dioptra.analyzer.calibration import RuntimeTable, RuntimeSamples, Event, EventKind
 from inspect import Traceback
 import dis
 
 class Runtime(AnalysisBase):
-    total_runtime : int
-    instruction_num: int
-    multiplicative_depth: MultDepth
-    runtime_table : RuntimeTable
-    where : dict[int, tuple[int, str, dis.Positions]]
-    unit: str
 
-    def __init__(self, multiplicative_depth: MultDepth, runtime_table: RuntimeTable) -> None:
+    def __init__(self, multiplicative_depth: MultDepth, runtime_samples: RuntimeSamples) -> None:
         self.total_runtime = 0
         self.level = multiplicative_depth
-        self.runtime_table = runtime_table
+        self.multiplicative_depth = multiplicative_depth
+        self.runtime_table = runtime_samples.avg_runtime_table()
         self.where = {}
         self.unit = "nanosec"
 
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Traceback) -> None:
         dest_depth = level
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.ENCODE, dest_depth))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.ENCODE, dest_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: Traceback) -> None:
@@ -29,34 +24,35 @@ class Runtime(AnalysisBase):
 
     def trace_encrypt(self, dest: Ciphertext, publicKey: PublicKey, plaintext: Plaintext, call_loc: Traceback) -> None:
         dest_depth = plaintext.level
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.ENCRYPT, dest_depth))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.ENCRYPT, dest_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_decrypt(self, dest: Plaintext, publicKey: PublicKey, ciphertext: Ciphertext, call_loc: Traceback) -> None:
         ct1_depth = self.multiplicative_depth.depth[ciphertext]
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.DECRYPT, ct1_depth))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.DECRYPT, ct1_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
         ct1_depth = self.multiplicative_depth.depth[ct1]
         ct2_depth = self.multiplicative_depth.depth[ct2]
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.EVAL_MULT, ct1_depth, ct2_depth))
+        
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_MULT, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
         ct1_depth = self.multiplicative_depth.depth[ct1]
         ct2_depth = self.multiplicative_depth.depth[ct2]
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.EVAL_ADD, ct1_depth, ct2_depth))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_ADD, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Traceback) -> None:
         ct1_depth = self.multiplicative_depth.depth[ct1]
         ct2_depth = self.multiplicative_depth.depth[ct2]
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.EVAL_SUB, ct1_depth, ct2_depth))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_SUB, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, call_loc: Traceback | None) -> None:
-        self.total_runtime += self.get_runtime_ns(Event(EventKind.EVAL_BOOTSTRAP))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_BOOTSTRAP))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def set_runtime(self, ct: Ciphertext, runtime: int, call_loc: Traceback) -> None:
