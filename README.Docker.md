@@ -53,3 +53,28 @@ Finally, you can access a shell in the running container with:
 Where you will be in a clean `/workspace` directory where OpenFHE applications
 can be cloned and run with `dioptra`, which is installed to the container for
 immediate use.
+
+# Dev Container
+
+Inside the `.devcontainer` directory there is a devcontainer spec suitable for
+development using Visual Studio Code (see https://code.visualstudio.com/docs/devcontainers/containers)
+for more information.  Opening the folder using the dev container vscode extension
+should give you an environment that's has OpenFHE and the python bindings installed
+globally.
+
+## Creating a virtual environment
+
+From there, one way to continue is to create a virtual environment and install any tools you might
+need so that when running `pip3 install .`, dioptra is installed in the virtual environment - 
+it may not be installable otherwise.
+
+To make a virtual environment (preferably in the `workspaces/dioptra` directory):
+
+``` console
+> python3 -mvenv .venv
+```
+
+And enter the virtual environment by:
+```
+> source .venv/bin/activate
+```
