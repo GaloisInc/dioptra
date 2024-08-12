@@ -65,7 +65,13 @@ class RuntimeTable:
     self.runtimes = runtimes
 
   def get_runtime_ns(self, e: Event) -> int:
-    return self.runtimes[e]
+    if e in self.runtimes:
+      return self.runtimes[e]
+    elif e.arg_depth2 is not None:
+      e_swaped = Event(e.kind, e.arg_depth2, e.arg_depth1)
+      return self.runtimes[e_swaped]
+    else:
+      raise(f"No runtime found for event: kind:{e.kind} depth 1:{e.arg_depth1} depth 2:{e.arg_depth2}")
 
 class RuntimeSamples:
   def __init__(self):
