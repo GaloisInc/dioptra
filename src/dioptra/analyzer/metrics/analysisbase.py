@@ -33,7 +33,7 @@ class Plaintext(Value):
     level: int
     def __init__(self, level: int):
         self.level = level
-        super(Value, self).__init__()
+        super().__init__()
 
 class PublicKey(Value):
     pass
@@ -50,9 +50,9 @@ class KeyPair:
 class AnalysisBase:
     where : dict[int, tuple[int, str, dis.Positions]]
     unit: str
-    def trace_encode(self, dest: Plaintext, level: int) -> None:
+    def trace_encode(self, dest: Plaintext, level: int, call_loc: inspect.Traceback | None) -> None:
         pass    
-    def trace_encode_ckks(self, dest: Plaintext, level: int) -> None:
+    def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: inspect.Traceback | None) -> None:
         pass    
     def trace_encrypt(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
         pass    
@@ -99,8 +99,9 @@ class Analyzer:
 
     def MakePackedPlaintext(self, value: list[int], noise_scale_deg: int = 1, level: int = 0) -> Plaintext:
         new = Plaintext(level)
+        caller_loc = code_loc.calling_frame()
         for analysis in self.analysis_list:
-            analysis.trace_encode(new, level)
+            analysis.trace_encode(new, level, caller_loc)
         return new
 
     def MakeCKKSPackedPlaintext(self, *args, **kwargs) -> Plaintext:#type: ignore
@@ -112,15 +113,17 @@ class Analyzer:
         raise NotImplementedError("MakeCKKSPackedPlaintext: analyzer does not implement this overload")
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
         new = Ciphertext()
+        caller_loc = code_loc.calling_frame()
         for analysis in self.analysis_list:
-            analysis.trace_encrypt(new, public_key, plaintext)
+            analysis.trace_encrypt(new, public_key, plaintext, caller_loc)
         return new
         
     def Decrypt(self, *args, **kwargs):
         new = Ciphertext()
+        caller_loc = code_loc.calling_frame()
         if isinstance(args[0], PublicKey) and isinstance(args[1], Ciphertext):
             for analysis in self.analysis_list:
-                analysis.trace_decrypt(new, args[0], args[1])
+                analysis.trace_decrypt(new, args[0], args[1], caller_loc)
             return new
         raise NotImplementedError("Decrypt: analyzer does not implement this overload")
     
