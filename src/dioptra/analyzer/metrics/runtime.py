@@ -30,26 +30,26 @@ class Runtime(AnalysisBase):
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_decrypt(self, dest: Plaintext, publicKey: PublicKey, ciphertext: Ciphertext, call_loc: Frame) -> None:
-        ct1_depth = self.multiplicative_depth.depth[ciphertext]
+        ct1_depth = self.multiplicative_depth.depth_of(ciphertext)
         self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.DECRYPT, ct1_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame) -> None:
-        ct1_depth = self.multiplicative_depth.depth[ct1]
-        ct2_depth = self.multiplicative_depth.depth[ct2]
+        ct1_depth = self.multiplicative_depth.depth_of(ct1)
+        ct2_depth = self.multiplicative_depth.depth_of(ct2)
         
         self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_MULT, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame) -> None:
-        ct1_depth = self.multiplicative_depth.depth[ct1]
-        ct2_depth = self.multiplicative_depth.depth[ct2]
+        ct1_depth = self.multiplicative_depth.depth_of(ct1)
+        ct2_depth = self.multiplicative_depth.depth_of(ct2)
         self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_ADD, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame) -> None:
-        ct1_depth = self.multiplicative_depth.depth[ct1]
-        ct2_depth = self.multiplicative_depth.depth[ct2]
+        ct1_depth = self.multiplicative_depth.depth_of(ct1)
+        ct2_depth = self.multiplicative_depth.depth_of(ct2)
         self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_SUB, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 

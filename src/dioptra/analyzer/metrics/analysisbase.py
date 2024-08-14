@@ -1,4 +1,5 @@
 import inspect
+from typing import Callable
 from dioptra.analyzer.utils import code_loc
 import dis
 import sys
@@ -83,6 +84,7 @@ class AnalysisBase:
             with open(file_name_anotated, 'w') as file_edited:
                 file_edited.writelines(lines)
 
+
 class Analyzer:
     analysis_list : list[AnalysisBase]
 
@@ -165,6 +167,13 @@ class Analyzer:
             analysis.trace_bootstrap(new, ciphertext, caller_loc)
         return new
     
+    def ArbitraryCT(self, level=0) -> Ciphertext:
+        #TODO: incorporate level into this somehow
+        return Ciphertext()
+    
+    def Analyze(self, f: Callable, *args, **kwargs):
+        f(self, args, kwargs)
+
     # def _enable_trace(self):
     #     sys.settrace(self._trace)
 
