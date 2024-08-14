@@ -30,8 +30,7 @@ class Ciphertext(Value):
     pass
 
 class Plaintext(Value):
-    level: int
-    def __init__(self, level: int):
+    def __init__(self, level = 0):
         self.level = level
         super().__init__()
 
@@ -105,12 +104,15 @@ class Analyzer:
         return new
 
     def MakeCKKSPackedPlaintext(self, *args, **kwargs) -> Plaintext:#type: ignore
-        new = Plaintext()
-        if isinstance(args[2], int):
+        level = kwargs.get('level',0)
+        new = Plaintext(level)
+        caller_loc = code_loc.calling_frame()
+        if isinstance(args[0], list):
             for analysis in self.analysis_list:
-                analysis.trace_encode_ckks(new, args[2])
+                analysis.trace_encode_ckks(new, args[0], caller_loc, level)
             return new
         raise NotImplementedError("MakeCKKSPackedPlaintext: analyzer does not implement this overload")
+    
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
         new = Ciphertext()
         caller_loc = code_loc.calling_frame()
