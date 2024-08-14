@@ -19,8 +19,10 @@ class Runtime(AnalysisBase):
         self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.ENCODE, dest_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
-    def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: Traceback) -> None:
-        pass
+    def trace_encode_ckks(self, dest: Plaintext, value: list[float], call_loc: Traceback, level: int = 0)  -> None:
+        dest_depth = level
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.ENCODE, dest_depth))
+        self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_encrypt(self, dest: Ciphertext, publicKey: PublicKey, plaintext: Plaintext, call_loc: Traceback) -> None:
         dest_depth = plaintext.level

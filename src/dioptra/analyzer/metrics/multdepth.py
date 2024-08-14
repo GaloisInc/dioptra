@@ -19,7 +19,7 @@ class MultDepth(AnalysisBase):
         new_depth = level
         self.set_depth(dest, new_depth, call_loc)   
 
-    def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: Traceback) -> None:
+    def trace_encode_ckks(self, dest: Plaintext, value: list[float], call_loc: Traceback, level: int = 0) -> None:
         new_depth = level
         self.set_depth(dest, new_depth, call_loc) 
 
