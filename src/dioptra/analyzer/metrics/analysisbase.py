@@ -1,6 +1,8 @@
 import inspect
-import dioptra.analyzer.utils.code_loc as code_loc
+from dioptra.analyzer.utils import code_loc
 import dis
+import sys
+
 
 class Value:
     value_id = 0
@@ -162,3 +164,16 @@ class Analyzer:
         for analysis in self.analysis_list:
             analysis.trace_bootstrap(new, ciphertext, caller_loc)
         return new
+    
+    # def _enable_trace(self):
+    #     sys.settrace(self._trace)
+
+    # def _trace(self, frame: any, event: str, arg: any) -> function:
+    #     if event == 'call':
+    #         caller = frame.f_back
+    #         print(f"calling {frame.f_code.co_qualname} at {frame_loc(caller)}")
+
+    #     if event == 'return' and frame.f_back is not None:
+    #         caller = frame.f_back
+    #         print(f"return from {frame.f_code.co_qualname} to {caller.f_code.co_qualname} at {frame_loc(caller)}")
+    #     return self._trace
