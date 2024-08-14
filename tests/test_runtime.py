@@ -1,52 +1,90 @@
-from dioptra.analyzer.metrics.analysisbase import Analyzer, Ciphertext
+from dioptra.analyzer.metrics.analysisbase import Analyzer, Value, Ciphertext, Plaintext
 from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
+from dioptra.analyzer.calibration import RuntimeSamples, format_ns
+import openfhe
+import time
 
-def runexample(fun) -> None:#type: ignore
-    runtime_table = {("mult_ctct", 1): 1, ("mult_ctct", 2): 2, ("mult_ctct", 3): 3,  ("mult_ctct", 4): 4,
-        ("add_ctct", 1): 1, ("add_ctct", 2): 2,  ("add_ctct", 3): 3, ("add_ctct", 4): 4,
-        ("add_ctpt", 1): 1, ("add_ctpt", 2): 2,  ("add_ctpt", 3): 3, ("add_ctpt", 4): 4,
-        ("sub_ctct", 1): 1, ("sub_ctct", 2): 2, ("sub_ctct", 3): 3, ("sub_ctct", 4): 4,
-        ("sub_ctpt", 1): 1, ("sub_ctpt", 2): 2, ("sub_ctpt", 3): 3, ("sub_ctpt", 4): 4,
-        ("bootstrap", 1): 10, ("bootstrap", 2): 10, ("bootstrap", 3): 10, ("bootstrap", 4): 10,
-        }
+def runestimator(fun) -> None:#type: ignore
+    # Read runtime table of each FHE operation
+    runtime_samples_file = "src/dioptra/analyzer/balanced.samples"
+    runtime_table = RuntimeSamples()
+    runtime_table.read_json(runtime_samples_file)
+
+    # Run the multiplicative depth analyzer first
     md = MultDepth()
     rt = Runtime(md, runtime_table)
     analyzer = Analyzer([md, rt])
     fun(analyzer)
-    print(f"Total Runtime: {rt.total_runtime}")
+    print(f"Total Runtime: {rt.total_runtime} ns")
     rt.anotate_metric()
 
-def square(crypto_context: Analyzer, c1: Ciphertext) -> Ciphertext:
-    return crypto_context.EvalMult(c1, c1)
+def square(cryptocontext: Analyzer, c1: Ciphertext) -> Ciphertext:
+    return cryptocontext.EvalMult(c1, c1)
 
-@runexample
-def example(crypto_context: Analyzer) -> None:
-    key_pair = crypto_context.KeyGen()
+# @runestimator
+def example():
+    # Setup Parameters
+    parameters = openfhe.CCParamsCKKSRNS()
+    secret_key_dist = openfhe.SecretKeyDist.UNIFORM_TERNARY
+    parameters.SetSecretKeyDist(secret_key_dist)
+    parameters.SetSecurityLevel(openfhe.SecurityLevel.HEStd_NotSet)
+    parameters.SetRingDim(1 << 16)
 
-    # Generate the relinearization key
-    crypto_context.EvalMultKeyGen(key_pair.secretKey)
+    rescale_tech = openfhe.ScalingTechnique.FLEXIBLEAUTO
 
-    # Generate the rotation evaluation keys
-    crypto_context.EvalRotateKeyGen(key_pair.secretKey, [1, 2, -1, -2])
+    dcrt_bits = 59
+    first_mod = 60
 
-    # Sample Program: Step 3: Encryption
+    parameters.SetScalingModSize(dcrt_bits)
+    parameters.SetScalingTechnique(rescale_tech)
+    parameters.SetFirstModSize(first_mod)
 
+    num_iterations = 2
+
+    level_budget = [3, 3]
+    depth = 10 + openfhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist) + (num_iterations - 1)
+
+    parameters.SetMultiplicativeDepth(depth)
+
+    cc = openfhe.GenCryptoContext(parameters)
+    cc.Enable(openfhe.PKESchemeFeature.PKE)
+    cc.Enable(openfhe.PKESchemeFeature.KEYSWITCH)
+    cc.Enable(openfhe.PKESchemeFeature.LEVELEDSHE)
+    cc.Enable(openfhe.PKESchemeFeature.ADVANCEDSHE)
+    cc.Enable(openfhe.PKESchemeFeature.FHE)
+
+    print("Generating evaluation keys...")
+    num_slots = parameters.GetRingDim() >> 1
+    level_budget = [3, 3]
+    bsgs_dim = [0,0]
+    cc.EvalBootstrapSetup(level_budget, bsgs_dim, num_slots)
+
+    # # key generation
+    key_pair = cc.KeyGen()
+    cc.EvalMultKeyGen(key_pair.secretKey)
+    cc.EvalBootstrapKeyGen(key_pair.secretKey, num_slots)
+  
+    max_mult_depth = parameters.GetMultiplicativeDepth()
+
+    start_time = time.time_ns()
     # First plaintext vector is encoded
     vector_of_ints1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    plaintext1 = crypto_context.MakePackedPlaintext(vector_of_ints1)
+    plaintext1 = cc.MakeCKKSPackedPlaintext(vector_of_ints1)
 
     # Second plaintext vector is encoded
     vector_of_ints2 = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    plaintext2 = crypto_context.MakePackedPlaintext(vector_of_ints2)
+    plaintext2 = cc.MakeCKKSPackedPlaintext(vector_of_ints2)
 
     # The encoded vectors are encrypted
-    ciphertext1 = crypto_context.Encrypt(key_pair.publicKey, plaintext1)
-    ciphertext2 = crypto_context.Encrypt(key_pair.publicKey, plaintext2)
+    ciphertext1 = cc.Encrypt(key_pair.publicKey, plaintext1)
+    ciphertext2 = cc.Encrypt(key_pair.publicKey, plaintext2)
 
-    v = crypto_context.EvalMult(ciphertext1, ciphertext2)
-    v2 = crypto_context.EvalAdd(v, v)
-    v3 = crypto_context.EvalSub(v, v2)
-    v4 = crypto_context.EvalMult(v, ciphertext1) 
-    v6 = square(crypto_context, v)
-    v7 = square(crypto_context, v6)
+    v = cc.EvalMult(ciphertext1, ciphertext2)
+    v2 = cc.EvalAdd(v, v)
+    v3 = cc.EvalSub(v, v2)
+    v4 = cc.EvalMult(v, ciphertext1) 
+    v6 = square(cc, v)
+    v7 = square(cc, v6)
+    end_time = time.time_ns()
+    print("Total Runtime without setup: " + str(format_ns(end_time - start_time)))
