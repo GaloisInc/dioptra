@@ -1,7 +1,8 @@
 from dioptra.analyzer.metrics.analysisbase import AnalysisBase, Ciphertext, Plaintext, PublicKey, PrivateKey
 from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.calibration import RuntimeTable, RuntimeSamples, Event, EventKind
+from dioptra.analyzer.calibration import RuntimeSamples, Event, EventKind
 from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.analyzer.utils.util import format_ns
 import dis
 
 class Runtime(AnalysisBase):
@@ -12,7 +13,6 @@ class Runtime(AnalysisBase):
         self.multiplicative_depth = multiplicative_depth
         self.runtime_table = runtime_samples.avg_runtime_table()
         self.where = {}
-        self.unit = "nanosec"
 
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame) -> None:
         dest_depth = level
@@ -60,5 +60,6 @@ class Runtime(AnalysisBase):
     def set_runtime(self, ct: Ciphertext, runtime: int, call_loc: Frame) -> None:
         while call_loc is not None:
             (file_name, positions) = call_loc.location()
-            self.where[positions] = (runtime, file_name, positions)
+            runtime_formated = format_ns(int(runtime))
+            self.where[positions] = (runtime, runtime_formated, file_name, positions)
             call_loc = call_loc.caller()
