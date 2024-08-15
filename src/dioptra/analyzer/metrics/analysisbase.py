@@ -3,7 +3,8 @@ from typing import Callable
 from dioptra.analyzer.utils import code_loc
 import dis
 import sys
-
+import pathlib
+import os.path
 
 class Value:
     value_id = 0
@@ -75,14 +76,16 @@ class AnalysisBase:
             lines = []
             if file_name in anotated_files.keys():
                 lines = anotated_files[file_name]
-            else:
+            elif os.path.exists(file_name):
                 with open(file_name, "r") as file:
                     lines = file.readlines()
-            lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # "+type(self).__name__ +": " + str(value) + " " + self.unit + "\n"
-            anotated_files[file_name] = lines
-            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
-            with open(file_name_anotated, 'w') as file_edited:
-                file_edited.writelines(lines)
+                lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # "+type(self).__name__ +": " + str(value) + " " + self.unit + "\n"
+                anotated_files[file_name] = lines
+                file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
+                with open(file_name_anotated, 'w') as file_edited:
+                    file_edited.writelines(lines)
+            else:
+                return
 
 
 class Analyzer:
