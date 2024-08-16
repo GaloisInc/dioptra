@@ -130,11 +130,12 @@ def list(file: Path):
 
 
 @estimate.command()
-@click.argument("file", type=click.Path(exists=True))
+@click.argument("file", type=click.Path(exists=True, path_type=Path))
 @click.option("--samples", type=click.Path(exists=True))
 @click.option(
-    "--outdir", type=click.Path(file_okay=False, dir_okay=True, writable=True)
+    "--outdir",
+    type=click.Path(file_okay=False, dir_okay=True, writable=True, path_type=Path),
 )
 def render(file: Path, samples: Path, outdir: Path) -> None:
     """Run decorated functions and render analysis results."""
-    decorator.render_analysis(samples, [file], outdir)
+    decorator.render_analysis(samples, file, outdir)

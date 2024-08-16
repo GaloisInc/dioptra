@@ -1,5 +1,6 @@
 import datetime
 from enum import Enum
+import importlib.resources as ilr
 import importlib.util
 import inspect
 import json
@@ -25,6 +26,9 @@ from dioptra.analyzer.utils.util import format_bytes, format_ns, format_ns_appro
 from dioptra.analyzer.utils.error import NotSupportedException
 from dioptra.visualization.annotation import annotate_lines
 from dioptra.ui.report_gen import render_results
+
+
+SKELETON_DIR = "analysis_site_skeleton"
 
 
 # TODO: does this belong somewhere accessible more places
@@ -322,5 +326,29 @@ def context_calibrate_main(
         cd.write_json(outfile)
 
 
-def render_analysis(sample_file: Path, files: list[Path], outdir: Path) -> None:
-    render_results(outdir)
+def render_analysis(sample_file: Path, file: Path, outdir: Path) -> None:
+    """Render the analysis of a given file with decorated functions.
+
+    This function takes a `sample_file` and Python `file` with Dioptra-decorated
+    functions and writes a simple website to `outdir`, allowing the analysis
+    results to be inspected in more detail.
+    """
+    with ilr.as_file(ilr.files(dioptra.ui).joinpath(SKELETON_DIR)) as p:
+        shutil.copytree(p, outdir, dirs_exist_ok=True)
+
+    samples = RuntimeSamples()
+    samples.read_json(str(sample_file))
+
+    print(f"Loading {file}...")
+    runpy.run_path(str(file))
+
+    runtime_analyses = {}
+    for limit, desc, f in runtime_functions:
+        depth_analysis = MultDepth()
+        runtime_analysis = Runtime(depth_analysis, samples)
+        runtime_analyses[f.__name__] = runtime_analysis
+        analyzer = Analyzer([runtime_analysis])
+
+        f(analyzer)
+
+    render_results(outdir, file)
