@@ -25,7 +25,7 @@ def calling_frame() -> Frame | None:
     if cur_frame is None:
         return None
     else: 
-        return Frame(cur_frame.f_back)
+        return Frame(cur_frame.f_back).caller()
 
 
 def frame_loc(frame) -> str:
