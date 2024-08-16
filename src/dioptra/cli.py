@@ -127,3 +127,11 @@ def list(file: Path):
     "@dioptra_context" or "@dioptra_binfhe_context".
     """
     decorator.context_list_main([str(file)])
+
+
+@estimate.command()
+@click.argument("file", type=click.Path(exists=True))
+@click.option("--samples", type=click.Path(exists=True))
+def render(file: Path, samples: Path) -> None:
+    """Run decorated functions and render analysis results."""
+    decorator.render_analysis(samples, [file])
