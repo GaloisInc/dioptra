@@ -1,9 +1,8 @@
-import inspect
+
 from typing import Callable
 from dioptra.analyzer.utils import code_loc
+from dioptra.analyzer.utils.code_loc import Frame
 import dis
-import sys
-import pathlib
 import os.path
 
 class Value:
@@ -52,21 +51,27 @@ class KeyPair:
 
 class AnalysisBase:
     where : dict[int, tuple[int, str, str, dis.Positions]]
-    def trace_encode(self, dest: Plaintext, level: int, call_loc: inspect.Traceback | None) -> None:
+    def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame| None) -> None:
         pass    
-    def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: inspect.Traceback | None) -> None:
+    def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: Frame| None) -> None:
         pass    
-    def trace_encrypt(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+    def trace_encrypt(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
         pass    
-    def trace_decrypt(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+    def trace_decrypt(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
         pass
-    def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+    def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
         pass
-    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
         pass
-    def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+    def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
         pass
-    def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: inspect.Traceback | None) -> None:
+    def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
+        pass
+    def trace_mul_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        pass
+    def trace_add_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        pass
+    def trace_sub_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
         pass
     def anotate_metric(self) -> None:
         anotated_files: dict[str, list[str]] = dict()
@@ -142,6 +147,11 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_mul_ctct(new, args[0], args[1], caller_loc)
             return new
+        elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
+            new = Ciphertext()
+            for analysis in self.analysis_list:
+                analysis.trace_mul_ctpt(new, args[0], args[1], caller_loc)
+            return new
         raise NotImplementedError("EvalMult: analyzer does not implement this overload")
     
     def EvalAdd(self, *args, **kwargs) -> Ciphertext:#type: ignore
@@ -151,6 +161,11 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_add_ctct(new, args[0], args[1], caller_loc)
             return new
+        elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
+            new = Ciphertext()
+            for analysis in self.analysis_list:
+                analysis.trace_add_ctpt(new, args[0], args[1], caller_loc)
+            return new
         raise NotImplementedError("EvalAdd: analyzer does not implement this overload")
     
     def EvalSub(self, *args, **kwargs) -> Ciphertext:#type: ignore
@@ -159,6 +174,11 @@ class Analyzer:
             new = Ciphertext()
             for analysis in self.analysis_list:
                 analysis.trace_sub_ctct(new, args[0], args[1], caller_loc)
+            return new
+        elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
+            new = Ciphertext()
+            for analysis in self.analysis_list:
+                analysis.trace_sub_ctpt(new, args[0], args[1], caller_loc)
             return new
         raise NotImplementedError("EvalSub: analyzer does not implement this overload")
     
