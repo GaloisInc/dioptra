@@ -16,10 +16,12 @@ class EventKind(enum.Enum):
   ENCRYPT = 3
   DECRYPT = 4
   EVAL_MULT_CTCT = 5
-  EVAL_ADD = 6
-  EVAL_SUB = 7
+  EVAL_ADD_CTCT = 6
+  EVAL_SUB_CTCT = 7
   EVAL_BOOTSTRAP = 8
-  EVAL_MULT_CTPT = 9  
+  EVAL_MULT_CTPT = 9
+  EVAL_ADD_CTPT = 10
+  EVAL_SUB_CTPT = 11
 
 
 class Event:
@@ -209,19 +211,26 @@ class Calibration:
 
       for depth1 in range(0, max_mult_depth):
         for depth2 in range(depth1, max_mult_depth):
-          with measure(EventKind.EVAL_ADD, depth1, depth2):
+          with measure(EventKind.EVAL_ADD_CTCT, depth1, depth2):
             cc.EvalAdd(ct_by_depth[depth1], ct_by_depth[depth2])
 
           with measure(EventKind.EVAL_MULT_CTCT, depth1, depth2):
             cc.EvalMult(ct_by_depth[depth1], ct_by_depth[depth2])
 
-          with measure(EventKind.EVAL_SUB, depth1, depth2):
+          with measure(EventKind.EVAL_SUB_CTCT, depth1, depth2):
             cc.EvalSub(ct_by_depth[depth1], ct_by_depth[depth2])
 
 
         for depth2 in range(0, max_mult_depth):
           with measure(EventKind.EVAL_MULT_CTPT, depth1, depth2):
             cc.EvalMult(ct_by_depth[depth1], pt_by_depth[depth2])
+
+          with measure(EventKind.EVAL_ADD_CTPT, depth1, depth2):
+            cc.EvalMult(ct_by_depth[depth1], pt_by_depth[depth2])
+
+          with measure(EventKind.EVAL_ADD_CTPT, depth1, depth2):
+            cc.EvalSub(ct_by_depth[depth1], pt_by_depth[depth2])
+
 
     return samples
   
