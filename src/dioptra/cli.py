@@ -26,6 +26,15 @@ def estimate() -> None:
 
 
 @estimate.command()
+@click.argument("script", type=click.Path(exists=True))
+def peakmem(script: Path) -> None:
+    """Estimate peak memory usage of an OpenFHE SCRIPT."""
+    click.echo("Estimating memory...")
+    s = OpenFHEScript(script)
+    s.show_ast()
+
+
+@estimate.command()
 @click.argument("file", type=click.Path(exists=True), required=True)
 @click.option(
     "--calibration-data",
