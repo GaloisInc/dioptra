@@ -4,6 +4,8 @@ import click_log
 import logging
 from pathlib import Path
 
+from dioptra import decorator
+
 from .core.openfhe_script import OpenFHEScript
 from .run import passthrough
 
@@ -49,3 +51,16 @@ def runtime(script: Path) -> None:
     click.echo("Estimating runtime...")
     s = OpenFHEScript(script)
     s.show_ast()
+
+@estimate.command()
+@click.argument("file", type=click.Path(exists=True))
+def report(file: Path) -> None:
+    """Run decorated functions and report estimated runtimes"""
+    decorator.report_main([str(file)])
+
+# @estimate.command()
+# @click.argument("file", type=click.Path(exists=True))
+# @click.argument("function", type=str)
+# @click.option("-o", type=click.Path(writable=True))
+# def annotate(file: Path, function: str, s: str):
+#     decorator.annotate(file, function, s)
