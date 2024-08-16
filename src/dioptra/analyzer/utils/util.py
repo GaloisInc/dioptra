@@ -15,11 +15,11 @@ def format_ns(ns: int) -> str:
   if mil > 0:
     return f"{mil} millenia"
   
-  tstr = f"{ns % 1000:03}n"
+  tstr = f"{ns % 1000:03}ns"
   if micro > 0:
-    tstr = f"{micro%1000:03}u" + tstr
+    tstr = f"{micro%1000:03}us" + tstr
   if milli > 0:
-    tstr = f"{milli%1000:03}m" + tstr
+    tstr = f"{milli%1000:03}ms" + tstr
   if second > 0:
     tstr = f"{second%60:02}s" + tstr
   if minute > 0:
