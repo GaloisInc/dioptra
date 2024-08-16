@@ -1,18 +1,15 @@
-import importlib.resources as ilr
+from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from ..analyzer.metrics.analysisbase import AnalysisBase
 
-_env = Environment(loader=PackageLoader("dioptra.ui"), autoescape=select_autoescape())
-_template = _env.get_template("results_template.html")
+def render_results(outdir: Path, file: Path) -> None:
+    env = Environment(
+        loader=PackageLoader("dioptra.ui"), autoescape=select_autoescape()
+    )
+    template = env.get_template("results_template.html")
 
-
-def render_results():
-    """Render an `AnalysisBase` as an HTML document.
-
-    The document displays the source code in a read-only text editor, and
-    responds to changes in cursor position to show relevant local analysis
-    results in a second column.
-    """
-    print(_template.render())
+    with open(file, "r") as script, open(
+        outdir.joinpath(f"{file.name}.html"), "w"
+    ) as rendered_html:
+        rendered_html.write(template.render(filename=file.name, source=script.read()))
