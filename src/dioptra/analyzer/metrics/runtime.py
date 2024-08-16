@@ -38,19 +38,41 @@ class Runtime(AnalysisBase):
         ct1_depth = self.multiplicative_depth.depth_of(ct1)
         ct2_depth = self.multiplicative_depth.depth_of(ct2)
         
-        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_MULT, ct1_depth, ct2_depth))
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_MULT_CTCT, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame) -> None:
         ct1_depth = self.multiplicative_depth.depth_of(ct1)
         ct2_depth = self.multiplicative_depth.depth_of(ct2)
-        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_ADD, ct1_depth, ct2_depth))
+
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_ADD_CTCT, ct1_depth, ct2_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame) -> None:
         ct1_depth = self.multiplicative_depth.depth_of(ct1)
         ct2_depth = self.multiplicative_depth.depth_of(ct2)
-        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_SUB, ct1_depth, ct2_depth))
+
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_SUB_CTCT, ct1_depth, ct2_depth))
+        self.set_runtime(dest, self.total_runtime, call_loc)
+
+    def trace_mul_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        ct_depth = self.multiplicative_depth.depth_of(ct)
+        pt_depth = self.multiplicative_depth.depth_of(pt)
+
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_MULT_CTPT, ct_depth, pt_depth))
+        self.set_runtime(dest, self.total_runtime, call_loc)
+        
+    def trace_add_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        ct_depth = self.multiplicative_depth.depth_of(ct)
+        pt_depth = self.multiplicative_depth.depth_of(pt)
+        
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_ADD_CTPT, ct_depth, pt_depth))
+        self.set_runtime(dest, self.total_runtime, call_loc)
+
+    def trace_sub_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        ct_depth = self.multiplicative_depth.depth_of(ct)
+        pt_depth = self.multiplicative_depth.depth_of(pt)
+        self.total_runtime += self.runtime_table.get_runtime_ns(Event(EventKind.EVAL_SUB_CTPT, ct_depth, pt_depth))
         self.set_runtime(dest, self.total_runtime, call_loc)
 
     def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, call_loc: Frame | None) -> None:

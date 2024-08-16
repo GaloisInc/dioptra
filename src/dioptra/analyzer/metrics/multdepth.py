@@ -39,6 +39,16 @@ class MultDepth(AnalysisBase):
     def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame) -> None:
         self.set_depth(dest, self.max_depth, call_loc)
 
+    def trace_mul_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        new_depth = max(self.depth_of(ct), self.depth_of(pt)) + 1
+        self.set_depth(dest, new_depth, call_loc)    
+
+    def trace_add_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        self.set_depth(dest, self.max_depth, call_loc)
+
+    def trace_sub_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
+        self.set_depth(dest, self.max_depth, call_loc)
+
     def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, call_loc: Frame | None) -> None:
         new_depth = 0
         self.set_depth(dest, new_depth, call_loc)
@@ -46,6 +56,11 @@ class MultDepth(AnalysisBase):
     def depth_of(self, ct: Ciphertext) -> int:
         if ct in self.depth:
             return self.depth[ct]   
+        return 0
+    
+    def depth_of(self, pt: Plaintext) -> int:
+        if pt in self.depth:
+            return self.depth[pt]   
         return 0
     
     def set_depth(self, msg: Ciphertext | Plaintext, depth: int, call_loc: Frame) -> None:
