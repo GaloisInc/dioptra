@@ -55,7 +55,8 @@ def simple_program(cc: ofhe.CryptoContext, x: ofhe.Ciphertext):
     x_pow_5 = x                           
     for i in range(0, 4):
         x_pow_5 = cc.EvalMult(x_pow_5, x)  
-
+    one = cc.MakeCKKSPackedPlaintext([1])
+    x_pow_5_1 = cc.EvalAdd(x_pow_5, one)
 
 # calibrate runtimes for operations
 # this might live as a seperate file, but we can also run it in python directly
@@ -77,7 +78,7 @@ def analyze(sample_file: str):
     x = analyzer.ArbitraryCT(level=0)     # make an arbitrary CT
     simple_program(analyzer, x)
     print(f"Estimated runtime: {format_ns(runtime_analysis.total_runtime)}")
-
+    runtime_analysis.anotate_metric()
 
 # Actually run program and time it
 def main():
