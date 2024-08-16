@@ -54,9 +54,10 @@ def runtime(script: Path) -> None:
 
 @estimate.command()
 @click.argument("file", type=click.Path(exists=True))
-def report(file: Path) -> None:
+@click.option("--samples", type=click.Path(exists=True))
+def report(file: Path, samples: Path) -> None:
     """Run decorated functions and report estimated runtimes"""
-    decorator.report_main([str(file)])
+    decorator.report_main(str(samples), [str(file)])
 
 # @estimate.command()
 # @click.argument("file", type=click.Path(exists=True))

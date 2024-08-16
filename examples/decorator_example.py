@@ -74,11 +74,11 @@ def pow_perf(cc: Analyzer, pow: Callable[[Analyzer, Ciphertext, int], Ciphertext
 
 # Compare the three implementations
 
-@dioptra_runtime("samples", limit=datetime.timedelta(minutes=4))
+@dioptra_runtime(limit=datetime.timedelta(minutes=4))
 def eval_pow(cc: Analyzer) -> None:
   pow_perf(cc, ct_pow)
 
-@dioptra_runtime("samples")
+@dioptra_runtime()
 def eval_pow_memo(cc: Analyzer, limit=datetime.timedelta(minutes=4)) -> None:
   memo_table = {}
   def pow(_cc, x, y):
@@ -86,7 +86,7 @@ def eval_pow_memo(cc: Analyzer, limit=datetime.timedelta(minutes=4)) -> None:
 
   pow_perf(cc, pow)
 
-@dioptra_runtime("samples")
+@dioptra_runtime()
 def eval_pow_memo_rec(cc: Analyzer, limit=datetime.timedelta(minutes=4)) -> None:
   memo_table = {}
   def pow(_cc, x, y):
