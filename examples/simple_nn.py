@@ -4,8 +4,12 @@ import openfhe as ofhe
 import random
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer
+from dioptra.analyzer.metrics.multdepth import MultDepth
+from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
+from dioptra.analyzer.calibration import RuntimeSamples
+
 from typing import Self
 
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
@@ -56,7 +60,6 @@ def rand_nn(cc: ofhe.CryptoContext, num_layers: int, num_hidden_layers: int, num
 def make_w_b(cc: ofhe.CryptoContext, weights: list[list[list[float]]], biases: list[list[float]]) -> Self:
         weights_plt = [[[cc.MakeCKKSPackedPlaintext([w]) for w in weights[i][j]] for j in range(len(weights[i]))] for i in range(len(weights))]
         biases_plt = [[cc.MakeCKKSPackedPlaintext([b]) for b in biases[i]] for i in range(len(biases))]
-
         return (weights_plt, biases_plt)
 
 def train(cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], num_layers):
@@ -149,6 +152,21 @@ def report_runtime(cc: Analyzer):
     num_layers = 2
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
     train(cc, xs_ct, num_layers)
+
+def annotate_runtime(sample_file: str):
+        # set up analyses
+    depth_analysis = MultDepth()
+    samples = RuntimeSamples()
+    samples.read_json(sample_file)
+    runtime_analysis = Runtime(depth_analysis, samples)
+    analyzer = Analyzer([depth_analysis, runtime_analysis])
     
+    num_inputs = 2
+    num_layers = 2
+    xs_ct = [analyzer.ArbitraryCT() for _ in range(num_inputs)]
+    train(analyzer, xs_ct, num_layers)
+
+    runtime_analysis.anotate_metric()
+
 if __name__ == '__main__':
-    main()
+    annotate_runtime("examples/samples")
