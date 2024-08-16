@@ -24,6 +24,7 @@ from dioptra.analyzer.utils.code_loc import TraceLoc
 from dioptra.analyzer.utils.util import format_bytes, format_ns, format_ns_approx
 from dioptra.analyzer.utils.error import NotSupportedException
 from dioptra.visualization.annotation import annotate_lines
+from dioptra.ui.report_gen import render_results
 
 
 # TODO: does this belong somewhere accessible more places
@@ -319,3 +320,7 @@ def context_calibrate_main(
         calibration = BinFHECalibration(cc, sk, log=log, sample_count=samples)
         cd = calibration.run()
         cd.write_json(outfile)
+
+
+def render_analysis(sample_file: Path, files: list[Path]) -> None:
+    render_results()
