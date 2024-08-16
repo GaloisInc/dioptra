@@ -1,12 +1,11 @@
 import time
 import openfhe as ofhe
-from dioptra.analyzer.calibration import Calibration, RuntimeSamples
+
 import random
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
+from dioptra.decorator import dioptra_runtime
 from typing import Self
 
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
@@ -144,6 +143,12 @@ def main():
     
     print(f"Actual runtime: {format_ns(end_ns - start_ns)}")
 
-
+@dioptra_runtime()
+def report_runtime(cc: Analyzer):
+    num_inputs = 2
+    num_layers = 2
+    xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
+    train(cc, xs_ct, num_layers)
+    
 if __name__ == '__main__':
     main()
