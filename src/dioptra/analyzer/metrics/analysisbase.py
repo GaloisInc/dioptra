@@ -50,7 +50,7 @@ class KeyPair:
     
 
 class AnalysisBase:
-    where : dict[int, tuple[int, str, str, dis.Positions]]
+    where : dict[int | dis.Positions, tuple[int, str, str, dis.Positions]]
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame| None) -> None:
         pass    
     def trace_encode_ckks(self, dest: Plaintext, level: int, call_loc: Frame| None) -> None:
@@ -76,20 +76,22 @@ class AnalysisBase:
     def anotate_metric(self) -> None:
         anotated_files: dict[str, list[str]] = dict()
         for metrics in self.where.values():
-            (value, value_formated, file_name, position) = metrics
-            lines = []
-            if file_name in anotated_files.keys():
-                lines = anotated_files[file_name]
-            elif os.path.exists(file_name):
-                with open(file_name, "r") as file:
-                    lines = file.readlines()
-                lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # "+type(self).__name__ +": " + str(value_formated)
+            (_value, value_formated, file_name, position) = metrics
+            if os.path.exists(file_name):
+                lines = []
+                if file_name in anotated_files.keys():
+                    lines = anotated_files[file_name]
+                else:
+                    with open(file_name, "r") as file:
+                        lines = file.readlines()
+                lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # "+type(self).__name__ +": " + str(value_formated) + "\n"
                 anotated_files[file_name] = lines
-                file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
-                with open(file_name_anotated, 'w') as file_edited:
-                    file_edited.writelines(lines)
-            else:
-                return
+
+        for file_name in anotated_files.keys():
+            anotated_files[file_name] = lines
+            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
+            with open(file_name_anotated, 'w') as file_edited:
+                file_edited.writelines(lines)
 
 
 class Analyzer:
