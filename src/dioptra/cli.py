@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from dioptra import decorator
+from dioptra.analyzer import calibration
 
 from .core.openfhe_script import OpenFHEScript
 from .run import passthrough
@@ -34,7 +35,6 @@ def estimate() -> None:
     """Estimate properties of an OpenFHE program."""
     pass
 
-
 @estimate.command()
 @click.argument("script", type=click.Path(exists=True))
 def peakmem(script: Path) -> None:
@@ -42,7 +42,6 @@ def peakmem(script: Path) -> None:
     click.echo("Estimating memory...")
     s = OpenFHEScript(script)
     s.show_ast()
-
 
 @estimate.command()
 @click.argument("script", type=click.Path(exists=True))

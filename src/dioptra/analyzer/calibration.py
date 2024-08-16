@@ -15,10 +15,12 @@ class EventKind(enum.Enum):
   DECODE = 2
   ENCRYPT = 3
   DECRYPT = 4
-  EVAL_MULT = 5
+  EVAL_MULT_CTCT = 5
   EVAL_ADD = 6
   EVAL_SUB = 7
   EVAL_BOOTSTRAP = 8
+  EVAL_MULT_CTPT = 9  
+
 
 class Event:
   def __init__(self, kind: EventKind, arg_depth1: int | None = None, arg_depth2: int | None = None):
@@ -188,6 +190,7 @@ class Calibration:
         cc.EvalBootstrap(ct)
 
       ct_by_depth = []
+      pt_by_depth = []
       for depth in range(0, max_mult_depth):
         with measure(EventKind.ENCODE, depth):
           pt = cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=depth)
@@ -202,17 +205,23 @@ class Calibration:
           pt.GetRealPackedValue()
 
         ct_by_depth.append(ct)
+        pt_by_depth.append(pt)
 
       for depth1 in range(0, max_mult_depth):
         for depth2 in range(depth1, max_mult_depth):
           with measure(EventKind.EVAL_ADD, depth1, depth2):
             cc.EvalAdd(ct_by_depth[depth1], ct_by_depth[depth2])
 
-          with measure(EventKind.EVAL_MULT, depth1, depth2):
+          with measure(EventKind.EVAL_MULT_CTCT, depth1, depth2):
             cc.EvalMult(ct_by_depth[depth1], ct_by_depth[depth2])
 
           with measure(EventKind.EVAL_SUB, depth1, depth2):
             cc.EvalSub(ct_by_depth[depth1], ct_by_depth[depth2])
+
+
+        for depth2 in range(0, max_mult_depth):
+          with measure(EventKind.EVAL_MULT_CTPT, depth1, depth2):
+            cc.EvalMult(ct_by_depth[depth1], pt_by_depth[depth2])
 
     return samples
   
