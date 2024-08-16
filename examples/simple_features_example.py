@@ -61,7 +61,7 @@ def simple_program(cc: ofhe.CryptoContext, x: ofhe.Ciphertext):
 # this might live as a seperate file, but we can also run it in python directly
 def calibrate(outfile: str):
     (cc, params) = setup_context()
-    samples = Calibration(cc, params, sys.stdout).calibrate()
+    samples = Calibration(cc, params, sys.stdout, sample_count=1).calibrate()
     samples.write_json(outfile)
     
 # analyze runtime
