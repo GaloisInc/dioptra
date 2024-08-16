@@ -322,5 +322,5 @@ def context_calibrate_main(
         cd.write_json(outfile)
 
 
-def render_analysis(sample_file: Path, files: list[Path]) -> None:
-    render_results()
+def render_analysis(sample_file: Path, files: list[Path], outdir: Path) -> None:
+    render_results(outdir)
