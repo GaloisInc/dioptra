@@ -6,6 +6,6 @@
 .column {
     padding: 8px;
     border-style: dotted;
-    border-width: thin;
+    border-width: medium;
     flex: 50%;
 }
