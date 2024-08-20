@@ -9,12 +9,28 @@
     <div class="row">
       <div class="column" id="editor">{{ source }}</div>
       <div class="column" id="analysis">
-        Display analyses for specific code regions by moving the cursor around the code.
+        {% for function in analyses.keys() %}
+          <input name="func" type="radio" value={{ function }} onclick="onFunctionSelect(this);" autocomplete="off">{{ function }}<br>
+        {% endfor %}
+        <br>
+        <span id="func_select">First, select a function to explore.</span>
+        <p id="results"></p>
       </div>
     </div>
 
     <script src="ace/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
     <script>
+      var analyses = new Map();
+      {% for f, v in analyses.items() %}
+      var inner = new Map();
+      {% for r, time in v.items() %}
+      inner.set("Range: [{{r[0]}}/{{r[1]}}] -> [{{r[2]}}/{{r[3]}}]", "{{ time }}");
+      {% endfor %}
+      analyses.set("{{ f }}", inner);
+      {% endfor %}
+
+      console.log(analyses)
+
       var editor = ace.edit("editor");
       editor.setTheme("ace/theme/github");
       editor.setOption("maxLines", 50);
@@ -22,13 +38,23 @@
       editor.setOption("showPrintMargin", false);
       editor.setReadOnly(true);
       editor.session.setMode("ace/mode/python");
-      editor.session.selection.on('changeCursor', function(e) {
-          document.getElementById("analysis").innerHTML =
-              "Column: "
-              + editor.selection.getCursor().column
-              + "<br>"
-              + "Row: "
-              + editor.selection.getCursor().row;
+
+      var selectedFunction;
+      function onFunctionSelect(functionRadio) {
+          selectedFunction = functionRadio.value;
+          document.getElementById("func_select").innerHTML = "Now, highlight an FHE operation (or a function that performs FHE operations) used in the selected function to display its runtime.";
+      }
+
+      editor.session.selection.on("changeSelection", function(e) {
+          if (typeof selectedFunction !== "undefined") {
+              document.getElementById("results").innerHTML = "";
+              var selectedRange = String(editor.selection.getRange());
+              if (analyses.get(selectedFunction).has(selectedRange)) {
+                  document.getElementById("results").innerHTML =
+                      "Estimated time of selected operation: "
+                      + analyses.get(selectedFunction).get(selectedRange);
+              }
+          }
       });
     </script>
   </body>
