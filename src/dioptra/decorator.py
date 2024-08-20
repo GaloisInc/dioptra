@@ -342,13 +342,24 @@ def render_analysis(sample_file: Path, file: Path, outdir: Path) -> None:
     print(f"Loading {file}...")
     runpy.run_path(str(file))
 
-    runtime_analyses = {}
+    runtime_analyses: dict[str, dict[tuple[int, int, int, int], str]] = {}
     for limit, desc, f in runtime_functions:
         depth_analysis = MultDepth()
         runtime_analysis = Runtime(depth_analysis, samples)
-        runtime_analyses[f.__name__] = runtime_analysis
         analyzer = Analyzer([runtime_analysis])
 
         f(analyzer)
 
-    render_results(outdir, file)
+        # Map regions (matches Ace code editor order) to time
+        time_lookup: dict[tuple[int, int, int, int], str] = {}
+        for k, v in runtime_analysis.where.items():
+            if v[2] != str(file):
+                continue
+
+            time_lookup[
+                (k.lineno - 1, k.col_offset, k.end_lineno - 1, k.end_col_offset)
+            ] = v[1]
+
+        runtime_analyses[f.__name__] = time_lookup
+
+    render_results(outdir, file, runtime_analyses)
