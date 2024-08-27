@@ -58,9 +58,26 @@ def report(file: Path, samples: Path) -> None:
     """Run decorated functions and report estimated runtimes"""
     decorator.report_main(str(samples), [str(file)])
 
-# @estimate.command()
-# @click.argument("file", type=click.Path(exists=True))
-# @click.argument("function", type=str)
+
+@cli.group()
+def context() -> None:
+    """Information about OpenFHE contexts"""
+    pass
+
+@context.command()
+@click.argument("file", type=click.Path(exists=True))
+@click.option("-n", type=str, required=True)
+@click.option("-o", type=click.Path(exists=False), required=True)
+@click.option("-c", type=int, default=5)
+def calibrate(file: Path, n: str, o: Path, c: int):
+    decorator.context_calibrate_main([str(file)], n, str(o), c)
+
+@context.command()
+@click.argument("file", type=click.Path(exists=True))
+def list(file: Path):
+    decorator.context_list_main([str(file)])
+
+
 # @click.option("-o", type=click.Path(writable=True))
 # def annotate(file: Path, function: str, s: str):
 #     decorator.annotate(file, function, s)
