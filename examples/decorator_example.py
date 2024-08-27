@@ -1,5 +1,6 @@
 import datetime
 from functools import reduce
+import time
 from typing import Callable, Iterable
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer, Ciphertext
@@ -78,19 +79,21 @@ def pow_perf(cc: Analyzer, pow: Callable[[Analyzer, Ciphertext, int], Ciphertext
 def eval_pow(cc: Analyzer) -> None:
   pow_perf(cc, ct_pow)
 
-@dioptra_runtime()
-def eval_pow_memo(cc: Analyzer, limit=datetime.timedelta(minutes=4)) -> None:
+@dioptra_runtime(limit=datetime.timedelta(minutes=4))
+def eval_pow_memo(cc: Analyzer) -> None:
   memo_table = {}
   def pow(_cc, x, y):
     return ct_pow_memo(_cc, x, y, memo_table)
 
   pow_perf(cc, pow)
 
-@dioptra_runtime()
-def eval_pow_memo_rec(cc: Analyzer, limit=datetime.timedelta(minutes=4)) -> None:
+@dioptra_runtime(limit=datetime.timedelta(minutes=4))
+def eval_pow_memo_rec(cc: Analyzer) -> None:
   memo_table = {}
+  time.sleep(100.0)
   def pow(_cc, x, y):
     return ct_pow_memo_rec(_cc, x, y, memo_table)
+  
   pow_perf(cc, pow)
 
 

@@ -133,7 +133,8 @@ class RuntimeSample:
 class Calibration:
   def __init__(self, 
     cc: openfhe.CryptoContext,
-    params: openfhe.CCParamsBFVRNS | openfhe.CCParamsBGVRNS | openfhe.CCParamsCKKSRNS, 
+    params: openfhe.CCParamsBFVRNS | openfhe.CCParamsBGVRNS | openfhe.CCParamsCKKSRNS,
+    keypair: openfhe.KeyPair,
     out: TextIO | None = None,
     sample_count: int = 5,
   ) -> None:
@@ -141,6 +142,7 @@ class Calibration:
     self.params = params
     self.out = out
     self.sample_count = sample_count
+    self.key_pair = keypair
     self.cc = cc
 
   def log(self, msg: str) -> None:
@@ -171,13 +173,8 @@ class Calibration:
       return RuntimeSample(Event(label, a1, a2), samples, on_exit=on_exit)
 
     cc = self.cc
+    key_pair = self.key_pair
 
-    self.log("Generating evaluation keys...")
-    # key generation
-    key_pair = cc.KeyGen()
-    cc.EvalMultKeyGen(key_pair.secretKey)
-    cc.EvalBootstrapKeyGen(key_pair.secretKey, self.num_slots())
-  
     max_mult_depth = self.params.GetMultiplicativeDepth()
     
     # an arbitrary plaintext
