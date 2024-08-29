@@ -1,13 +1,13 @@
 from dioptra.analyzer.metrics.analysisbase import AnalysisBase, Ciphertext, Plaintext, PublicKey, PrivateKey
 from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.calibration import RuntimeSamples, Event, EventKind
+from dioptra.analyzer.calibration import CalibrationData, Event, EventKind
 from dioptra.analyzer.utils.code_loc import Frame
 from dioptra.analyzer.utils.util import format_ns
 import dis
 
 class Runtime(AnalysisBase):
 
-    def __init__(self, multiplicative_depth: MultDepth, runtime_samples: RuntimeSamples) -> None:
+    def __init__(self, multiplicative_depth: MultDepth, runtime_samples: CalibrationData) -> None:
         self.total_runtime = 0
         self.level = multiplicative_depth
         self.multiplicative_depth = multiplicative_depth
