@@ -6,7 +6,7 @@ import runpy
 import sys
 from typing import Callable
 
-from dioptra.analyzer.calibration import Calibration, RuntimeSamples
+from dioptra.analyzer.calibration import Calibration, CalibrationData
 from dioptra.analyzer.metrics.analysisbase import Analyzer
 from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
@@ -38,7 +38,7 @@ def load_files(files: list[str]) -> None:
     runpy.run_path(file)
 
 def report_main(sample_file: str, files: list[str]) -> None:
-  samples = RuntimeSamples()
+  samples = CalibrationData()
   samples.read_json(sample_file)
 
   load_files(files)
@@ -75,7 +75,7 @@ def context_list_main(files: list[str]):
 
   for (n, f) in context_functions:
     file = inspect.getfile(f)
-    line = inspect.getlineno(f)
+    (_, line) = inspect.getsourcelines(f)
     print(f"{n} (defined at {file}:{line})")
 
 def context_calibrate_main(files: list[str], name: str, outfile: str, samples: int = 5, quiet: bool = False):
@@ -90,9 +90,9 @@ def context_calibrate_main(files: list[str], name: str, outfile: str, samples: i
     print(f"Calibration failed: no context named '{name}' found", file=sys.stderr)
     sys.exit(-1)
 
-  (cc, params, key_pair) = ctx_f()
+  (cc, params, key_pair, features) = ctx_f()
   log = None if quiet else sys.stdout
-  calibration = Calibration(cc, params, key_pair, log, samples)
+  calibration = Calibration(cc, params, key_pair, features, log, sample_count=samples)
   smp = calibration.calibrate()
   smp.write_json(outfile)
 

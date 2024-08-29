@@ -105,22 +105,3 @@ def bgv1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsBGVRNS, ofhe.KeyPair, list[
 
     return (crypto_context, parameters, key_pair, features)
 
-
-def bfv_mult():
-    (cc, _, kp, _) = bfv1()
-    def mkct(v):
-        pt = cc.MakePackedPlaintext(v)
-        return cc.Encrypt(kp.publicKey, pt)
-    
-    def mul_lv(c1, c2, s):
-        result = cc.EvalMult(c1, c2)
-        print(f"{s} -- arg1 level: {c1.GetLevel()}  arg2 level: {c2.GetLevel()}  result level: {result.GetLevel()}")
-        return result
-    
-    c1 = mkct([1,2,3,4])
-    c2 = mkct([3,2,1,4])
-    c3 = mkct([5,3,4,5])
-
-    r = mul_lv(c1, c2, "r = c1 * c2")
-    r2 = mul_lv(r, c3, "r2 = r * c3")
-    r3 = mul_lv(r2, r2, "r3 = r2 * r2")
