@@ -8,7 +8,7 @@ from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
-from dioptra.analyzer.calibration import RuntimeSamples
+from dioptra.analyzer.calibration import CalibrationData
 
 from typing import Self
 
@@ -132,7 +132,7 @@ def report_runtime(cc: Analyzer):
 def annotate_runtime(sample_file: str):
     # set up analyses
     depth_analysis = MultDepth()
-    samples = RuntimeSamples()
+    samples = CalibrationData()
     samples.read_json(sample_file)
     runtime_analysis = Runtime(depth_analysis, samples)
     analyzer = Analyzer([depth_analysis, runtime_analysis])

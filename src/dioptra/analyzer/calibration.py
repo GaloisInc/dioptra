@@ -7,9 +7,8 @@ import enum
 import json
 import sys
 
-from dioptra.analyzer.ct_level import CiphertextLevel
+from dioptra.analyzer.scheme import CiphertextLevel, PkeSchemeModels, SchemeModelPke
 from dioptra.analyzer.utils.util import format_ns
-
 
 class EventKind(enum.Enum):
   ENCODE = 1
@@ -25,22 +24,54 @@ class EventKind(enum.Enum):
   EVAL_SUB_CTPT = 11
 
 class Event:
-  def __init__(self, kind: EventKind, arg_depth1: CiphertextLevel | None = None, arg_depth2: CiphertextLevel | None = None):
+  commutative_event_kinds = set([
+    EventKind.EVAL_ADD_CTCT, EventKind.EVAL_MULT_CTCT, EventKind.EVAL_SUB_CTCT,
+    EventKind.EVAL_MULT_CTPT, EventKind.EVAL_ADD_CTPT, EventKind.EVAL_SUB_CTPT
+  ])
+
+  def __init__(self, kind: EventKind, arg_level1: CiphertextLevel | None = None, arg_level2: CiphertextLevel | None = None):
     self.kind = kind
 
     # if arg_depth2 is specified, arg_depth1 must be specified as well
-    assert arg_depth2 is None or arg_depth1 is not None
-    self.arg_depth1 = arg_depth1
-    self.arg_depth2 = arg_depth2
+    assert arg_level2 is None or arg_level1 is not None
+    self.arg_level1 = arg_level1
+    self.arg_level2 = arg_level2
 
   def __eq__(self, value: object) -> bool:
     return isinstance(value, Event) \
            and self.kind == value.kind \
-           and self.arg_depth1 == value.arg_depth1 \
-           and self.arg_depth2 == value.arg_depth2
+           and self.arg_level1 == value.arg_level1 \
+           and self.arg_level2 == value.arg_level2
 
   def __hash__(self) -> int:
-    return hash((self.kind, self.arg_depth1, self.arg_depth2))
+    return hash((self.kind, self.arg_level1, self.arg_level2))
+  
+  def to_dict(self) -> dict[str, Any]:
+    return {
+      "kind": self.kind.value,
+      "arg_level1": self.arg_level1.to_dict() if self.arg_level1 is not None else None,
+      "arg_level2": self.arg_level2.to_dict() if self.arg_level2 is not None else None,
+    }
+  
+  def __str__(self) -> str:
+    if self.arg_level2 is not None:
+      return f"Event(f{self.kind.name}, f{self.arg_level1}, f{self.arg_level2})"
+    elif self.arg_level1 is not None:
+      return f"Event(f{self.kind.name}, f{self.arg_level1})"
+    else:
+      return f"Event(f{self.kind.name})"
+    
+  def is_commutative(self) -> bool:
+    return self.kind in Event.commutative_event_kinds
+  
+  @staticmethod
+  def from_dict(d) -> 'Event':
+    e = Event(EventKind.ENCODE)
+    e.kind = EventKind(d["kind"])
+    e.arg_level1 = CiphertextLevel.from_dict(d["arg_level1"]) if "arg_level1" in d else None,
+    e.arg_level2 = CiphertextLevel.from_dict(d["arg_level2"]) if "arg_level2" in d else None,
+    return e
+
   
 class RuntimeTable:
   def __init__(self, runtimes: dict[Event, int]):
@@ -49,19 +80,15 @@ class RuntimeTable:
   def get_runtime_ns(self, e: Event) -> int:
     if e in self.runtimes:
       return self.runtimes[e]
-    elif e.arg_depth2 is not None:
-      e_swaped = Event(e.kind, e.arg_depth2, e.arg_depth1)
+    elif e.arg_level2 is not None and e.is_commutative():
+      e_swaped = Event(e.kind, e.arg_level2, e.arg_level1)
       return self.runtimes[e_swaped]
     else:
-      raise NotImplementedError(f"No runtime found for event: kind:{e.kind} depth 1:{e.arg_depth1} depth 2:{e.arg_depth2}")
+      raise NotImplementedError(f"No runtime found for event: {e}")
 
 class CalibrationData:
   def __init__(self):
     self.samples: dict[Event, list[int]] = {}
-    self.bootstrap_level: int = 0
-
-  def record_bootstrap_lv(self, out_lv: int) -> None:
-    self.bootstrap_level = max(out_lv, self.bootstrap_level)
 
   def add_sample(self, e: Event, ns: int) -> None:
     if e not in self.samples:
@@ -69,22 +96,27 @@ class CalibrationData:
 
     self.samples[e].append(ns)
 
-  def write_json(self, f: str):
-    evts = [(self.event_to_dict(evt), ts) for (evt, ts) in self.samples.items()]
-    obj = {
+  def to_dict(self) -> dict[str, Any]:
+    evts = [(evt.to_dict(), ts) for (evt, ts) in self.samples.items()]
+    return {
       "samples": evts,
-      "bootstrap_level": self.bootstrap_level,
     }
+  
+  @staticmethod
+  def from_dict(obj: dict[str, Any]) -> 'CalibrationData':
+    evts = [(Event.from_dict(evt), ts) for (evt, ts) in obj["samples"]]
+    cal = CalibrationData()
+    cal.samples = dict(evts)
+    return cal
 
+  def write_json(self, f: str):
     with open(f, "w") as fh:
-      json.dump(obj, fh)
+      json.dump(self.to_dict(), fh)
 
   def read_json(self, f: str):
     with open(f, "r") as fh:
       obj = json.load(fh)
-      lst = [(self.event_from_dict(evt), ts) for (evt, ts) in obj["samples"]]
-      self.samples = dict(lst)
-      self.bootstrap_level = obj["bootstrap_level"]
+      return CalibrationData.from_dict(obj)
 
   def avg_runtime_table(self) -> RuntimeTable:
     table = {}
@@ -93,21 +125,6 @@ class CalibrationData:
 
     return RuntimeTable(table)
   
-  def event_to_dict(self, e: Event) -> dict[str, Any]:
-    r: dict[str, Any] = {"kinddesc": e.kind.name, "kindid": e.kind.value }
-    if e.arg_depth1 is not None:
-      r["depth1"] = e.arg_depth1
-
-    if e.arg_depth2 is not None:
-      r["depth2"] = e.arg_depth2
-
-    return r
-  
-  def event_from_dict(self, r: dict[str, Any]) -> Event:
-    kind = EventKind(r["kindid"])
-    depth1 = r.get("depth1", None)
-    depth2 = r.get("depth2", None)
-    return Event(kind, depth1, depth2)
   
   def __eq__(self, value: object) -> bool:
     def sorted(l: list) -> list:
@@ -157,6 +174,19 @@ class Calibration:
     self.cc = cc
     self.features = set(features)
 
+
+  def is_ckks(self) -> bool:
+    return isinstance(self.params, openfhe.CCParamsCKKSRNS)
+  
+  def is_bgv(self) -> bool:
+    return isinstance(self.params, openfhe.CCParamsBGVRNS)
+  
+  def is_bfv(self) -> bool:
+    return isinstance(self.params, openfhe.CCParamsBFVRNS)
+  
+  def scheme_model(self) -> SchemeModelPke:
+    return PkeSchemeModels.scheme_model_for(self.params)
+
   def log(self, msg: str) -> None:
     if self.out is not None:
       print(msg, file=self.out)
@@ -168,19 +198,57 @@ class Calibration:
     else:
       return self.cc.GetRingDimension() ## XXX: ask hilder about this
   
-  def encode(self, level) -> openfhe.Plaintext:
+  def encode(self, level: CiphertextLevel) -> openfhe.Plaintext:
     pt_val = [0] * self.num_slots()
     if isinstance(self.params, openfhe.CCParamsCKKSRNS):
-      return self.cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=level)
+      return self.cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=level.level, noiseScaleDeg=level.noise_scale_deg)
     else:
-      return self.cc.MakePackedPlaintext(pt_val, level=level)
+      return self.cc.MakePackedPlaintext(pt_val, level=level.level, noiseScaleDeg=level.noise_scale_deg)
     
   def decode(self, pt: openfhe.Plaintext) -> None:
     if isinstance(self.params, openfhe.CCParamsCKKSRNS):
       pt.GetRealPackedValue()
     else:
       pt.GetPackedValue()
-  
+
+  def all_levels(self) -> Iterable[CiphertextLevel]:
+    if self.is_ckks():
+      for deg in [0, 1]:
+        for level in range(0, self.params.GetMultiplicativeDepth()):
+          yield CiphertextLevel(level, deg)
+
+    if self.is_bgv():
+      yield CiphertextLevel(0, 2)
+      for deg in [0,1]:
+        for level in range(1, self.params.GetMultiplicativeDepth()):
+          yield CiphertextLevel(level, deg)
+
+    # dunno how to think about noise scale deg in this case
+    if self.is_bfv():
+      for level in range(0, self.params.GetMultiplicativeDepth()):
+        yield CiphertextLevel(level, 0)
+
+  def level_pairs(self) -> Iterable[tuple[CiphertextLevel, CiphertextLevel]]:
+    if self.is_bfv():
+      for l in self.all_levels():
+        yield (l,l)
+
+    else:
+      for l1 in self.all_levels():
+        for l2 in self.all_levels():
+          yield (l1, l2)
+
+  def level_pairs_comm(self) -> Iterable[tuple[CiphertextLevel, CiphertextLevel]]:
+    if self.is_bfv():
+      return self.level_pairs()
+    
+    else:
+      all = list(self.all_levels())
+      for i in range(0, len(all)):
+        for j in range(i, len(all)):
+          yield (all[i], all[j])
+
+
   def calibrate_base(self) -> CalibrationData:
     samples = CalibrationData()
     def measure(label: EventKind, a1: CiphertextLevel | None = None, a2: CiphertextLevel | None = None):
@@ -191,7 +259,7 @@ class Calibration:
         self.log(f"Measuring {label} depth={a1}")
 
       else:
-        self.log(f"Measuring {label} depth1={a1} depth2={a2}")
+        self.log(f"Measuring {label} level1={a1} level2={a2}")
       
       def on_exit(ns: int):
         self.log(f"   [{format_ns(ns)}]")
@@ -209,18 +277,13 @@ class Calibration:
       self.log(f"Iteration {iteration}")
 
       # XXX: is this its own function?
-      if openfhe.PKESchemeFeature.FHE in self.features:
-        pt = self.encode(0)
+      if openfhe.PKESchemeFeature.FHE in self.features and self.is_ckks():
+        pt = self.encode(CiphertextLevel(0, 1))
         ct = cc.Encrypt(key_pair.publicKey, pt)
-        ct_bs = None
         with measure(EventKind.EVAL_BOOTSTRAP):
-          ct_bs = cc.EvalBootstrap(ct)
+          cc.EvalBootstrap(ct)
         
-        samples.record_bootstrap_lv(ct_bs)
-
-      ct_by_depth = []
-      pt_by_depth = []
-      for level in range(0, max_mult_depth):
+      for level in self.all_levels():
         with measure(EventKind.ENCODE, level):
           pt = self.encode(level)
 
@@ -233,29 +296,30 @@ class Calibration:
         with measure(EventKind.DECODE, level):
           self.decode(pt)
 
-        ct_by_depth.append(ct)
-        pt_by_depth.append(pt)
 
-      for depth1 in range(0, max_mult_depth):
-        for depth2 in range(depth1, max_mult_depth):
-          with measure(EventKind.EVAL_ADD_CTCT, depth1, depth2):
-            cc.EvalAdd(ct_by_depth[depth1], ct_by_depth[depth2])
+      seen = set()
+      for (level1, level2) in self.level_pairs_comm():
+          pt = self.scheme_model().arbitrary_pt(self.cc, level2)
+          ct1 = self.scheme_model().arbitrary_ct(self.cc, self.key_pair.publicKey, level1)
+          ct2 = self.scheme_model().arbitrary_ct(self.cc, self.key_pair.publicKey, level2)
 
-          with measure(EventKind.EVAL_MULT_CTCT, depth1, depth2):
-            cc.EvalMult(ct_by_depth[depth1], ct_by_depth[depth2])
+          with measure(EventKind.EVAL_ADD_CTCT, level1, level2):
+            cc.EvalAdd(ct1, ct2)
 
-          with measure(EventKind.EVAL_SUB_CTCT, depth1, depth2):
-            cc.EvalSub(ct_by_depth[depth1], ct_by_depth[depth2])
+          with measure(EventKind.EVAL_MULT_CTCT, level1, level2):
+            cc.EvalMult(ct1, ct2)
 
-        for depth2 in range(0, max_mult_depth):
-          with measure(EventKind.EVAL_MULT_CTPT, depth1, depth2):
-            cc.EvalMult(ct_by_depth[depth1], pt_by_depth[depth2])
+          with measure(EventKind.EVAL_SUB_CTCT, level1, level2):
+            cc.EvalSub(ct1, ct2)
 
-          with measure(EventKind.EVAL_ADD_CTPT, depth1, depth2):
-            cc.EvalMult(ct_by_depth[depth1], pt_by_depth[depth2])
+          with measure(EventKind.EVAL_MULT_CTPT, level1, level2):
+            cc.EvalMult(ct1, pt)
 
-          with measure(EventKind.EVAL_ADD_CTPT, depth1, depth2):
-            cc.EvalSub(ct_by_depth[depth1], pt_by_depth[depth2])
+          with measure(EventKind.EVAL_ADD_CTPT, level1, level2):
+            cc.EvalMult(ct1, pt)
+
+          with measure(EventKind.EVAL_ADD_CTPT, level1, level2):
+            cc.EvalSub(ct1, pt)
 
     return samples
   
