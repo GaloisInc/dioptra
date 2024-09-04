@@ -1,7 +1,7 @@
 import tempfile
 import time
 import openfhe as ofhe
-from dioptra.analyzer.calibration import Calibration, RuntimeSamples
+from dioptra.analyzer.calibration import Calibration, CalibrationData
 import sys
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer
@@ -69,7 +69,7 @@ def calibrate(outfile: str):
 def analyze(sample_file: str):
     # set up analyses
     depth_analysis = MultDepth()
-    samples = RuntimeSamples()
+    samples = CalibrationData()
     samples.read_json(sample_file)
     runtime_analysis = Runtime(depth_analysis, samples)
     analyzer = Analyzer([runtime_analysis])
