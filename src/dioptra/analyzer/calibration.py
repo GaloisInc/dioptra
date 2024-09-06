@@ -7,7 +7,7 @@ import enum
 import json
 import sys
 
-from dioptra.analyzer.scheme import CiphertextLevel, PkeSchemeModels, SchemeModelPke
+from dioptra.analyzer.scheme import LevelInfo, PkeSchemeModels, SchemeModelPke
 from dioptra.analyzer.utils.util import format_ns
 
 class EventKind(enum.Enum):
@@ -29,7 +29,7 @@ class Event:
     EventKind.EVAL_MULT_CTPT, EventKind.EVAL_ADD_CTPT, EventKind.EVAL_SUB_CTPT
   ])
 
-  def __init__(self, kind: EventKind, arg_level1: CiphertextLevel | None = None, arg_level2: CiphertextLevel | None = None):
+  def __init__(self, kind: EventKind, arg_level1: LevelInfo | None = None, arg_level2: LevelInfo | None = None):
     self.kind = kind
 
     # if arg_depth2 is specified, arg_depth1 must be specified as well
@@ -68,8 +68,8 @@ class Event:
   def from_dict(d) -> 'Event':
     e = Event(EventKind.ENCODE)
     e.kind = EventKind(d["kind"])
-    e.arg_level1 = CiphertextLevel.from_dict(d["arg_level1"]) if "arg_level1" in d else None,
-    e.arg_level2 = CiphertextLevel.from_dict(d["arg_level2"]) if "arg_level2" in d else None,
+    e.arg_level1 = LevelInfo.from_dict(d["arg_level1"]) if "arg_level1" in d else None,
+    e.arg_level2 = LevelInfo.from_dict(d["arg_level2"]) if "arg_level2" in d else None,
     return e
 
   
@@ -198,7 +198,7 @@ class Calibration:
     else:
       return self.cc.GetRingDimension() ## XXX: ask hilder about this
   
-  def encode(self, level: CiphertextLevel) -> openfhe.Plaintext:
+  def encode(self, level: LevelInfo) -> openfhe.Plaintext:
     pt_val = [0] * self.num_slots()
     if isinstance(self.params, openfhe.CCParamsCKKSRNS):
       return self.cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=level.level, noiseScaleDeg=level.noise_scale_deg)
@@ -211,24 +211,24 @@ class Calibration:
     else:
       pt.GetPackedValue()
 
-  def all_levels(self) -> Iterable[CiphertextLevel]:
+  def all_levels(self) -> Iterable[LevelInfo]:
     if self.is_ckks():
       for deg in [0, 1]:
         for level in range(0, self.params.GetMultiplicativeDepth()):
-          yield CiphertextLevel(level, deg)
+          yield LevelInfo(level, deg)
 
     if self.is_bgv():
-      yield CiphertextLevel(0, 2)
+      yield LevelInfo(0, 2)
       for deg in [0,1]:
         for level in range(1, self.params.GetMultiplicativeDepth()):
-          yield CiphertextLevel(level, deg)
+          yield LevelInfo(level, deg)
 
     # dunno how to think about noise scale deg in this case
     if self.is_bfv():
       for level in range(0, self.params.GetMultiplicativeDepth()):
-        yield CiphertextLevel(level, 0)
+        yield LevelInfo(level, 0)
 
-  def level_pairs(self) -> Iterable[tuple[CiphertextLevel, CiphertextLevel]]:
+  def level_pairs(self) -> Iterable[tuple[LevelInfo, LevelInfo]]:
     if self.is_bfv():
       for l in self.all_levels():
         yield (l,l)
@@ -238,7 +238,7 @@ class Calibration:
         for l2 in self.all_levels():
           yield (l1, l2)
 
-  def level_pairs_comm(self) -> Iterable[tuple[CiphertextLevel, CiphertextLevel]]:
+  def level_pairs_comm(self) -> Iterable[tuple[LevelInfo, LevelInfo]]:
     if self.is_bfv():
       return self.level_pairs()
     
@@ -251,7 +251,7 @@ class Calibration:
 
   def calibrate_base(self) -> CalibrationData:
     samples = CalibrationData()
-    def measure(label: EventKind, a1: CiphertextLevel | None = None, a2: CiphertextLevel | None = None):
+    def measure(label: EventKind, a1: LevelInfo | None = None, a2: LevelInfo | None = None):
       if a1 is None and a2 is None:
         self.log(f"Measuring {label}")
 
@@ -278,7 +278,7 @@ class Calibration:
 
       # XXX: is this its own function?
       if openfhe.PKESchemeFeature.FHE in self.features and self.is_ckks():
-        pt = self.encode(CiphertextLevel(0, 1))
+        pt = self.encode(LevelInfo(0, 1))
         ct = cc.Encrypt(key_pair.publicKey, pt)
         with measure(EventKind.EVAL_BOOTSTRAP):
           cc.EvalBootstrap(ct)

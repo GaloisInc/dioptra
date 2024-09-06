@@ -1,7 +1,7 @@
 from audioop import add
 from typing import Iterator
 from unittest import TestCase, TestSuite
-from dioptra.analyzer.scheme import CiphertextLevel, PkeSchemeModels
+from dioptra.analyzer.scheme import LevelInfo, PkeSchemeModels
 from tests.test_contexts import ckks1
 import openfhe
 
@@ -15,7 +15,7 @@ class TestCiphertextLevel_CKKS(TestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.cts: dict[CiphertextLevel, openfhe.Ciphertext] = {}
+    self.cts: dict[LevelInfo, openfhe.Ciphertext] = {}
 
   def cc(self):
     return TestCiphertextLevel_CKKS._cc
@@ -26,7 +26,7 @@ class TestCiphertextLevel_CKKS(TestCase):
   def params(self):
     return TestCiphertextLevel_CKKS._parameters
   
-  def mkct(self, lv: CiphertextLevel) -> openfhe.Ciphertext:
+  def mkct(self, lv: LevelInfo) -> openfhe.Ciphertext:
     if lv in self.cts:
       return self.cts[lv]
 
@@ -38,13 +38,13 @@ class TestCiphertextLevel_CKKS(TestCase):
     return ct0
 
     
-  def all_levels(self) -> Iterator[CiphertextLevel]:
+  def all_levels(self) -> Iterator[LevelInfo]:
     for level in range(0, self.params().GetMultiplicativeDepth()):
       for noise_scale_deg in [1,2]:
-        yield CiphertextLevel(level=level, noise_scale_deg=noise_scale_deg)
+        yield LevelInfo(level=level, noise_scale_deg=noise_scale_deg)
 
   def test_mul_level(self):
-    seen: set[frozenset[CiphertextLevel]] = set()
+    seen: set[frozenset[LevelInfo]] = set()
     for ct1 in self.all_levels():
       for ct2 in self.all_levels():
         if frozenset([ct1, ct2]) in seen:
