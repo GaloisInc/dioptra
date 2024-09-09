@@ -38,15 +38,13 @@ def load_files(files: list[str]) -> None:
     runpy.run_path(file)
 
 def report_main(sample_file: str, files: list[str]) -> None:
-  samples = CalibrationData()
-  samples.read_json(sample_file)
+  calibration = CalibrationData.read_json(sample_file)
 
   load_files(files)
 
   for (limit, desc, f) in runtime_functions:
-    depth_analysis = MultDepth()
-    runtime_analysis = Runtime(depth_analysis, samples)
-    analyzer = Analyzer([runtime_analysis])
+    runtime_analysis = Runtime(calibration)
+    analyzer = Analyzer([runtime_analysis], calibration.get_scheme())
     
     f(analyzer)
 
