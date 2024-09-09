@@ -8,7 +8,6 @@ import enum
 import json
 import sys
 
-from build.lib.dioptra.analyzer.scheme import PkeSchemeModels
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelBFV, SchemeModelBGV, SchemeModelCKKS, SchemeModelPke
 from dioptra.analyzer.utils.util import format_ns
 
