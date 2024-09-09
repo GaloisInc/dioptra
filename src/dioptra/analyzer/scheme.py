@@ -2,8 +2,6 @@ from enum import Enum
 from typing import Any, Callable, Iterable, Self
 import openfhe
 
-from build.lib.dioptra.analyzer.scheme import PkeSchemeModels
-
 class LevelInfo:
   def __init__(self, level: int = 0, noise_scale_deg: int = 1):
     self.noise_scale_deg = noise_scale_deg # rename to is mul result?
@@ -46,7 +44,7 @@ class LevelInfo:
   def __str__(self):
     return f"LevelInfo(level={self.level}, noise_scale_deg={self.noise_scale_deg})"
 
-  
+
 class SchemeModelPke:
   """This class encodes information about different PKE schemes"""
   def __init__(self, name: str) -> None:
@@ -112,7 +110,7 @@ class SchemeModelCKKS(SchemeModelPke):
     return cc.GetRingDimension() // 2
   
   def arbitrary_pt(self, cc: openfhe.CryptoContext, level: LevelInfo) -> openfhe.Ciphertext:
-    return cc.MakeCKKSPackedPlaintext([0] * self.num_slots(cc), level=level.level, noiseScaleDeg=level.noise_scale_deg)
+    return cc.MakeCKKSPackedPlaintext([0] * self.num_slots(cc), level=level.level, scaleDeg=level.noise_scale_deg)
   
   def bootstrap_level(self, lev: LevelInfo) -> LevelInfo:
     return lev.min(self.bootstrap_lev)

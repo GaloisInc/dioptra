@@ -221,7 +221,7 @@ class Calibration:
   def encode(self, level: LevelInfo) -> openfhe.Plaintext:
     pt_val = [0] * self.num_slots()
     if isinstance(self.params, openfhe.CCParamsCKKSRNS):
-      return self.cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=level.level, noiseScaleDeg=level.noise_scale_deg)
+      return self.cc.MakeCKKSPackedPlaintext(pt_val, slots=self.num_slots(), level=level.level, scaleDeg=level.noise_scale_deg)
     else:
       return self.cc.MakePackedPlaintext(pt_val, level=level.level, noiseScaleDeg=level.noise_scale_deg)
     
@@ -299,7 +299,7 @@ class Calibration:
 
       # XXX: is this its own function?
       if openfhe.PKESchemeFeature.FHE in self.features and self.is_ckks():
-        pt = self.encode(LevelInfo(max_mult_depth, 1))
+        pt = self.encode(LevelInfo(max_mult_depth - 1, 1))
         ct = cc.Encrypt(key_pair.publicKey, pt)
         bsres = None
         with measure(EventKind.EVAL_BOOTSTRAP):
@@ -309,6 +309,7 @@ class Calibration:
           bootstrap_lev = bsres
           # update scheme with bootstrapping data
           samples.set_scheme(SchemeModelCKKS(bsres))
+          self.log(f"Bootstrap level: {bsres}")
 
         else:
           assert bootstrap_lev == bsres
