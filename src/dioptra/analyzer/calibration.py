@@ -233,13 +233,13 @@ class Calibration:
 
   def all_levels(self) -> Iterable[LevelInfo]:
     if self.is_ckks():
-      for deg in [0, 1]:
-        for level in range(0, self.params.GetMultiplicativeDepth()):
+      for deg in [1,2]:
+        for level in range(0, self.params.GetMultiplicativeDepth() - (deg - 1)): 
           yield LevelInfo(level, deg)
 
     if self.is_bgv():
       yield LevelInfo(0, 2)
-      for deg in [0,1]:
+      for deg in [1,2]:
         for level in range(1, self.params.GetMultiplicativeDepth()):
           yield LevelInfo(level, deg)
 
