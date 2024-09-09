@@ -4,11 +4,11 @@ import openfhe as ofhe
 import random
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
-from dioptra.analyzer.calibration import CalibrationData
+from dioptra.analyzer.calibration import Calibration
+from dioptra.analyzer.scheme import PkeSchemeModels
 
 from typing import Self
 
@@ -131,11 +131,10 @@ def report_runtime(cc: Analyzer):
 
 def annotate_runtime(sample_file: str):
     # set up analyses
-    depth_analysis = MultDepth()
-    samples = CalibrationData()
+    samples = Calibration()
     samples.read_json(sample_file)
-    runtime_analysis = Runtime(depth_analysis, samples)
-    analyzer = Analyzer([depth_analysis, runtime_analysis])
+    runtime_analysis = Runtime(samples)
+    analyzer = Analyzer([runtime_analysis], PkeSchemeModels.CKKS)
 
     rows = 5
     cols = 5  

@@ -1,13 +1,13 @@
 import tempfile
 import time
 import openfhe as ofhe
-from dioptra.analyzer.calibration import Calibration, CalibrationData
+from dioptra.analyzer.calibration import Calibration
 import sys
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
+from dioptra.analyzer.scheme import PkeSchemeModels
 
 # make a cryptocontext and return the context and the parameters used to create it
 def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
@@ -68,11 +68,10 @@ def calibrate(outfile: str):
 # analyze runtime
 def analyze(sample_file: str):
     # set up analyses
-    depth_analysis = MultDepth()
-    samples = CalibrationData()
+    samples = Calibration()
     samples.read_json(sample_file)
-    runtime_analysis = Runtime(depth_analysis, samples)
-    analyzer = Analyzer([runtime_analysis])
+    runtime_analysis = Runtime(samples)
+    analyzer = Analyzer([runtime_analysis], PkeSchemeModels)
     
     # run analysis
     x = analyzer.ArbitraryCT(level=0)     # make an arbitrary CT
