@@ -1,6 +1,8 @@
 from enum import Enum
-from typing import Any, Iterable, Self
+from typing import Any, Callable, Iterable, Self
 import openfhe
+
+from build.lib.dioptra.analyzer.scheme import PkeSchemeModels
 
 class LevelInfo:
   def __init__(self, level: int = 0, noise_scale_deg: int = 1):
@@ -27,6 +29,10 @@ class LevelInfo:
     
     return self
   
+  def min(self, other: 'LevelInfo') -> 'LevelInfo':
+    mx = self.max(other)
+    return self if mx == other else other
+  
   def to_dict(self) -> dict[str, Any]:
     return {
       "noise_scale_deg": self.noise_scale_deg,
@@ -39,7 +45,7 @@ class LevelInfo:
   
   def __str__(self):
     return f"LevelInfo(level={self.level}, noise_scale_deg={self.noise_scale_deg})"
-  
+
   
 class SchemeModelPke:
   """This class encodes information about different PKE schemes"""
@@ -64,10 +70,34 @@ class SchemeModelPke:
   def arbitrary_ct(self, cc: openfhe.CryptoContext, sk: openfhe.PublicKey, level: LevelInfo) -> openfhe.Ciphertext:
     return cc.Encrypt(sk, self.arbitrary_pt(cc, level))
   
+  def bootstrap_level(self, lev: LevelInfo) -> LevelInfo:
+    raise NotImplementedError(f"scheme '{self.name}' does not implement `bootstrap_effect`")
+  
+  def to_dict(self) -> dict[str, Any]:
+    return {
+      "scheme": self.name
+    }
+
+  @staticmethod
+  def from_dict(d: dict[str, Any]) -> 'SchemeModelPke':
+    name = d["scheme"]
+    if name == "CKKS":
+      lev = LevelInfo.from_dict(d["bootstrap_level"])
+      return SchemeModelCKKS(lev)
+    
+    elif name == "BGV":
+      return SchemeModelBGV()
+    
+    elif name == "BFV":
+      return SchemeModelBFV()
+    
+    raise NotImplemented(f"from_dict(): could not determine scheme model for '{name}'")
+
   
 class SchemeModelCKKS(SchemeModelPke):
-  def __init__(self):
+  def __init__(self, bootstrap_lev: LevelInfo):
     super().__init__("CKKS")
+    self.bootstrap_lev = bootstrap_lev
 
   def min_level(self) -> LevelInfo:
     return LevelInfo(0, 1)
@@ -84,6 +114,10 @@ class SchemeModelCKKS(SchemeModelPke):
   def arbitrary_pt(self, cc: openfhe.CryptoContext, level: LevelInfo) -> openfhe.Ciphertext:
     return cc.MakeCKKSPackedPlaintext([0] * self.num_slots(cc), level=level.level, noiseScaleDeg=level.noise_scale_deg)
   
+  def bootstrap_level(self, lev: LevelInfo) -> LevelInfo:
+    return lev.min(self.bootstrap_lev)
+
+
 class SchemeModelBGV(SchemeModelPke):
   def __init__(self):
     super().__init__("BGV")
@@ -91,6 +125,7 @@ class SchemeModelBGV(SchemeModelPke):
   def min_level(self) -> LevelInfo:
     return LevelInfo(0, 2)
   
+  # TODO: raise an error if ciphertext level is not the same level
   def mul_level(self, lev1: LevelInfo, lev2: LevelInfo) -> LevelInfo:
     return lev1.max(lev2).levelled_incr()
   
@@ -123,21 +158,3 @@ class SchemeModelBFV(SchemeModelPke):
   def arbitrary_pt(self, cc: openfhe.CryptoContext, level: LevelInfo) -> openfhe.Ciphertext:
     return cc.MakePackedPlaintext([0] * self.num_slots(cc), level=level.level, noiseScaleDeg=level.noise_scale_deg)
 
-
-class PkeSchemeModels():
-  CKKS = SchemeModelCKKS()
-  BGV = SchemeModelBGV()
-  BFV = SchemeModelBFV()
-
-  @staticmethod
-  def scheme_model_for(params: openfhe.CCParamsBFVRNS | openfhe.CCParamsBGVRNS | openfhe.CCParamsCKKSRNS) -> SchemeModelPke:
-    if isinstance(params, openfhe.CCParamsBFVRNS):
-      return PkeSchemeModels.BFV
-    
-    elif isinstance(params, openfhe.CCParamsBGVRNS):
-      return PkeSchemeModels.BGV
-    
-    elif isinstance(params, openfhe.CCParamsCKKSRNS):
-      return PkeSchemeModels.CKKS
-    
-    raise NotImplementedError(f"scheme_model_for {type(params)}")

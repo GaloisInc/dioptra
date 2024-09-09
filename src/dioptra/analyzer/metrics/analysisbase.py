@@ -250,7 +250,7 @@ class Analyzer:
     
     def EvalBootstrap(self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0) -> Ciphertext: 
         caller_loc = code_loc.calling_frame()
-        new = Ciphertext(level=LevelInfo(0, 1), value=ciphertext.value) # XXX: this is not correct
+        new = Ciphertext(level=self.scheme.bootstrap_level(ciphertext.level), value=ciphertext.value)
         for analysis in self.analysis_list:
             analysis.trace_bootstrap(new, ciphertext, caller_loc)
         return new

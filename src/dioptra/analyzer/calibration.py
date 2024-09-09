@@ -1,3 +1,4 @@
+from ensurepip import bootstrap
 import os
 import openfhe
 import time
@@ -7,7 +8,8 @@ import enum
 import json
 import sys
 
-from dioptra.analyzer.scheme import LevelInfo, PkeSchemeModels, SchemeModelPke
+from build.lib.dioptra.analyzer.scheme import PkeSchemeModels
+from dioptra.analyzer.scheme import LevelInfo, SchemeModelBFV, SchemeModelBGV, SchemeModelCKKS, SchemeModelPke
 from dioptra.analyzer.utils.util import format_ns
 
 class EventKind(enum.Enum):
@@ -87,33 +89,46 @@ class RuntimeTable:
       raise NotImplementedError(f"No runtime found for event: {e}")
 
 class CalibrationData:
-  def __init__(self):
+  def __init__(self, scheme: SchemeModelPke):
     self.samples: dict[Event, list[int]] = {}
+    self.scheme : SchemeModelPke = scheme
+    
 
   def add_sample(self, e: Event, ns: int) -> None:
     if e not in self.samples:
       self.samples[e] = []
 
     self.samples[e].append(ns)
+  
+  def set_scheme(self, scheme: SchemeModelPke) -> None:
+    self.scheme = scheme
+
+  def get_scheme(self) -> SchemeModelPke:
+    return self.scheme
 
   def to_dict(self) -> dict[str, Any]:
+    assert self.scheme is not None
     evts = [(evt.to_dict(), ts) for (evt, ts) in self.samples.items()]
     return {
+      "scheme": self.scheme.to_dict(),
       "samples": evts,
     }
-  
+
   @staticmethod
   def from_dict(obj: dict[str, Any]) -> 'CalibrationData':
+    scheme = SchemeModelPke.from_dict(obj["scheme"])
     evts = [(Event.from_dict(evt), ts) for (evt, ts) in obj["samples"]]
-    cal = CalibrationData()
+    cal = CalibrationData(scheme)
     cal.samples = dict(evts)
+    cal.scheme = scheme
     return cal
 
   def write_json(self, f: str):
     with open(f, "w") as fh:
       json.dump(self.to_dict(), fh)
 
-  def read_json(self, f: str):
+  @staticmethod
+  def read_json(f: str) -> 'CalibrationData':
     with open(f, "r") as fh:
       obj = json.load(fh)
       return CalibrationData.from_dict(obj)
@@ -174,6 +189,14 @@ class Calibration:
     self.cc = cc
     self.features = set(features)
 
+    if self.is_ckks():
+      # NOTE: the bootstrapping level is a placeholder, we will determine it experimentally
+      self.scheme = SchemeModelCKKS(LevelInfo())
+    elif self.is_bgv():
+      self.scheme = SchemeModelBGV()
+    elif self.is_bfv():
+      self.scheme = SchemeModelBFV()
+
 
   def is_ckks(self) -> bool:
     return isinstance(self.params, openfhe.CCParamsCKKSRNS)
@@ -184,9 +207,7 @@ class Calibration:
   def is_bfv(self) -> bool:
     return isinstance(self.params, openfhe.CCParamsBFVRNS)
   
-  def scheme_model(self) -> SchemeModelPke:
-    return PkeSchemeModels.scheme_model_for(self.params)
-
+  
   def log(self, msg: str) -> None:
     if self.out is not None:
       print(msg, file=self.out)
@@ -250,7 +271,7 @@ class Calibration:
 
 
   def calibrate_base(self) -> CalibrationData:
-    samples = CalibrationData()
+    samples = CalibrationData(self.scheme)
     def measure(label: EventKind, a1: LevelInfo | None = None, a2: LevelInfo | None = None):
       if a1 is None and a2 is None:
         self.log(f"Measuring {label}")
@@ -272,16 +293,27 @@ class Calibration:
     max_mult_depth = self.params.GetMultiplicativeDepth()
     self.log(f"Max multiplicative depth: {max_mult_depth}")
     self.log(f"Slots: {self.num_slots()}")
+    bootstrap_lev = None
     
     for iteration in range(0, self.sample_count):
       self.log(f"Iteration {iteration}")
 
       # XXX: is this its own function?
       if openfhe.PKESchemeFeature.FHE in self.features and self.is_ckks():
-        pt = self.encode(LevelInfo(0, 1))
+        pt = self.encode(LevelInfo(max_mult_depth, 1))
         ct = cc.Encrypt(key_pair.publicKey, pt)
+        bsres = None
         with measure(EventKind.EVAL_BOOTSTRAP):
-          cc.EvalBootstrap(ct)
+          bsres = cc.EvalBootstrap(ct)
+
+        if bootstrap_lev is None:
+          bootstrap_lev = bsres
+          # update scheme with bootstrapping data
+          samples.set_scheme(SchemeModelCKKS(bsres))
+
+        else:
+          assert bootstrap_lev == bsres
+      
         
       for level in self.all_levels():
         with measure(EventKind.ENCODE, level):
@@ -299,9 +331,9 @@ class Calibration:
 
       seen = set()
       for (level1, level2) in self.level_pairs_comm():
-          pt = self.scheme_model().arbitrary_pt(self.cc, level2)
-          ct1 = self.scheme_model().arbitrary_ct(self.cc, self.key_pair.publicKey, level1)
-          ct2 = self.scheme_model().arbitrary_ct(self.cc, self.key_pair.publicKey, level2)
+          pt = self.scheme.arbitrary_pt(self.cc, level2)
+          ct1 = self.scheme.arbitrary_ct(self.cc, self.key_pair.publicKey, level1)
+          ct2 = self.scheme.arbitrary_ct(self.cc, self.key_pair.publicKey, level2)
 
           with measure(EventKind.EVAL_ADD_CTCT, level1, level2):
             cc.EvalAdd(ct1, ct2)
@@ -326,36 +358,3 @@ class Calibration:
   def calibrate(self) -> CalibrationData:
     self.log("Beginning calibration...")
     return self.calibrate_base()
-
-
-# def run_example():
-#   # Setup Parameters
-#   parameters = openfhe.CCParamsCKKSRNS()
-#   secret_key_dist = openfhe.SecretKeyDist.UNIFORM_TERNARY
-#   parameters.SetSecretKeyDist(secret_key_dist)
-#   parameters.SetSecurityLevel(openfhe.SecurityLevel.HEStd_NotSet)
-#   parameters.SetRingDim(1 << 16)
-
-#   rescale_tech = openfhe.ScalingTechnique.FLEXIBLEAUTO
-
-#   dcrt_bits = 59
-#   first_mod = 60
-
-#   parameters.SetScalingModSize(dcrt_bits)
-#   parameters.SetScalingTechnique(rescale_tech)
-#   parameters.SetFirstModSize(first_mod)
-
-#   num_iterations = 2
-
-#   level_budget = [3, 3]
-#   depth = 10 + openfhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist) + (num_iterations - 1)
-
-#   parameters.SetMultiplicativeDepth(depth)
-  
-#   c = Calibration(parameters, sys.stdout, sample_count=1)
-#   samples = c.calibrate()
-#   samples.write_json("balanced.samples")
-#   s = RuntimeSamples()
-#   s.read_json("balanced.samples")
-#   assert s == samples
-
