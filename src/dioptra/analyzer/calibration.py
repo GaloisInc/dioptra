@@ -306,14 +306,11 @@ class Calibration:
           bsres = cc.EvalBootstrap(ct)
 
         if bootstrap_lev is None:
-          bootstrap_lev = bsres
+          bootstrap_lev = LevelInfo(level=bsres.GetLevel(), noise_scale_deg=2)
           # update scheme with bootstrapping data
-          samples.set_scheme(SchemeModelCKKS(bsres))
-          self.log(f"Bootstrap level: {bsres}")
+          samples.set_scheme(SchemeModelCKKS(bootstrap_lev))
+          self.log(f"Bootstrap level: {bootstrap_lev}")
 
-        else:
-          assert bootstrap_lev == bsres
-      
         
       for level in self.all_levels():
         with measure(EventKind.ENCODE, level):
