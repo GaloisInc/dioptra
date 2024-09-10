@@ -61,22 +61,18 @@ def report_main(sample_file: str, files: list[str]) -> None:
     print(f"{status} {desc} ... { format_ns(runtime_analysis.total_runtime) }")
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
-  samples = CalibrationData()
-  samples.read_json(sample_file)
+  samples = CalibrationData.read_json(sample_file)
 
   runtime_analysis = Runtime(samples)
   analyzer = Analyzer([runtime_analysis], samples.scheme)
 
-  load_files(file)
+  load_files([file])
 
   for (_, desc, f) in runtime_functions:
     if desc == test_case:
       f(analyzer)
       runtime_analysis.anotate_metric()
       return 
-
-
-    
 
 def dioptra_context(description: str | None = None):
   def decorator(f):
