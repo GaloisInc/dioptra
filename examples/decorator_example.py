@@ -90,7 +90,6 @@ def eval_pow_memo(cc: Analyzer) -> None:
 @dioptra_runtime(limit=datetime.timedelta(minutes=4))
 def eval_pow_memo_rec(cc: Analyzer) -> None:
   memo_table = {}
-  time.sleep(100.0)
   def pow(_cc, x, y):
     return ct_pow_memo_rec(_cc, x, y, memo_table)
   

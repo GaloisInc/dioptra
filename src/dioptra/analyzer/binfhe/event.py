@@ -1,4 +1,5 @@
 import enum
+from typing import Any
 
 class EventKind(enum.Enum):
   ENCRYPT = 0
@@ -21,3 +22,23 @@ class EventKind(enum.Enum):
 class Event:
   def __init__(self, kind: EventKind):
     self.kind = kind
+
+  def __hash__(self) -> int:
+    return hash(self.kind.value)
+
+  def __eq__(self, value: object) -> bool:
+    return isinstance(value, Event) \
+       and self.kind == value.kind
+  
+  def to_dict(self) -> dict[str, Any]:
+    return {
+      "kind": self.kind.value
+    }
+  
+  @staticmethod
+  def from_dict(d: dict[str, Any]) -> 'Event':
+    kind = EventKind(d["Event"])
+    return Event(kind)
+  
+  def __str__(self) -> str:
+    return f"{self.kind.name}"

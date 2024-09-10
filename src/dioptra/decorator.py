@@ -66,16 +66,13 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
   runtime_analysis = Runtime(samples)
   analyzer = Analyzer([runtime_analysis], samples.scheme)
 
-  load_files(file)
+  load_files([file])
 
   for (_, desc, f) in runtime_functions:
     if desc == test_case:
       f(analyzer)
       runtime_analysis.anotate_metric()
       return 
-
-
-    
 
 def dioptra_context(description: str | None = None):
   def decorator(f):
