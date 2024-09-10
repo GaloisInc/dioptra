@@ -94,7 +94,7 @@ class RuntimeTable:
       return None
     
     else:
-      LevelInfo(level.level, 1)
+      return LevelInfo(level.level, 1)
 
   def get_runtime_ns(self, e: Event) -> int:
     if self.is_bfv:
@@ -159,7 +159,7 @@ class CalibrationData:
     for (event, runtimes) in self.samples.items():
       table[event] = sum(runtimes) // len(runtimes)
 
-    return RuntimeTable(table)
+    return RuntimeTable(table, self.scheme.name == "BFV")
   
   
   def __eq__(self, value: object) -> bool:

@@ -67,7 +67,7 @@ class SchemeModelPke:
 
   def arbitrary_ct(self, cc: openfhe.CryptoContext, sk: openfhe.PublicKey, level: LevelInfo) -> openfhe.Ciphertext:
     return cc.Encrypt(sk, self.arbitrary_pt(cc, level))
-  
+
   def bootstrap_level(self, lev: LevelInfo) -> LevelInfo:
     raise NotImplementedError(f"scheme '{self.name}' does not implement `bootstrap_effect`")
   
