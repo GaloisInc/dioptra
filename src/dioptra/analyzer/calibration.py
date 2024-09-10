@@ -85,10 +85,21 @@ class Event:
 
   
 class RuntimeTable:
-  def __init__(self, runtimes: dict[Event, int]):
+  def __init__(self, runtimes: dict[Event, int], is_bfv: bool = False):
     self.runtimes = runtimes
+    self.is_bfv = is_bfv
+
+  def reset_noise_scale_deg(self, level: LevelInfo | None) -> LevelInfo | None:
+    if level is None:
+      return None
+    
+    else:
+      LevelInfo(level.level, 1)
 
   def get_runtime_ns(self, e: Event) -> int:
+    if self.is_bfv:
+      e = Event(e.kind, self.reset_noise_scale_deg(e.arg_level1), self.reset_noise_scale_deg(e.arg_level2))
+
     if e in self.runtimes:
       return self.runtimes[e]
     elif e.arg_level2 is not None and e.is_commutative():
@@ -255,8 +266,8 @@ class Calibration:
 
     # dunno how to think about noise scale deg in this case
     if self.is_bfv():
-      for level in range(0, self.params.GetMultiplicativeDepth()):
-        yield LevelInfo(level, 0)
+      for level in range(0, 2):  # TODO: ask hilder what the proper level is here
+        yield LevelInfo(level, 1)
 
   def level_pairs(self) -> Iterable[tuple[LevelInfo, LevelInfo]]:
     if self.is_bfv():
@@ -270,7 +281,8 @@ class Calibration:
 
   def level_pairs_comm(self) -> Iterable[tuple[LevelInfo, LevelInfo]]:
     if self.is_bfv():
-      return self.level_pairs()
+      for i in self.level_pairs():
+        yield i
     
     else:
       all = list(self.all_levels())
@@ -335,7 +347,7 @@ class Calibration:
           self.decode(pt)
 
 
-      seen = set()
+      self.log(f"{list(self.level_pairs_comm())}")
       for (level1, level2) in self.level_pairs_comm():
           pt = self.scheme.arbitrary_pt(self.cc, level2)
           ct1 = self.scheme.arbitrary_ct(self.cc, self.key_pair.publicKey, level1)
