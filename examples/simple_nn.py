@@ -7,8 +7,6 @@ from dioptra.analyzer.metrics.analysisbase import Analyzer
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
-from dioptra.analyzer.calibration import Calibration
-from dioptra.analyzer.scheme import PkeSchemeModels
 
 from typing import Self
 
@@ -153,19 +151,5 @@ def report_runtime(cc: Analyzer):
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
     train(cc, xs_ct, num_layers)
 
-def annotate_runtime(sample_file: str):
-    # set up analyses
-    samples = Calibration()
-    samples.read_json(sample_file)
-    runtime_analysis = Runtime(samples)
-    analyzer = Analyzer([runtime_analysis], PkeSchemeModels.CKKS)
-    
-    num_inputs = 2
-    num_layers = 2
-    xs_ct = [analyzer.ArbitraryCT() for _ in range(num_inputs)]
-    train(analyzer, xs_ct, num_layers)
-
-    runtime_analysis.anotate_metric()
-
 if __name__ == '__main__':
-    annotate_runtime("examples/samples")
+    main()

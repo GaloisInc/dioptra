@@ -12,9 +12,8 @@ def runestimator(fun) -> None:#type: ignore
     runtime_table.read_json(runtime_samples_file)
 
     # Run the multiplicative depth analyzer first
-    md = MultDepth()
-    rt = Runtime(md, runtime_table)
-    analyzer = Analyzer([md, rt])
+    rt = Runtime(runtime_table)
+    analyzer = Analyzer([rt])
     fun(analyzer)
     print(f"Total Runtime: {rt.total_runtime} ns")
     rt.anotate_metric()

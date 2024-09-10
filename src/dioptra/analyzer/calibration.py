@@ -93,9 +93,10 @@ class RuntimeTable:
       return self.runtimes[e]
     elif e.arg_level2 is not None and e.is_commutative():
       e_swaped = Event(e.kind, e.arg_level2, e.arg_level1)
-      return self.runtimes[e_swaped]
-    else:
-      raise NotImplementedError(f"No runtime found for event: {e}")
+      if e_swaped in self.runtimes:
+        return self.runtimes[e_swaped]
+
+    raise NotImplementedError(f"No runtime found for event: {e}")
 
 class CalibrationData:
   def __init__(self, scheme: SchemeModelPke):
