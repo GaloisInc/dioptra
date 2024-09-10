@@ -58,6 +58,15 @@ def report(file: Path, samples: Path) -> None:
     """Run decorated functions and report estimated runtimes"""
     decorator.report_main(str(samples), [str(file)])
 
+@estimate.command()
+@click.argument("file", type=click.Path(exists=True))
+@click.option("--samples", type=click.Path(exists=True))
+@click.option("--output", type=click.Path())
+@click.option("--testcase", type=str)
+def annotate(file: Path, samples: Path, testcase: str, output: Path) -> None:
+    """Run decorated functions and report estimated runtimes"""
+    decorator.annotate_main(str(samples), str(file), testcase, str(output))
+
 
 @cli.group()
 def context() -> None:

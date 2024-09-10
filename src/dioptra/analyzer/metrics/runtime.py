@@ -15,10 +15,9 @@ class Runtime(AnalysisBase):
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame) -> None:
         pass
 
-    def trace_encode_ckks(self, dest: Plaintext, value: list[float], call_loc: Frame, level: int = 0)  -> None:
-        dest_depth = level
+    def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame)  -> None:
 
-        line_runtime = self.runtime_table.get_runtime_ns(Event(EventKind.ENCODE, dest_depth))
+        line_runtime = self.runtime_table.get_runtime_ns(Event(EventKind.ENCODE, dest.level))
         self.total_runtime += line_runtime
         self.set_runtime(dest, line_runtime, call_loc)  
 

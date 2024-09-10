@@ -140,7 +140,8 @@ class SchemeModelBGV(SchemeModelPke):
     return cc.GetRingDimension()
   
   def arbitrary_pt(self, cc: openfhe.CryptoContext, level: LevelInfo) -> openfhe.Ciphertext:
-    return cc.MakePackedPlaintext([0] * self.num_slots(cc), level=level.level, noiseScaleDeg=level.noise_scale_deg)
+    lv = level.max(self.min_level())
+    return cc.MakePackedPlaintext([0] * self.num_slots(cc), level=lv.level, noiseScaleDeg=lv.noise_scale_deg)
   
 class SchemeModelBFV(SchemeModelPke):
   def __init__(self):
