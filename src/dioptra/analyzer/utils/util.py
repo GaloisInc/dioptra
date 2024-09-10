@@ -1,6 +1,5 @@
+import json
 from typing import Iterator
-
-
 
 def format_ns(ns: int) -> str:
   micro = ns // 1000
@@ -31,11 +30,7 @@ def format_ns(ns: int) -> str:
   if year > 0:
     tstr = f"{year:03}y" + tstr
   
-  
-
   return tstr
-
-
 
 # range function with step that always includes endpoints
 def ep_range(start: int, end: int, step: int) -> Iterator[int]:
