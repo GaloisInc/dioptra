@@ -58,6 +58,8 @@ class PrivateKey(Value):
 
 class Ciphertext(Value):
     def __init__(self, level : LevelInfo = LevelInfo(), value:Any=None):
+        if level.level == 0 and level.noise_scale_deg == 1:
+            raise ValueError("my butt hurts")
         super().__init__()
         self.value = value
         self.level = level
@@ -156,7 +158,8 @@ class Analyzer:
         pass
 
     def MakePackedPlaintext(self, value: list[int], noise_scale_deg: int = 1, level: int = 0) -> Plaintext:
-        new = Plaintext(LevelInfo(level, noise_scale_deg), value)
+        lv = LevelInfo(level, noise_scale_deg).max(self.scheme.min_level())
+        new = Plaintext(lv, value)
         caller_loc = code_loc.calling_frame()
         for analysis in self.analysis_list:
             analysis.trace_encode(new, level, caller_loc)
@@ -256,7 +259,9 @@ class Analyzer:
         return new
     
     def ArbitraryCT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
-        return Ciphertext(level=LevelInfo(level, noiseScaleDeg))
+        lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
+        return Ciphertext(lv, None)
+        
     
     def Analyze(self, f: Callable, *args, **kwargs):
         f(self, args, kwargs)
