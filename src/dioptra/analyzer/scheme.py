@@ -114,6 +114,12 @@ class SchemeModelCKKS(SchemeModelPke):
   
   def bootstrap_level(self, lev: LevelInfo) -> LevelInfo:
     return lev.min(self.bootstrap_lev)
+  
+  def to_dict(self) -> dict[str, Any]:
+    return {
+      "scheme": self.name,
+      "bootstrap_level": self.bootstrap_lev.to_dict()
+    }
 
 
 class SchemeModelBGV(SchemeModelPke):
