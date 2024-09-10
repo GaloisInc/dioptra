@@ -61,8 +61,7 @@ def report_main(sample_file: str, files: list[str]) -> None:
     print(f"{status} {desc} ... { format_ns(runtime_analysis.total_runtime) }")
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
-  samples = CalibrationData()
-  samples.read_json(sample_file)
+  samples = CalibrationData.read_json(sample_file)
 
   runtime_analysis = Runtime(samples)
   analyzer = Analyzer([runtime_analysis], samples.scheme)
