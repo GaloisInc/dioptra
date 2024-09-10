@@ -310,7 +310,6 @@ class Calibration:
           # update scheme with bootstrapping data
           samples.set_scheme(SchemeModelCKKS(bootstrap_lev))
           self.log(f"Bootstrap level: {bootstrap_lev}")
-
         
       for level in self.all_levels():
         with measure(EventKind.ENCODE, level):
