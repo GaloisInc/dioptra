@@ -67,11 +67,21 @@ class Event:
   
   @staticmethod
   def from_dict(d) -> 'Event':
+    def read_level(s: str) -> LevelInfo | None:
+      if s not in d:
+        return None
+      
+      if d[s] is None:
+        return None
+      
+      return LevelInfo.from_dict(d[s])
+
     e = Event(EventKind.ENCODE)
     e.kind = EventKind(d["kind"])
-    e.arg_level1 = LevelInfo.from_dict(d["arg_level1"]) if "arg_level1" in d else None,
-    e.arg_level2 = LevelInfo.from_dict(d["arg_level2"]) if "arg_level2" in d else None,
+    e.arg_level1 = read_level("arg_level1")
+    e.arg_level2 = read_level("arg_level2")
     return e
+
 
   
 class RuntimeTable:
