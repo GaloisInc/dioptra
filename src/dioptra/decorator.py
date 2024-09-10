@@ -6,13 +6,15 @@ import runpy
 import sys
 from typing import Callable
 
+import dioptra.analyzer.binfhe.calibration as bin_cal
 from dioptra.analyzer.calibration import Calibration, CalibrationData
 from dioptra.analyzer.metrics.analysisbase import Analyzer
 from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 
-context_functions = []
+pke_context_functions = []
+bin_context_functions = []
 runtime_functions = []
 
 def dioptra_runtime(limit: datetime.timedelta | None = None, description: str | None = None) -> Callable:  #TODO better type
@@ -77,7 +79,15 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
 def dioptra_context(description: str | None = None):
   def decorator(f):
     d = f.__name__ if description is None else description
-    context_functions.append((d, f))
+    pke_context_functions.append((d, f))
+    return f
+  
+  return decorator
+
+def dioptra_binfhe_context(description: str | None = None):
+  def decorator(f):
+    d = f.__name__ if description is None else description
+    bin_context_functions.append((d, f))
     return f
   
   return decorator
@@ -85,7 +95,12 @@ def dioptra_context(description: str | None = None):
 def context_list_main(files: list[str]):
   load_files(files)
 
-  for (n, f) in context_functions:
+  for (n, f) in pke_context_functions:
+    file = inspect.getfile(f)
+    (_, line) = inspect.getsourcelines(f)
+    print(f"{n} (defined at {file}:{line})")
+
+  for (n, f) in bin_context_functions:
     file = inspect.getfile(f)
     (_, line) = inspect.getsourcelines(f)
     print(f"{n} (defined at {file}:{line})")
@@ -94,18 +109,34 @@ def context_calibrate_main(files: list[str], name: str, outfile: str, samples: i
   load_files(files)
 
   ctx_f = None
-  for (n, f) in context_functions:
+  is_pke = True
+  # TODO: throw if context has name collision
+  for (n, f) in pke_context_functions:
     if n == name:
+      ctx_f = f
+
+  for (n, f) in bin_context_functions:
+    if n == name:
+      is_pke = False
       ctx_f = f
 
   if ctx_f is None:
     print(f"Calibration failed: no context named '{name}' found", file=sys.stderr)
     sys.exit(-1)
 
-  (cc, params, key_pair, features) = ctx_f()
-  log = None if quiet else sys.stdout
-  calibration = Calibration(cc, params, key_pair, features, log, sample_count=samples)
-  smp = calibration.calibrate()
-  smp.write_json(outfile)
+  if is_pke:
+    (cc, params, key_pair, features) = ctx_f()
+
+    log = None if quiet else sys.stdout
+    calibration = Calibration(cc, params, key_pair, features, log, sample_count=samples)
+    smp = calibration.calibrate()
+    smp.write_json(outfile)
+
+  else:
+    (cc, sk) = ctx_f()
+    log = None if quiet else sys.stdout
+    calibration = bin_cal.Calibration(cc, sk, log=log, sample_count=samples)
+    cd = calibration.run()
+    cd.write_json(outfile)
 
 

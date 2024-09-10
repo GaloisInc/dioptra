@@ -1,6 +1,6 @@
 import openfhe as ofhe
 
-from dioptra.decorator import dioptra_context
+from dioptra.decorator import dioptra_binfhe_context, dioptra_context
 
 @dioptra_context()
 def ckks1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS, ofhe.KeyPair, list[ofhe.PKESchemeFeature]]:
@@ -104,6 +104,16 @@ def bgv1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsBGVRNS, ofhe.KeyPair, list[
     crypto_context.EvalRotateKeyGen(key_pair.secretKey, [1, 2, -1, -2])
 
     return (crypto_context, parameters, key_pair, features)
+
+
+@dioptra_binfhe_context()
+def binfhe1():
+    cc = ofhe.BinFHEContext()
+    cc.GenerateBinFHEContext(ofhe.STD128,ofhe.GINX)
+    sk = cc.KeyGen()
+    cc.BTKeyGen(sk)
+
+    return (cc, sk)
 
 
 def bfv_mult():

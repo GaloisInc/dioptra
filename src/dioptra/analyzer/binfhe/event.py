@@ -18,6 +18,7 @@ class EventKind(enum.Enum):
   EVAL_NOT = 13
   EVAL_SIGN = 14
   KEYGEN = 15
+  GENERATE_LUT_VIA_FUNCTION = 16
 
 class Event:
   def __init__(self, kind: EventKind):
