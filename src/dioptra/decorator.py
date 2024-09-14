@@ -1,30 +1,67 @@
 import datetime
+from enum import Enum
 import importlib.util
 import inspect
+import json
+from multiprocessing import Value
 from plistlib import InvalidFileException
 import runpy
 import sys
-from typing import Callable
+from typing import Callable, OrderedDict
 
-import dioptra.analyzer.binfhe.calibration as bin_cal
-from dioptra.analyzer.calibration import Calibration, CalibrationData
+from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.analyzer.binfhe.calibration import BinFHECalibration, BinFHECalibrationData
+from dioptra.analyzer.binfhe.runtime import RuntimeAnnotation, RuntimeEstimate, RuntimeTotal
+from dioptra.analyzer.calibration import PKECalibration, PKECalibrationData
 from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
+from dioptra.visualization.annotation import annotate_lines
 
-pke_context_functions = []
-bin_context_functions = []
-runtime_functions = []
+# TODO: does this belong somewhere accessible more places
+class SchemeType(Enum):
+  PKE = 1
+  BINFHE = 2
+
+class EstimationCase:
+  def __init__(self, desc: str, f: Callable, schemetype: SchemeType, limit: datetime.timedelta | None):
+    self.description = desc
+    self.run = f
+    self.schemetype = schemetype
+    self.limit = limit
+
+class ContextFunction:
+  def __init__(self, desc: str, f: Callable, schemetype: SchemeType):
+    self.description = desc
+    self.run = f
+    self.schemetype = schemetype
+
+
+context_functions: OrderedDict[str, ContextFunction] = OrderedDict()
+estimation_cases: OrderedDict[str, EstimationCase] = OrderedDict()
+
+def estimation_case_decorator(description: str | None, f: Callable, limit: datetime.timedelta | None, ty: SchemeType) -> Callable:
+    d = f.__name__ if description is None else description
+    if d in estimation_cases:
+      other = estimation_cases[d]
+      file = inspect.getfile(other.run)
+      (_, line) = inspect.getsourcelines(other.run)
+      raise ValueError(f"Estimation case {d} has been defined earlier (at  ={file}:{line}) - use 'description' in decorator to rename?")
+    
+    estimation_cases[d] = EstimationCase(d, f, ty, limit)
+    return f
 
 def dioptra_runtime(limit: datetime.timedelta | None = None, description: str | None = None) -> Callable:  #TODO better type
   def decorator(f):
-    d = f.__name__ if description is None else description
-    runtime_functions.append((limit, d, f))
-    return f
+    estimation_case_decorator(description, f, limit, SchemeType.PKE)
   
   return decorator
 
+def dioptra_binfhe_runtime(limit: datetime.timedelta | None = None, description: str | None = None) -> Callable:  #TODO better type
+  def decorator(f):
+    estimation_case_decorator(description, f, limit, SchemeType.BINFHE)
+  
+  return decorator
 
 def timedelta_as_ns(d: datetime.timedelta) -> int:
   return d.microseconds * (10 ** 3) + \
@@ -40,102 +77,142 @@ def load_files(files: list[str]) -> None:
   for file in files:
     runpy.run_path(file)
 
+def load_calibration_data(file: str) -> PKECalibrationData | BinFHECalibrationData:
+  with open(file) as handle:
+    obj = json.load(handle)
+    if obj["scheme"]["name"] == "BINFHE":
+      return BinFHECalibrationData.from_dict(obj)
+    else:
+      return PKECalibrationData.from_dict(obj)
+    
+def calibration_type(calibration: PKECalibrationData | BinFHECalibrationData) -> SchemeType:
+  if isinstance(calibration, PKECalibrationData):
+    return SchemeType.PKE
+
+  elif isinstance(calibration, BinFHECalibrationData):
+    return SchemeType.BINFHE
+
+  else:
+    raise NotImplementedError(f"Cannot determine scheme type for calibration: {type(calibration)}")
+
+
 def report_main(sample_file: str, files: list[str]) -> None:
-  calibration = CalibrationData.read_json(sample_file)
+  calibration = load_calibration_data(sample_file)
 
   load_files(files)
 
-  for (limit, desc, f) in runtime_functions:
-    runtime_analysis = Runtime(calibration)
-    analyzer = Analyzer([runtime_analysis], calibration.get_scheme())
-    
-    f(analyzer)
+  for case in estimation_cases.values():
+    runtime = None
+    if case.schemetype == SchemeType.PKE and isinstance(calibration, PKECalibrationData):
+      runtime_analysis = Runtime(calibration)
+      analyzer = Analyzer([runtime_analysis], calibration.get_scheme())
+      case.run(analyzer)
+      runtime = runtime_analysis.total_runtime
 
-    if limit is None:
+    elif case.schemetype == SchemeType.BINFHE and isinstance(calibration, BinFHECalibrationData):
+      avg_runtime = calibration.avg_case()
+      total = RuntimeTotal()
+      est = RuntimeEstimate(avg_runtime, total)
+      analyzer = BinFHEAnalyzer(calibration.params, est)
+      case.run(analyzer)
+      runtime = total.total_runtime
+
+    else:
+      print(f"[FAIL---] {case.description}: Cannot run case with this calibration data")
+      print(f"          Calibration is for a {calibration_type(calibration).name} context")
+      print(f"          But estimation case requires a {case.schemetype} context")
+      continue
+
+    if case.limit is None:
       status = "[-------]"
 
-    elif runtime_analysis.total_runtime <= timedelta_as_ns(limit):
+    elif runtime <= timedelta_as_ns(case.limit):
       status = "[OK     ]"
 
     else:
       status = "[TIMEOUT]"
 
-    print(f"{status} {desc} ... { format_ns(runtime_analysis.total_runtime) }")
+    print(f"{status} {case.description} ... { format_ns(runtime) }")
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
-  samples = CalibrationData.read_json(sample_file)
-
-  runtime_analysis = Runtime(samples)
-  analyzer = Analyzer([runtime_analysis], samples.scheme)
-
+  calibration = load_calibration_data(sample_file)
   load_files([file])
+  case = estimation_cases.get(test_case, None)
 
-  for (_, desc, f) in runtime_functions:
-    if desc == test_case:
-      f(analyzer)
-      runtime_analysis.anotate_metric()
-      return 
+  if case is None:
+    print(f"ERROR: Could not find test case '{test_case}' in scope", file=sys.stderr)
+    return
+
+  if case.schemetype == SchemeType.PKE and isinstance(calibration, PKECalibrationData):
+    runtime_analysis = Runtime(calibration)
+    analyzer = Analyzer([runtime_analysis], calibration.scheme)
+    case.run(analyzer)
+    runtime_analysis.anotate_metric()
+    return 
+  
+  elif case.schemetype == SchemeType.BINFHE and isinstance(calibration, BinFHECalibrationData):
+    annot_rpt = RuntimeAnnotation()
+    est = RuntimeEstimate(calibration.avg_case(), annot_rpt)
+    analyzer = BinFHEAnalyzer(calibration.params, est)
+    case.run(analyzer)
+    annotation = dict((line, format_ns(ns)) for (line, ns) in annot_rpt.annotation_for(file).items())
+    annotate_lines(file, output, annotation)
+
+  else:
+    print(f"Calibration data '{sample_file}' is not compatible with estimation case '{test_case}'")
+
+
+def dioptra_context_decorator(description: str | None, f: Callable, ty: SchemeType) -> Callable:
+  d = f.__name__ if description is None else description
+  if d in context_functions:
+    other = estimation_cases[d]
+    file = inspect.getfile(other.run)
+    (_, line) = inspect.getsourcelines(other.run)
+    raise ValueError(f"Context {d} has been defined earlier (at  ={file}:{line}) - use 'description' in decorator to rename?")
+
+  context_functions[d] = ContextFunction(d, f, ty)
+  return f
 
 def dioptra_context(description: str | None = None):
   def decorator(f):
-    d = f.__name__ if description is None else description
-    pke_context_functions.append((d, f))
-    return f
+    return dioptra_context_decorator(description, f, SchemeType.PKE)
   
   return decorator
 
 def dioptra_binfhe_context(description: str | None = None):
   def decorator(f):
-    d = f.__name__ if description is None else description
-    bin_context_functions.append((d, f))
-    return f
+    return dioptra_context_decorator(description, f, SchemeType.BINFHE)
   
   return decorator
 
 def context_list_main(files: list[str]):
   load_files(files)
 
-  for (n, f) in pke_context_functions:
-    file = inspect.getfile(f)
-    (_, line) = inspect.getsourcelines(f)
-    print(f"{n} (defined at {file}:{line})")
-
-  for (n, f) in bin_context_functions:
-    file = inspect.getfile(f)
-    (_, line) = inspect.getsourcelines(f)
-    print(f"{n} (defined at {file}:{line})")
+  for cf in context_functions.values():
+    file = inspect.getfile(cf.run)
+    (_, line) = inspect.getsourcelines(cf.run)
+    print(f"{cf.description} (defined at {file}:{line})")
 
 def context_calibrate_main(files: list[str], name: str, outfile: str, samples: int = 5, quiet: bool = False):
   load_files(files)
 
-  ctx_f = None
-  is_pke = True
-  # TODO: throw if context has name collision
-  for (n, f) in pke_context_functions:
-    if n == name:
-      ctx_f = f
-
-  for (n, f) in bin_context_functions:
-    if n == name:
-      is_pke = False
-      ctx_f = f
-
-  if ctx_f is None:
+  cf = context_functions.get(name, None)
+  if cf is None:
     print(f"Calibration failed: no context named '{name}' found", file=sys.stderr)
     sys.exit(-1)
 
-  if is_pke:
-    (cc, params, key_pair, features) = ctx_f()
-
+  print(f"Calibration for f{cf.schemetype} scheme")
+  if cf.schemetype == SchemeType.PKE:
+    (cc, params, key_pair, features) = cf.run()
     log = None if quiet else sys.stdout
-    calibration = Calibration(cc, params, key_pair, features, log, sample_count=samples)
+    calibration = PKECalibration(cc, params, key_pair, features, log, sample_count=samples)
     smp = calibration.calibrate()
     smp.write_json(outfile)
 
-  else:
-    (cc, sk) = ctx_f()
+  elif cf.schemetype == SchemeType.BINFHE:
+    (cc, sk) = cf.run()
     log = None if quiet else sys.stdout
-    calibration = bin_cal.Calibration(cc, sk, log=log, sample_count=samples)
+    calibration = BinFHECalibration(cc, sk, log=log, sample_count=samples)
     cd = calibration.run()
     cd.write_json(outfile)
 

@@ -1,6 +1,6 @@
 {
   "scheme": {
-    "scheme": "CKKS",
+    "name": "CKKS",
     "bootstrap_level": {
       "noise_scale_deg": 2,
       "level": 21

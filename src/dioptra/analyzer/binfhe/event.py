@@ -1,7 +1,9 @@
 import enum
 from typing import Any
 
-class EventKind(enum.Enum):
+import openfhe
+
+class BinFHEEventKind(enum.Enum):
   ENCRYPT = 0
   DECRYPT = 1
   EVAL_BIN_GATE_OR = 2
@@ -20,15 +22,15 @@ class EventKind(enum.Enum):
   KEYGEN = 15
   GENERATE_LUT_VIA_FUNCTION = 16
 
-class Event:
-  def __init__(self, kind: EventKind):
+class BinFHEEvent:
+  def __init__(self, kind: BinFHEEventKind):
     self.kind = kind
 
   def __hash__(self) -> int:
     return hash(self.kind.value)
 
   def __eq__(self, value: object) -> bool:
-    return isinstance(value, Event) \
+    return isinstance(value, BinFHEEvent) \
        and self.kind == value.kind
   
   def to_dict(self) -> dict[str, Any]:
@@ -37,9 +39,29 @@ class Event:
     }
   
   @staticmethod
-  def from_dict(d: dict[str, Any]) -> 'Event':
-    kind = EventKind(d["Event"])
-    return Event(kind)
+  def from_dict(d: dict[str, Any]) -> 'BinFHEEvent':
+    kind = BinFHEEventKind(d["kind"])
+    return BinFHEEvent(kind)
   
   def __str__(self) -> str:
     return f"{self.kind.name}"
+  
+  @staticmethod
+  def bingate_to_event() -> dict[openfhe.BINGATE,'BinFHEEvent']:
+    if BinFHEEvent.BINGATE_TO_EVENT is None:
+      BinFHEEvent.BINGATE_TO_EVENT = {
+        openfhe.BINGATE.OR: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_OR),
+        openfhe.BINGATE.AND: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_AND),
+        openfhe.BINGATE.NOR: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_NOR),
+        openfhe.BINGATE.NAND: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_NAND),
+        openfhe.BINGATE.XOR_FAST: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_XORFAST),
+        openfhe.BINGATE.XNOR_FAST: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_XNORFAST),
+        openfhe.BINGATE.XOR: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_XOR),
+        openfhe.BINGATE.XNOR: BinFHEEvent(BinFHEEventKind.EVAL_BIN_GATE_XNOR),
+      }
+  
+    return BinFHEEvent.BINGATE_TO_EVENT
+  
+  BINGATE_TO_EVENT: dict[openfhe.BINGATE,'BinFHEEvent'] | None = None
+
+

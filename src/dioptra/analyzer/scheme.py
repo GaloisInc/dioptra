@@ -75,12 +75,12 @@ class SchemeModelPke:
   
   def to_dict(self) -> dict[str, Any]:
     return {
-      "scheme": self.name
+      "name": self.name
     }
 
   @staticmethod
   def from_dict(d: dict[str, Any]) -> 'SchemeModelPke':
-    name = d["scheme"]
+    name = d["name"]
     if name == "CKKS":
       lev = LevelInfo.from_dict(d["bootstrap_level"])
       return SchemeModelCKKS(lev)
@@ -119,7 +119,7 @@ class SchemeModelCKKS(SchemeModelPke):
   
   def to_dict(self) -> dict[str, Any]:
     return {
-      "scheme": self.name,
+      "name": self.name,
       "bootstrap_level": self.bootstrap_lev.to_dict()
     }
 

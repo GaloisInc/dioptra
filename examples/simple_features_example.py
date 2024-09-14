@@ -1,7 +1,7 @@
 import tempfile
 import time
 import openfhe as ofhe
-from dioptra.analyzer.calibration import CalibrationData
+from dioptra.analyzer.calibration import PKECalibrationData
 import sys
 
 from dioptra.analyzer.metrics.analysisbase import Analyzer
@@ -68,7 +68,7 @@ def calibrate(outfile: str):
 # analyze runtime
 def analyze(sample_file: str):
     # set up analyses
-    samples = CalibrationData()
+    samples = PKECalibrationData()
     samples.read_json(sample_file)
     runtime_analysis = Runtime(samples)
     analyzer = Analyzer([runtime_analysis], PkeSchemeModels)

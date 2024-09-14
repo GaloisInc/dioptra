@@ -58,8 +58,6 @@ class PrivateKey(Value):
 
 class Ciphertext(Value):
     def __init__(self, level : LevelInfo = LevelInfo(), value:Any=None):
-        if level.level == 0 and level.noise_scale_deg == 1:
-            raise ValueError("my butt hurts")
         super().__init__()
         self.value = value
         self.level = level

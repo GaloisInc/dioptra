@@ -4,32 +4,42 @@ import time
 from typing import IO, Any, Callable
 import openfhe
 
-from dioptra.analyzer.binfhe.event import Event, EventKind
+from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
+from dioptra.analyzer.binfhe.params import BinFHEParams
 from dioptra.analyzer.utils.util import format_ns
 
-class CalibrationData:
-  def __init__(self):
-    self.runtime_samples : dict[Event, list[int]] = {}
+class BinFHECalibrationData:
+  def __init__(self, params: BinFHEParams):
+    self.runtime_samples : dict[BinFHEEvent, list[int]] = {}
+    self.params = params
 
-  def add_runtime_sample(self, event: Event, runtime: int) -> None:
+  def add_runtime_sample(self, event: BinFHEEvent, runtime: int) -> None:
     if event not in self.runtime_samples:
       self.runtime_samples[event] = []
 
     self.runtime_samples[event].append(runtime)
 
+  def avg_case(self) -> dict[BinFHEEvent, int]:
+    return dict([(e, sum(s) // len(s)) for (e, s) in self.runtime_samples.items()])
+
   def to_dict(self) -> dict[str, Any]:
-    scheme = {"scheme": "binfhe"}
+    scheme = {
+      "name": "BINFHE",
+      "params": self.params.to_dict()
+    }
     runtime_samples = [(e.to_dict(), s) for (e, s) in self.runtime_samples.items()]
 
     return {
       "scheme": scheme,
-      "runtime_samples": runtime_samples
+      "runtime_samples": runtime_samples,
     }
     
   @staticmethod
-  def from_dict(d: dict[str, Any]) -> 'CalibrationData':
-    cd = CalibrationData()
-    cd.runtime_samples = dict([(Event.from_dict(e), s) for (e, s) in d["runtime_samples"]])
+  def from_dict(d: dict[str, Any]) -> 'BinFHECalibrationData':
+    assert d["scheme"]["name"] == "BINFHE"
+    params = BinFHEParams.from_dict(d["scheme"]["params"])
+    cd = BinFHECalibrationData(params)
+    cd.runtime_samples = dict([(BinFHEEvent.from_dict(e), s) for (e, s) in d["runtime_samples"]])
     return cd
   
   def write_json(self, file: str) -> None:
@@ -37,13 +47,13 @@ class CalibrationData:
       json.dump(self.to_dict(), f)
 
   @staticmethod
-  def read_json(file: str) -> 'CalibrationData':
+  def read_json(file: str) -> 'BinFHECalibrationData':
     with open(file) as f:
-      return CalibrationData.from_dict(json.load(f))
+      return BinFHECalibrationData.from_dict(json.load(f))
 
 # TODO: factor this so it is usable more places
 class RuntimeSample:
-  def __init__(self, label: Event, samples: CalibrationData, on_exit: Callable[[int], None] | None = None) -> None:
+  def __init__(self, label: BinFHEEvent, samples: BinFHECalibrationData, on_exit: Callable[[int], None] | None = None) -> None:
     self.label = label
     self.samples = samples
     self.on_exit = on_exit
@@ -58,18 +68,7 @@ class RuntimeSample:
     if self.on_exit is not None:
       self.on_exit(t)
 
-class Calibration:
-  bingate_to_event = {
-    openfhe.BINGATE.OR: Event(EventKind.EVAL_BIN_GATE_OR),
-    openfhe.BINGATE.AND: Event(EventKind.EVAL_BIN_GATE_AND),
-    openfhe.BINGATE.NOR: Event(EventKind.EVAL_BIN_GATE_NOR),
-    openfhe.BINGATE.NAND: Event(EventKind.EVAL_BIN_GATE_NAND),
-    openfhe.BINGATE.XOR_FAST: Event(EventKind.EVAL_BIN_GATE_XORFAST),
-    openfhe.BINGATE.XNOR_FAST: Event(EventKind.EVAL_BIN_GATE_XNORFAST),
-    openfhe.BINGATE.XOR: Event(EventKind.EVAL_BIN_GATE_XOR),
-    openfhe.BINGATE.XNOR: Event(EventKind.EVAL_BIN_GATE_XNOR),
-  }
-
+class BinFHECalibration:
   def __init__(self, 
                cc: openfhe.BinFHEContext,
                sk: openfhe.LWEPrivateKey,
@@ -84,10 +83,11 @@ class Calibration:
     if self.log_out is not None:
       print(s, file=self.log_out)
 
-  def run(self) -> CalibrationData:
-    data = CalibrationData()
+  def run(self) -> BinFHECalibrationData:
+    params = BinFHEParams(self.cc.Getn(), self.cc.Getq(), self.cc.GetBeta())
+    data = BinFHECalibrationData(params)
 
-    def measure(e: Event):
+    def measure(e: BinFHEEvent):
       self.log(f"Measuring {e}")
       def logtime(t):
         self.log(f" [{format_ns(t)}]")
@@ -97,19 +97,19 @@ class Calibration:
     for i in range(0, self.iter):
       ct1 = None
       
-      with measure(Event(EventKind.ENCRYPT)):
+      with measure(BinFHEEvent(BinFHEEventKind.ENCRYPT)):
         ct1 = self.cc.Encrypt(self.sk, 1)
 
-      with measure(Event(EventKind.DECRYPT)):
+      with measure(BinFHEEvent(BinFHEEventKind.DECRYPT)):
         self.cc.Decrypt(self.sk, ct1)
 
       ct2 = self.cc.Encrypt(self.sk, 0)
 
-      for (gate, event) in Calibration.bingate_to_event.items():
+      for (gate, event) in BinFHEEvent.bingate_to_event().items():
         with measure(event):
           self.cc.EvalBinGate(gate, ct1, ct2)
 
-      with measure(Event(EventKind.EVAL_NOT)):
+      with measure(BinFHEEvent(BinFHEEventKind.EVAL_NOT)):
         self.cc.EvalNOT(ct1)
 
       # TODO: these only seem to work with high precision (what's that?)

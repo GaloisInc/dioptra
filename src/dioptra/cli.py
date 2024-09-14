@@ -35,25 +35,25 @@ def estimate() -> None:
     """Estimate properties of an OpenFHE program."""
     pass
 
-@estimate.command()
-@click.argument("script", type=click.Path(exists=True))
-def peakmem(script: Path) -> None:
-    """Estimate peak memory usage of an OpenFHE SCRIPT."""
-    click.echo("Estimating memory...")
-    s = OpenFHEScript(script)
-    s.show_ast()
+# @estimate.command()
+# @click.argument("script", type=click.Path(exists=True))
+# def peakmem(script: Path) -> None:
+#     """Estimate peak memory usage of an OpenFHE SCRIPT."""
+#     click.echo("Estimating memory...")
+#     s = OpenFHEScript(script)
+#     s.show_ast()
+
+# @estimate.command()
+# @click.argument("script", type=click.Path(exists=True))
+# def runtime(script: Path) -> None:
+#     """Estimate the runtime of an OpenFHE SCRIPT."""
+#     click.echo("Estimating runtime...")
+#     s = OpenFHEScript(script)
+#     s.show_ast()
 
 @estimate.command()
-@click.argument("script", type=click.Path(exists=True))
-def runtime(script: Path) -> None:
-    """Estimate the runtime of an OpenFHE SCRIPT."""
-    click.echo("Estimating runtime...")
-    s = OpenFHEScript(script)
-    s.show_ast()
-
-@estimate.command()
-@click.argument("file", type=click.Path(exists=True))
-@click.option("--samples", type=click.Path(exists=True))
+@click.argument("file", type=click.Path(exists=True), required=True)
+@click.option("--samples", type=click.Path(exists=True), required=True)
 def report(file: Path, samples: Path) -> None:
     """Run decorated functions and report estimated runtimes"""
     decorator.report_main(str(samples), [str(file)])

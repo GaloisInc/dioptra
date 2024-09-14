@@ -1,6 +1,10 @@
 import json
 from typing import Iterator
 
+def NotSupportedException(Exception):
+  pass
+
+
 def format_ns(ns: int) -> str:
   micro = ns // 1000
   milli = micro // 1000

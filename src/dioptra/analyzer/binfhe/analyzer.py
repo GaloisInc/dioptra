@@ -1,98 +1,127 @@
 from typing import Callable
+from dioptra.analyzer.binfhe.params import BinFHEParams
 from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
 import openfhe
 
-from dioptra.analyzer.metrics.analysisbase import PrivateKey
+from dioptra.analyzer.utils import code_loc
+from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.error import NotSupportedException
 
-# TODO: figure out plaintext modulus
+class BinFHEAnalysisBase:
+  def trace_eval_gate(self, gate: openfhe.BINGATE, dest: LWECiphertext, c1: LWECiphertext, c2: LWECiphertext, loc: Frame|None) -> None:
+    pass
+
+  def trace_eval_not(self, dest: LWECiphertext, c: LWECiphertext, loc: Frame | None) -> None:
+    pass
+
+class BinFHEAnalysisGroup(BinFHEAnalysisBase):
+  def __init__(self, grp: list[BinFHEAnalysisBase]):
+    self.analyses = grp
+
+  def trace_eval_gate(self, gate: openfhe.BINGATE, dest: LWECiphertext, c1: LWECiphertext, c2: LWECiphertext, loc: Frame | None) -> None:
+    for a in self.analyses:
+      a.trace_eval_gate(gate, dest, c1, c2, loc)
+
+  def trace_eval_not(self, dest: LWECiphertext, c: LWECiphertext, loc: Frame | None) -> None:
+    for a in self.analyses:
+      a.trace_eval_not(dest, c, loc)
+    
+
+# TODO: figure out plaintext modulus for p != 4
 class BinFHEAnalyzer:
-  def __init__(self, n: int, q: int, beta: int):
-    self.n = n
-    self.q = q
-    self.beta = beta
+  def __init__(self, params: BinFHEParams, analysis: BinFHEAnalysisBase) -> None:
+    self.params = params
+    self.analysis = analysis
+
+  def _unsupported_feature_msg(self, feature: str) -> str:
+    return f"{feature} is not supported for estimation in the current version of dioptra"
+
+  def _check_plaintext_modulus(self, n: int) -> None:
+    if n != 4:
+      raise NotSupportedException(f"Non-default plaintext modulus ({n}) is not supported on this operation in the current version of dioptra")
 
   def BTKeyGen(self, sk: LWEPrivateKey, keygenMode: openfhe.KEYGEN_MODE = openfhe.KEYGEN_MODE.SYM_ENCRYPT) -> None:
     pass
             
-  def Decrypt(self, sk: PrivateKey, ct: LWECiphertext, p: int = 4) -> int:
-    return 0 # TODO: value is not correct
+  def Decrypt(self, sk: LWEPrivateKey, ct: LWECiphertext, p: int = 4) -> int:
+    self._check_plaintext_modulus(p)
+    return ct.value # TODO: value is not correct
 
   def Encrypt(self, sk: LWEPrivateKey, 
                     m: int, 
                     output: openfhe.BINFHE_OUTPUT = openfhe.BINFHE_OUTPUT.BOOTSTRAPPED, # XXX: TODO
                     p: int = 4, 
                     mod: int = 0) -> LWECiphertext:
-    ct = LWECiphertext(length=self.n, modulus=self.q)
+    self._check_plaintext_modulus(p)
+    if m != 0 and m != 1:
+      raise NotSupportedException("Plaintext must be binary (0 or 1) in the current version of dioptra")
+    
+    ct = LWECiphertext(length=self.params.n, modulus=self.params.q, value=m, pt_mod=p)
     return ct
   
   def _eval_gate_plain(self, gate: openfhe.BINGATE, i1: int, i2: int) -> int:
     if gate == openfhe.BINGATE.OR:
-      return i1 | i2
+      return (i1 | i2)
     
     elif gate == openfhe.BINGATE.AND:
-      return i1 & i2
+      return (i1 & i2) 
     
     elif gate == openfhe.BINGATE.NOR:
-      return ~(i1 | i2)
+      return (~(i1 | i2)) & 1
     
     elif gate == openfhe.BINGATE.NAND:
-      return ~(i1 & i2)
+      return (~(i1 & i2)) & 1
     
     elif gate == openfhe.BINGATE.XOR_FAST or gate == openfhe.BINGATE.XOR:
-      return i1 ^ i2
+      return (i1 ^ i2)
     
     elif gate == openfhe.BINGATE.XNOR_FAST or gate == openfhe.BINGATE.XNOR:
-      return ~(i1 ^ i2)
+      return (~(i1 ^ i2)) & 1
     
     raise NotImplementedError(f"gate type not implemented: {gate.name}")
     
-
   def EvalBinGate(self, gate: openfhe.BINGATE, ct1: LWECiphertext, ct2: LWECiphertext) -> LWECiphertext:
-    ct = LWECiphertext(length=self.n, modulus=self.q)
-
-    return ct
+    loc = code_loc.calling_frame()
+    dest = LWECiphertext(length=self.params.n, modulus=self.params.q, value=self._eval_gate_plain(gate, ct1.value, ct2.value), pt_mod=4)
+    self.analysis.trace_eval_gate(gate, dest, ct1, ct2, loc)
+    return dest
   
   # TODO: need to figure out how long the resulting list is - ask Hilder
   def EvalDecomp(self, ct: LWECiphertext) -> list[LWECiphertext]:
-    raise NotImplemented("EvalDecomp is not implemented")
+    raise NotSupportedException(self._unsupported_feature_msg("EvalDecomp"))
   
   def EvalFloor(self, ct: LWECiphertext, roundbits: int = 0) -> LWECiphertext:
-    ct = LWECiphertext(length=self.n, modulus=self.q)
-
-    return ct
+    raise NotSupportedException(self._unsupported_feature_msg("EvalFloor"))
   
   def EvalFunc(self, ct: LWECiphertext, LUT: list[int]) -> LWECiphertext:
-    ct = LWECiphertext(ct.length, ct.ct_mod)
-
-    return ct
+    raise NotSupportedException(self._unsupported_feature_msg("EvalFunc"))
   
-  def EvalNot(self, ct: LWECiphertext) -> LWECiphertext:
-    ct = LWECiphertext(ct.length, ct.ct_mod)
-
-    return ct
+  def EvalNOT(self, ct: LWECiphertext) -> LWECiphertext:
+    loc = code_loc.calling_frame()
+    dest = LWECiphertext(ct.length, ct.ct_mod, value=(~ct.value & 1), pt_mod=4)
+    self.analysis.trace_eval_not(dest, ct, loc)
+    return dest
   
   def EvalSign(self, ct: LWECiphertext) -> LWECiphertext:
-    ct = LWECiphertext(ct.length, ct.ct_mod)
-
-    return ct
+    raise NotSupportedException(self._unsupported_feature_msg("EvalSign"))
 
   def GenerateBinFHEContext(self, *args, **kwargs):
     pass # TODO: we can probably ingore this for now
 
   def GenerateLUTviaFunction(self, f: Callable[[int, int], int], p: int) -> list[int]:
-    return list([])
+    raise NotSupportedException(self._unsupported_feature_msg("GenerateLUTviaFunction"))
   
   def GetBeta(self) -> int:
-    return self.beta
+    return self.params.beta
 
   def Getn(self) -> int:
-    return self.n
+    return self.params.n
 
   def Getq(self) -> int:
-    return self.q
+    return self.params.q
   
   def KeyGen(self) -> LWEPrivateKey:
-    return LWEPrivateKey(self.n)
+    return LWEPrivateKey(self.params.n)
 
 
 
