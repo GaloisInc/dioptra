@@ -7,7 +7,7 @@ from dioptra.analyzer.metrics.analysisbase import Analyzer
 from dioptra.analyzer.metrics.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
-from dioptra.analyzer.calibration import CalibrationData
+from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 

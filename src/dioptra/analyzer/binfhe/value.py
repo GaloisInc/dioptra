@@ -6,11 +6,12 @@ class Value:
     self.value_id = Value.id
     
 class LWECiphertext(Value):
-  def __init__(self, length: int, modulus: int):
+  def __init__(self, length: int, modulus: int, value: int, pt_mod = 4):
     super().__init__()
     self.length = length
     self.ct_mod = modulus
-    self.pt_mod = 4
+    self.pt_mod = pt_mod
+    self.value = value
 
   def GetLength(self) -> int:
     return self.length

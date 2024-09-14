@@ -109,7 +109,7 @@ class RuntimeTable:
 
     raise NotImplementedError(f"No runtime found for event: {e}")
 
-class CalibrationData:
+class PKECalibrationData:
   def __init__(self, scheme: SchemeModelPke):
     self.samples: dict[Event, list[int]] = {}
     self.scheme : SchemeModelPke = scheme
@@ -136,10 +136,10 @@ class CalibrationData:
     }
 
   @staticmethod
-  def from_dict(obj: dict[str, Any]) -> 'CalibrationData':
+  def from_dict(obj: dict[str, Any]) -> 'PKECalibrationData':
     scheme = SchemeModelPke.from_dict(obj["scheme"])
     evts = [(Event.from_dict(evt), ts) for (evt, ts) in obj["samples"]]
-    cal = CalibrationData(scheme)
+    cal = PKECalibrationData(scheme)
     cal.samples = dict(evts)
     cal.scheme = scheme
     return cal
@@ -149,10 +149,10 @@ class CalibrationData:
       json.dump(self.to_dict(), fh)
 
   @staticmethod
-  def read_json(f: str) -> 'CalibrationData':
+  def read_json(f: str) -> 'PKECalibrationData':
     with open(f, "r") as fh:
       obj = json.load(fh)
-      return CalibrationData.from_dict(obj)
+      return PKECalibrationData.from_dict(obj)
 
   def avg_runtime_table(self) -> RuntimeTable:
     table = {}
@@ -169,16 +169,16 @@ class CalibrationData:
       return s
     
     def key_eq(k: Event) -> bool:
-      return  isinstance(value, CalibrationData) and \
+      return  isinstance(value, PKECalibrationData) and \
               k in self.samples and k in value.samples and \
               sorted(self.samples[k]) == value.samples[k]
 
-    return isinstance(value, CalibrationData) and \
+    return isinstance(value, PKECalibrationData) and \
            all(key_eq(k) for k in self.samples.keys()) and \
            all(key_eq(k) for k in value.samples.keys())
 
 class RuntimeSample:
-  def __init__(self, label: Event, samples: CalibrationData, on_exit: Callable[[int], None] | None = None) -> None:
+  def __init__(self, label: Event, samples: PKECalibrationData, on_exit: Callable[[int], None] | None = None) -> None:
     self.label = label
     self.samples = samples
     self.on_exit = on_exit
@@ -194,7 +194,7 @@ class RuntimeSample:
       self.on_exit(t)
 
 
-class Calibration:
+class PKECalibration:
   def __init__(self, 
     cc: openfhe.CryptoContext,
     params: openfhe.CCParamsBFVRNS | openfhe.CCParamsBGVRNS | openfhe.CCParamsCKKSRNS,
@@ -292,8 +292,8 @@ class Calibration:
           yield (all[i], all[j])
 
 
-  def calibrate_base(self) -> CalibrationData:
-    samples = CalibrationData(self.scheme)
+  def calibrate_base(self) -> PKECalibrationData:
+    samples = PKECalibrationData(self.scheme)
     def measure(label: EventKind, a1: LevelInfo | None = None, a2: LevelInfo | None = None):
       if a1 is None and a2 is None:
         self.log(f"Measuring {label}")
@@ -374,6 +374,6 @@ class Calibration:
 
     return samples
   
-  def calibrate(self) -> CalibrationData:
+  def calibrate(self) -> PKECalibrationData:
     self.log("Beginning calibration...")
     return self.calibrate_base()

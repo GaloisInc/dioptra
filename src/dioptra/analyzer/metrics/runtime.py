@@ -1,13 +1,13 @@
 from dioptra.analyzer.metrics.analysisbase import AnalysisBase, Ciphertext, Plaintext, PublicKey, PrivateKey
 from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.calibration import CalibrationData, Event, EventKind
+from dioptra.analyzer.calibration import PKECalibrationData, Event, EventKind
 from dioptra.analyzer.utils.code_loc import Frame
 from dioptra.analyzer.utils.util import format_ns
 import dis
 
 class Runtime(AnalysisBase):
 
-    def __init__(self, runtime_samples: CalibrationData) -> None:
+    def __init__(self, runtime_samples: PKECalibrationData) -> None:
         self.total_runtime = 0
         self.runtime_table = runtime_samples.avg_runtime_table()
         self.where = {}
