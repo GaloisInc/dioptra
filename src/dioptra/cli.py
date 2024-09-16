@@ -61,13 +61,13 @@ def context() -> None:
 @click.option("--name", type=str, required=True, help="name of the context function to generate data for")
 @click.option("-o", type=click.Path(exists=False), required=True, help="file to output calibration data to")
 @click.option("--sample-count", type=int, default=5, help="number of samples to take (default 5)")
-def calibrate(file: Path, n: str, o: Path, c: int):
+def calibrate(file: Path, name: str, o: Path, sample_count: int):
     """Run calibration for a decorated context function.
 
     FILE is the python file to look for functions decorated with
     "@dioptra_context" or "@dioptra_binfhe_context"
     """
-    decorator.context_calibrate_main([str(file)], n, str(o), c)
+    decorator.context_calibrate_main([str(file)], name, str(o), sample_count)
 
 @context.command()
 @click.argument("file", type=click.Path(exists=True), required=True)

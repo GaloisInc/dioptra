@@ -96,6 +96,9 @@ class BinFHECalibration:
 
     for i in range(0, self.iter):
       ct1 = None
+
+      with measure(BinFHEEvent(BinFHEEventKind.KEYGEN)):
+        self.cc.KeyGen()
       
       with measure(BinFHEEvent(BinFHEEventKind.ENCRYPT)):
         ct1 = self.cc.Encrypt(self.sk, 1)

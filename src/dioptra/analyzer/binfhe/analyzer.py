@@ -8,6 +8,15 @@ from dioptra.analyzer.utils.code_loc import Frame
 from dioptra.error import NotSupportedException
 
 class BinFHEAnalysisBase:
+  def trace_keygen(self, key: LWEPrivateKey, loc: Frame|None) -> None:
+    pass
+
+  def trace_encrypt(self, dest: LWECiphertext, sk: LWEPrivateKey, loc: Frame|None) -> None:
+    pass
+
+  def trace_decrypt(self, sk: LWEPrivateKey, ct: LWECiphertext, loc: Frame|None) -> None:
+    pass
+
   def trace_eval_gate(self, gate: openfhe.BINGATE, dest: LWECiphertext, c1: LWECiphertext, c2: LWECiphertext, loc: Frame|None) -> None:
     pass
 
@@ -15,8 +24,20 @@ class BinFHEAnalysisBase:
     pass
 
 class BinFHEAnalysisGroup(BinFHEAnalysisBase):
-  def __init__(self, grp: list[BinFHEAnalysisBase]):
+  def __init__(self, grp: list[BinFHEAnalysisBase]) -> None:
     self.analyses = grp
+
+  def trace_keygen(self, key: LWEPrivateKey, loc: Frame|None) -> None:
+    for a in self.analyses:
+      a.trace_keygen(key, loc)
+
+  def trace_encrypt(self, dest: LWECiphertext, sk: LWEPrivateKey, loc: Frame|None) -> None:
+    for a in self.analyses:
+      a.trace_encrypt(dest, sk, loc)
+
+  def trace_decrypt(self, sk: LWEPrivateKey, ct: LWECiphertext, loc: Frame|None) -> None:
+    for a in self.analyses:
+      a.trace_decrypt(sk, ct, loc)
 
   def trace_eval_gate(self, gate: openfhe.BINGATE, dest: LWECiphertext, c1: LWECiphertext, c2: LWECiphertext, loc: Frame | None) -> None:
     for a in self.analyses:
