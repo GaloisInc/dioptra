@@ -1,4 +1,3 @@
-from importlib import simple
 import openfhe as ofhe
 
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
