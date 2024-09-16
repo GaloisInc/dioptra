@@ -1,14 +1,14 @@
 from dioptra.analyzer.metrics.analysisbase import Analyzer, Value, Ciphertext, Plaintext
 from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.metrics.runtime import Runtime
-from dioptra.analyzer.calibration import CalibrationData, format_ns
+from dioptra.analyzer.calibration import PKECalibrationData, format_ns
 import openfhe
 import time
 
 def runestimator(fun) -> None:#type: ignore
     # Read runtime table of each FHE operation
     runtime_samples_file = "src/dioptra/analyzer/balanced.samples"
-    runtime_table = CalibrationData()
+    runtime_table = PKECalibrationData()
     runtime_table.read_json(runtime_samples_file)
 
     # Run the multiplicative depth analyzer first
