@@ -21,72 +21,61 @@ def cli() -> None:
     """The Dioptra FHE platform."""
     pass
 
-
-@cli.command()
-@click.argument("script", type=click.Path(exists=True))
-def run(script: Path) -> None:
-    """Run an OpenFHE SCRIPT normally."""
-    click.echo("Running OpenFHE program...")
-    passthrough(script)
-
-
 @cli.group()
 def estimate() -> None:
     """Estimate properties of an OpenFHE program."""
     pass
 
-# @estimate.command()
-# @click.argument("script", type=click.Path(exists=True))
-# def peakmem(script: Path) -> None:
-#     """Estimate peak memory usage of an OpenFHE SCRIPT."""
-#     click.echo("Estimating memory...")
-#     s = OpenFHEScript(script)
-#     s.show_ast()
-
-# @estimate.command()
-# @click.argument("script", type=click.Path(exists=True))
-# def runtime(script: Path) -> None:
-#     """Estimate the runtime of an OpenFHE SCRIPT."""
-#     click.echo("Estimating runtime...")
-#     s = OpenFHEScript(script)
-#     s.show_ast()
+@estimate.command()
+@click.argument("file", type=click.Path(exists=True), required=True)
+@click.option("--cd", type=click.Path(exists=True), required=True, help="file containing calibration data to use for the estimate")
+def report(file: Path, cd: Path) -> None:
+    """Estimate FHE runtime for decorated functions.
+    
+    FILE is the python file to look for functions decorated with
+    "@dioptra_runtime" or "@dioptra_binfhe_runtime"
+    """
+    decorator.report_main(str(cd), [str(file)])
 
 @estimate.command()
 @click.argument("file", type=click.Path(exists=True), required=True)
-@click.option("--samples", type=click.Path(exists=True), required=True)
-def report(file: Path, samples: Path) -> None:
-    """Run decorated functions and report estimated runtimes"""
-    decorator.report_main(str(samples), [str(file)])
+@click.option("--cd", type=click.Path(exists=True), required=True, help="file containing calibration data to use for the estimate")
+@click.option("-o", type=click.Path(), required=True, help="output filename")
+@click.option("--case", type=str, required=True, help="name of the estimation case to run")
+def annotate(file: Path, cd: Path, case: str, o: Path) -> None:
+    """Annotate a Python source file with estimated FHE runtimes.
 
-@estimate.command()
-@click.argument("file", type=click.Path(exists=True))
-@click.option("--samples", type=click.Path(exists=True))
-@click.option("--output", type=click.Path())
-@click.option("--testcase", type=str)
-def annotate(file: Path, samples: Path, testcase: str, output: Path) -> None:
-    """Run decorated functions and report estimated runtimes"""
-    decorator.annotate_main(str(samples), str(file), testcase, str(output))
+    FILE is the python file to look for functions decorated with
+    "@dioptra_runtime" or "@dioptra_binfhe_runtime"
+    """
+    decorator.annotate_main(str(cd), str(file), case, str(o))
 
 
 @cli.group()
 def context() -> None:
-    """Information about OpenFHE contexts"""
+    """FHE context commands"""
     pass
 
 @context.command()
-@click.argument("file", type=click.Path(exists=True))
-@click.option("-n", type=str, required=True)
-@click.option("-o", type=click.Path(exists=False), required=True)
-@click.option("-c", type=int, default=5)
+@click.argument("file", type=click.Path(exists=True), required=True)
+@click.option("--name", type=str, required=True, help="name of the context function to generate data for")
+@click.option("-o", type=click.Path(exists=False), required=True, help="file to output calibration data to")
+@click.option("--sample-count", type=int, default=5, help="number of samples to take (default 5)")
 def calibrate(file: Path, n: str, o: Path, c: int):
+    """Run calibration for a decorated context function.
+
+    FILE is the python file to look for functions decorated with
+    "@dioptra_context" or "@dioptra_binfhe_context"
+    """
     decorator.context_calibrate_main([str(file)], n, str(o), c)
 
 @context.command()
-@click.argument("file", type=click.Path(exists=True))
+@click.argument("file", type=click.Path(exists=True), required=True)
 def list(file: Path):
+    """List decorated context functions
+
+    FILE is the python file to look for functions decorated with
+    "@dioptra_context" or "@dioptra_binfhe_context"
+    """
     decorator.context_list_main([str(file)])
 
-
-# @click.option("-o", type=click.Path(writable=True))
-# def annotate(file: Path, function: str, s: str):
-#     decorator.annotate(file, function, s)
