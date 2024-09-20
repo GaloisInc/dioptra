@@ -1,3 +1,6 @@
+import weakref
+
+
 class Value:
   id: int = 0
 
@@ -18,6 +21,10 @@ class LWECiphertext(Value):
   
   def GetModulus(self) -> int:
     return self.ct_mod
+  
+  def _set_finalizer(self, finalizer: weakref.finalize) -> None:
+    self._finalize = finalizer
+    
 
 
 class LWEPrivateKey(Value):
