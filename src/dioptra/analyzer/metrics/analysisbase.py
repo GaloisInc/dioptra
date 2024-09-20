@@ -1,5 +1,6 @@
 
-from typing import Any, Callable, Iterable, Sequence, TypeVar
+from typing import Any, Callable, Iterable, Self, Sequence, TypeVar
+import weakref
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelPke
 from dioptra.analyzer.utils import code_loc
 from dioptra.analyzer.utils.code_loc import Frame
@@ -62,7 +63,9 @@ class Ciphertext(Value):
         self.value = value
         self.level = level
 
-
+    def with_analyzer_gc_callback(self, analyzer: 'Analyzer') -> Self:
+        self._finalizer = weakref.finalize(self, analyzer._dealloc_ct, self.value, self.level)
+        return self
 
 class Plaintext(Value):
     def __init__(self, level : LevelInfo = LevelInfo(), value:Any=None):
@@ -81,6 +84,10 @@ class Plaintext(Value):
             raise ValueError("GetRealPackedValue(): Does not work for arbitrary values")
         
         return list(self.value)
+    
+    def with_analyzer_gc_callback(self, analyzer: 'Analyzer') -> Self:
+        self._finalizer = weakref.finalize(self, analyzer._dealloc_pt, self.value, self.level)
+        return self
 
 class PublicKey(Value):
     pass
@@ -118,6 +125,15 @@ class AnalysisBase:
         pass
     def trace_sub_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
         pass
+    def trace_alloc_ct(self, ct: Ciphertext, call_loc: Frame|None) -> None:
+        pass
+    def trace_alloc_pt(self, pt: Plaintext, call_loc: Frame|None) -> None:
+        pass
+    def trace_dealloc_ct(self, vid: int, level: LevelInfo) -> None:
+        pass
+    def trace_dealloc_pt(self, vid: int, level: LevelInfo) -> None:
+        pass
+
     def anotate_metric(self) -> None:
         anotated_files: dict[str, list[str]] = dict()
         for metrics in self.where.values():
@@ -156,9 +172,9 @@ class Analyzer:
         pass
 
     def MakePackedPlaintext(self, value: list[int], noise_scale_deg: int = 1, level: int = 0) -> Plaintext:
-        lv = LevelInfo(level, noise_scale_deg).max(self.scheme.min_level())
-        new = Plaintext(lv, value)
         caller_loc = code_loc.calling_frame()
+        lv = LevelInfo(level, noise_scale_deg).max(self.scheme.min_level())
+        new = self._mk_pt(lv, value, caller_loc)
         for analysis in self.analysis_list:
             analysis.trace_encode(new, level, caller_loc)
         return new
@@ -169,15 +185,15 @@ class Analyzer:
 
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], list):
-            new = Plaintext(LevelInfo(level, noise_scale_deg), args[0])
+            new = self._mk_pt(LevelInfo(level, noise_scale_deg), args[0], caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_encode_ckks(new, caller_loc)
             return new
         raise NotImplementedError("MakeCKKSPackedPlaintext: analyzer does not implement this overload")
     
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
-        new = Ciphertext(level=plaintext.level, value=plaintext.value)
         caller_loc = code_loc.calling_frame()
+        new = self._mk_ct(level=plaintext.level, value=plaintext.value, loc=caller_loc)
         for analysis in self.analysis_list:
             analysis.trace_encrypt(new, plaintext, public_key, caller_loc)
         return new
@@ -187,7 +203,7 @@ class Analyzer:
         if isinstance(args[0], PrivateKey) and isinstance(args[1], Ciphertext):
             pkey = args[0]
             ct = args[1]
-            new = Plaintext(ct.level, ct.value)
+            new = self._mk_pt(ct.level, ct.value, caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_decrypt(new, ct, pkey, caller_loc)
             return new
@@ -198,14 +214,14 @@ class Analyzer:
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
             level = self.scheme.mul_level(args[0].level, args[1].level)
-            new = Ciphertext(level, VectorMath.pw_mul(args[0].value, args))
+            new = self._mk_ct(level, VectorMath.pw_mul(args[0].value, args), caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_mul_ctct(new, args[0], args[1], caller_loc)
             return new
         
         elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
             level = self.scheme.mul_level(args[0].level, args[1].level)
-            new = Ciphertext(level, VectorMath.pw_mul(args[0].value, args[1].value))
+            new = self._mk_ct(level, VectorMath.pw_mul(args[0].value, args[1].value), caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_mul_ctpt(new, args[0], args[1], caller_loc)
             return new
@@ -216,14 +232,14 @@ class Analyzer:
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
             level = self.scheme.add_level(args[0].level, args[1].level)
-            new = Ciphertext(level, VectorMath.pw_add(args[0].value, args))
+            new = self._mk_ct(level, VectorMath.pw_add(args[0].value, args), caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_add_ctct(new, args[0], args[1], caller_loc)
             return new
         
         elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
             level = self.scheme.add_level(args[0].level, args[1].level)
-            new = Ciphertext(level, VectorMath.pw_add(args[0].value, args))
+            new = self._mk_ct(level, VectorMath.pw_add(args[0].value, args), caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_add_ctpt(new, args[0], args[1], caller_loc)
             return new
@@ -235,14 +251,14 @@ class Analyzer:
 
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
             level = self.scheme.add_level(args[0].level, args[1].level)
-            new = Ciphertext(level, VectorMath.pw_add(args[0].value, args))
+            new = self._mk_ct(level, VectorMath.pw_add(args[0].value, args), caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_sub_ctct(new, args[0], args[1], caller_loc)
             return new
         
         elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
             level = self.scheme.add_level(args[0].level, args[1].level)
-            new = Ciphertext(level, VectorMath.pw_sub(args[0].value, args))
+            new = self._mk_ct(level, VectorMath.pw_sub(args[0].value, args), caller_loc)
             for analysis in self.analysis_list:
                 analysis.trace_sub_ctpt(new, args[0], args[1], caller_loc)
             return new
@@ -251,19 +267,39 @@ class Analyzer:
     
     def EvalBootstrap(self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0) -> Ciphertext: 
         caller_loc = code_loc.calling_frame()
-        new = Ciphertext(level=self.scheme.bootstrap_level(ciphertext.level), value=ciphertext.value)
+        new = self._mk_ct(level=self.scheme.bootstrap_level(ciphertext.level), value=ciphertext.value, loc=caller_loc)
         for analysis in self.analysis_list:
             analysis.trace_bootstrap(new, ciphertext, caller_loc)
         return new
     
     def ArbitraryCT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
+        caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
-        return Ciphertext(lv, None)
-        
+        return self._mk_ct(lv, None, caller_loc)
     
     def Analyze(self, f: Callable, *args, **kwargs):
         f(self, args, kwargs)
 
+    def _dealloc_ct(self, vid: int, level: LevelInfo) -> None:
+        for analysis in self.analysis_list:
+            analysis.trace_dealloc_ct(vid, level)
+
+    def _dealloc_pt(self, vid: int, level: LevelInfo) -> None:
+        for analysis in self.analysis_list:
+            analysis.trace_dealloc_pt(vid, level)
+
+    def _mk_ct(self, level: LevelInfo, value: Any, loc: Frame|None) -> Ciphertext:
+        ct = Ciphertext(level=level, value=value)
+        for analysis in self.analysis_list:
+            analysis.trace_alloc_ct(ct, loc)
+        return ct.with_analyzer_gc_callback(self)
+    
+    def _mk_pt(self, level: LevelInfo, value: Any, loc: Frame|None) -> Plaintext:
+        pt = Plaintext(level=level, value=value)
+        for analysis in self.analysis_list:
+            analysis.trace_alloc_pt(pt, loc)
+        return pt.with_analyzer_gc_callback(self)
+    
     # def _enable_trace(self):
     #     sys.settrace(self._trace)
 
