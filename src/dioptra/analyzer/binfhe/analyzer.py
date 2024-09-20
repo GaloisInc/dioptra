@@ -1,4 +1,5 @@
 from typing import Callable
+import weakref
 from dioptra.analyzer.binfhe.params import BinFHEParams
 from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
 import openfhe
@@ -21,6 +22,12 @@ class BinFHEAnalysisBase:
     pass
 
   def trace_eval_not(self, dest: LWECiphertext, c: LWECiphertext, loc: Frame | None) -> None:
+    pass
+
+  def trace_alloc_ct(self, dest: LWECiphertext, loc: Frame | None) -> None:
+    pass
+
+  def trace_dealloc_ct(self, vid: int) -> None:
     pass
 
 class BinFHEAnalysisGroup(BinFHEAnalysisBase):
@@ -46,6 +53,14 @@ class BinFHEAnalysisGroup(BinFHEAnalysisBase):
   def trace_eval_not(self, dest: LWECiphertext, c: LWECiphertext, loc: Frame | None) -> None:
     for a in self.analyses:
       a.trace_eval_not(dest, c, loc)
+
+  def trace_alloc_ct(self, dest: LWECiphertext, loc: Frame | None) -> None:
+    for a in self.analyses:
+      a.trace_alloc_ct(dest, loc)
+
+  def trace_dealloc_ct(self, vid: int) -> None:
+    for a in self.analyses:
+      a.trace_dealloc_ct(vid)
     
 
 # TODO: figure out plaintext modulus for p != 4
@@ -103,7 +118,7 @@ class BinFHEAnalyzer:
     
   def EvalBinGate(self, gate: openfhe.BINGATE, ct1: LWECiphertext, ct2: LWECiphertext) -> LWECiphertext:
     loc = code_loc.calling_frame()
-    dest = LWECiphertext(length=self.params.n, modulus=self.params.q, value=self._eval_gate_plain(gate, ct1.value, ct2.value), pt_mod=4)
+    dest = self._mk_ct(self._eval_gate_plain(gate, ct1.value, ct2.value), loc)
     self.analysis.trace_eval_gate(gate, dest, ct1, ct2, loc)
     return dest
   
@@ -119,7 +134,7 @@ class BinFHEAnalyzer:
   
   def EvalNOT(self, ct: LWECiphertext) -> LWECiphertext:
     loc = code_loc.calling_frame()
-    dest = LWECiphertext(ct.length, ct.ct_mod, value=(~ct.value & 1), pt_mod=4)
+    dest = self._mk_ct(~ct.value & 1, loc)
     self.analysis.trace_eval_not(dest, ct, loc)
     return dest
   
@@ -143,6 +158,15 @@ class BinFHEAnalyzer:
   
   def KeyGen(self) -> LWEPrivateKey:
     return LWEPrivateKey(self.params.n)
+  
+  def _dealloc_ct(self, vid: int):
+    self.analysis.trace_dealloc_ct(vid)
+
+  def _mk_ct(self, value: int, loc: Frame|None) -> LWECiphertext:
+    new = LWECiphertext(self.params.n, self.params.q, value, 4)
+    self.analysis.trace_alloc_ct(new, loc)
+    new._set_finalizer(weakref.finalize(new, self._dealloc_ct, new.id))
+    return new
 
 
 

@@ -63,8 +63,8 @@ class Ciphertext(Value):
         self.value = value
         self.level = level
 
-    def with_analyzer_gc_callback(self, analyzer: 'Analyzer') -> Self:
-        self._finalizer = weakref.finalize(self, analyzer._dealloc_ct, self.value, self.level)
+    def set_finalizer(self, finalizer: weakref.finalize) -> Self:
+        self._finalizer = finalizer
         return self
 
 class Plaintext(Value):
@@ -85,8 +85,8 @@ class Plaintext(Value):
         
         return list(self.value)
     
-    def with_analyzer_gc_callback(self, analyzer: 'Analyzer') -> Self:
-        self._finalizer = weakref.finalize(self, analyzer._dealloc_pt, self.value, self.level)
+    def set_finalizer(self, finalizer: weakref.finalize) -> Self:
+        self._finalizer = finalizer
         return self
 
 class PublicKey(Value):
@@ -292,13 +292,15 @@ class Analyzer:
         ct = Ciphertext(level=level, value=value)
         for analysis in self.analysis_list:
             analysis.trace_alloc_ct(ct, loc)
-        return ct.with_analyzer_gc_callback(self)
+        ct.set_finalizer(weakref.finalize(ct, self._dealloc_ct, ct.id, level))
+        return ct
     
     def _mk_pt(self, level: LevelInfo, value: Any, loc: Frame|None) -> Plaintext:
         pt = Plaintext(level=level, value=value)
         for analysis in self.analysis_list:
             analysis.trace_alloc_pt(pt, loc)
-        return pt.with_analyzer_gc_callback(self)
+        pt.set_finalizer(weakref.finalize(pt, self._dealloc_ct, pt.id, level))
+        return pt
     
     # def _enable_trace(self):
     #     sys.settrace(self._trace)
