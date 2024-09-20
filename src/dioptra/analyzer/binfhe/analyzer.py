@@ -80,7 +80,9 @@ class BinFHEAnalyzer:
     pass
             
   def Decrypt(self, sk: LWEPrivateKey, ct: LWECiphertext, p: int = 4) -> int:
+    loc = code_loc.calling_frame()
     self._check_plaintext_modulus(p)
+    self.analysis.trace_decrypt(sk, ct, loc)
     return ct.value # TODO: value is not correct
 
   def Encrypt(self, sk: LWEPrivateKey, 
@@ -88,11 +90,13 @@ class BinFHEAnalyzer:
                     output: openfhe.BINFHE_OUTPUT = openfhe.BINFHE_OUTPUT.BOOTSTRAPPED, # XXX: TODO
                     p: int = 4, 
                     mod: int = 0) -> LWECiphertext:
+    loc = code_loc.calling_frame()
     self._check_plaintext_modulus(p)
     if m != 0 and m != 1:
       raise NotSupportedException("Plaintext must be binary (0 or 1) in the current version of dioptra")
     
     ct = LWECiphertext(length=self.params.n, modulus=self.params.q, value=m, pt_mod=p)
+    self.analysis.trace_encrypt(ct, sk, loc)
     return ct
   
   def _eval_gate_plain(self, gate: openfhe.BINGATE, i1: int, i2: int) -> int:
