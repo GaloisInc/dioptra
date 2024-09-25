@@ -4,6 +4,7 @@ import time
 from typing import IO, Any, Callable
 import openfhe
 
+import dioptra_native
 from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
 from dioptra.analyzer.binfhe.params import BinFHEParams
 from dioptra.analyzer.utils.util import format_ns
@@ -12,6 +13,10 @@ class BinFHECalibrationData:
   def __init__(self, params: BinFHEParams):
     self.runtime_samples : dict[BinFHEEvent, list[int]] = {}
     self.params = params
+    self.ciphertext_size: int = 0
+
+  def set_ciphertext_size(self, ctsize: int):
+    self.ciphertext_size = ctsize
 
   def add_runtime_sample(self, event: BinFHEEvent, runtime: int) -> None:
     if event not in self.runtime_samples:
@@ -32,6 +37,7 @@ class BinFHECalibrationData:
     return {
       "scheme": scheme,
       "runtime_samples": runtime_samples,
+      "memory": {"ciphertext_size": self.ciphertext_size }
     }
     
   @staticmethod
@@ -40,6 +46,7 @@ class BinFHECalibrationData:
     params = BinFHEParams.from_dict(d["scheme"]["params"])
     cd = BinFHECalibrationData(params)
     cd.runtime_samples = dict([(BinFHEEvent.from_dict(e), s) for (e, s) in d["runtime_samples"]])
+    cd.ciphertext_size = d["memory"]["ciphertext_size"]
     return cd
   
   def write_json(self, file: str) -> None:
@@ -93,6 +100,13 @@ class BinFHECalibration:
         self.log(f" [{format_ns(t)}]")
 
       return RuntimeSample(e, data, on_exit=logtime)
+
+    # measure ciphertext size
+    ct = self.cc.Encrypt(self.sk, 0)
+    ct_size = dioptra_native.lwe_ciphertext_size(ct)
+    data.set_ciphertext_size(ct_size)
+    self.log(f"Ciphertext size: {ct_size}")
+    ct = None
 
     for i in range(0, self.iter):
       ct1 = None

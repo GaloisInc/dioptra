@@ -9,6 +9,10 @@ inline size_t poly_size(Poly const& p) {
   return sizeof(p);
 }
 
+inline size_t native_vec_size(NativeVector const& v) {
+  return v.GetLength() * sizeof(NativeInteger);
+}
+
 inline size_t native_poly_size(NativePoly const& p) {
   if(p.IsEmpty()) {
     return sizeof(p);
@@ -38,6 +42,10 @@ size_t ciphertext_size(Ciphertext<DCRTPoly> const& ct) {
   return sizeof(*ct) + dcrt_poly_vec_size(ct->GetElements());
 }
 
+size_t lwe_ciphertext_size(LWECiphertext const& ct) {
+  return native_vec_size(ct->GetA()) + sizeof(*ct);
+}
+
 size_t plaintext_size(Plaintext const& pt) {
   return sizeof(*pt)
        + dcrt_poly_size(pt->GetElement<DCRTPoly>())
@@ -63,5 +71,6 @@ PYBIND11_MODULE(dioptra_native, m) {
   m.doc() = "dioptra native module";
   m.def("ciphertext_size", &ciphertext_size, "Compute the size of a ciphertext");
   m.def("plaintext_size", &plaintext_size, "Compute the size of a plaintext");
+  m.def("lwe_ciphertext_size", &lwe_ciphertext_size, "Compute the size of an LWECiphertext");
 }
 
