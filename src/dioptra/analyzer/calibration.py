@@ -1,12 +1,9 @@
-from ensurepip import bootstrap
-import os
 import openfhe
 import time
-from typing import IO, Any, Callable, Iterable, Iterator, TextIO
-import random
+from typing import Any, Callable, Iterable, TextIO
 import enum
 import json
-import sys
+import dioptra_native
 
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelBFV, SchemeModelBGV, SchemeModelCKKS, SchemeModelPke
 from dioptra.analyzer.utils.util import format_ns
@@ -111,15 +108,23 @@ class RuntimeTable:
 
 class PKECalibrationData:
   def __init__(self, scheme: SchemeModelPke):
-    self.samples: dict[Event, list[int]] = {}
+    self.runtime_samples: dict[Event, list[int]] = {}
     self.scheme : SchemeModelPke = scheme
+    self.ct_mem : dict[LevelInfo, int] = {}
+    self.pt_mem : dict[LevelInfo, int] = {}
     
+  def set_memory_tables(self, pt_data: dict[LevelInfo, int] = {}, ct_data: dict[LevelInfo, int] = {}) -> None:
+    self.ct_mem = ct_data
+    self.pt_mem = pt_data
 
-  def add_sample(self, e: Event, ns: int) -> None:
-    if e not in self.samples:
-      self.samples[e] = []
+  def set_plaintext_memory_dict(self, data: dict[LevelInfo, int] = {}) -> None:
+    self.pt_mem = data
 
-    self.samples[e].append(ns)
+  def add_runtime_sample(self, e: Event, ns: int) -> None:
+    if e not in self.runtime_samples:
+      self.runtime_samples[e] = []
+
+    self.runtime_samples[e].append(ns)
   
   def set_scheme(self, scheme: SchemeModelPke) -> None:
     self.scheme = scheme
@@ -129,18 +134,28 @@ class PKECalibrationData:
 
   def to_dict(self) -> dict[str, Any]:
     assert self.scheme is not None
-    evts = [(evt.to_dict(), ts) for (evt, ts) in self.samples.items()]
+    evts = [(evt.to_dict(), ts) for (evt, ts) in self.runtime_samples.items()]
+    ct_mems = [(lvl.to_dict(), m) for (lvl, m) in self.ct_mem.items()]
+    pt_mems = [(lvl.to_dict(), m) for (lvl, m) in self.pt_mem.items()]
     return {
       "scheme": self.scheme.to_dict(),
-      "samples": evts,
+      "runtime": evts,
+      "memory": {
+        "ciphertext": ct_mems,
+        "plaintext": pt_mems,
+      }
     }
 
   @staticmethod
   def from_dict(obj: dict[str, Any]) -> 'PKECalibrationData':
     scheme = SchemeModelPke.from_dict(obj["scheme"])
-    evts = [(Event.from_dict(evt), ts) for (evt, ts) in obj["samples"]]
+    evts = [(Event.from_dict(evt), ts) for (evt, ts) in obj["runtime"]]
+    ct_mems = [(LevelInfo.from_dict(lvl), m) for (lvl, m) in obj["memory"]["ciphertext"]]
+    pt_mems = [(LevelInfo.from_dict(lvl), m) for (lvl, m) in obj["memory"]["plaintext"]]
     cal = PKECalibrationData(scheme)
-    cal.samples = dict(evts)
+    cal.runtime_samples = dict(evts)
+    cal.pt_mem = dict(pt_mems)
+    cal.ct_mem = dict(ct_mems)
     cal.scheme = scheme
     return cal
 
@@ -156,7 +171,7 @@ class PKECalibrationData:
 
   def avg_runtime_table(self) -> RuntimeTable:
     table = {}
-    for (event, runtimes) in self.samples.items():
+    for (event, runtimes) in self.runtime_samples.items():
       table[event] = sum(runtimes) // len(runtimes)
 
     return RuntimeTable(table, self.scheme.name == "BFV")
@@ -170,12 +185,12 @@ class PKECalibrationData:
     
     def key_eq(k: Event) -> bool:
       return  isinstance(value, PKECalibrationData) and \
-              k in self.samples and k in value.samples and \
-              sorted(self.samples[k]) == value.samples[k]
+              k in self.runtime_samples and k in value.runtime_samples and \
+              sorted(self.runtime_samples[k]) == value.runtime_samples[k]
 
     return isinstance(value, PKECalibrationData) and \
-           all(key_eq(k) for k in self.samples.keys()) and \
-           all(key_eq(k) for k in value.samples.keys())
+           all(key_eq(k) for k in self.runtime_samples.keys()) and \
+           all(key_eq(k) for k in value.runtime_samples.keys())
 
 class RuntimeSample:
   def __init__(self, label: Event, samples: PKECalibrationData, on_exit: Callable[[int], None] | None = None) -> None:
@@ -189,7 +204,7 @@ class RuntimeSample:
   def __exit__(self, exc_type, exc_value, traceback):
     end = time.perf_counter_ns()
     t = end - self.begin
-    self.samples.add_sample(self.label, t)
+    self.samples.add_runtime_sample(self.label, t)
     if self.on_exit is not None:
       self.on_exit(t)
 
@@ -294,6 +309,9 @@ class PKECalibration:
 
   def calibrate_base(self) -> PKECalibrationData:
     samples = PKECalibrationData(self.scheme)
+    ct_mem: dict[LevelInfo, int] = {} 
+    pt_mem: dict[LevelInfo, int] = {} 
+
     def measure(label: EventKind, a1: LevelInfo | None = None, a2: LevelInfo | None = None):
       if a1 is None and a2 is None:
         self.log(f"Measuring {label}")
@@ -311,6 +329,7 @@ class PKECalibration:
 
     cc = self.cc
     key_pair = self.key_pair
+
 
     max_mult_depth = self.params.GetMultiplicativeDepth()
     self.log(f"Max multiplicative depth: {max_mult_depth}")
@@ -347,8 +366,16 @@ class PKECalibration:
         with measure(EventKind.DECODE, level):
           self.decode(pt)
 
+        if level not in ct_mem:
+          ct_size = dioptra_native.ciphertext_size(ct)
+          self.log(f"Ciphertext {level}: {ct_size}")
+          ct_mem[level] = ct_size
 
-      self.log(f"{list(self.level_pairs_comm())}")
+        if level not in pt_mem:
+          pt_size = dioptra_native.plaintext_size(pt)
+          self.log(f"Plaintext {level}: {pt_size}")
+          pt_mem[level] = pt_size
+
       for (level1, level2) in self.level_pairs_comm():
           pt = self.scheme.arbitrary_pt(self.cc, level2)
           ct1 = self.scheme.arbitrary_ct(self.cc, self.key_pair.publicKey, level1)
@@ -372,6 +399,7 @@ class PKECalibration:
           with measure(EventKind.EVAL_ADD_CTPT, level1, level2):
             cc.EvalSub(ct1, pt)
 
+    samples.set_memory_tables(pt_mem, ct_mem)
     return samples
   
   def calibrate(self) -> PKECalibrationData:
