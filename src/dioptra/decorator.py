@@ -9,13 +9,19 @@ import runpy
 import sys
 from typing import Callable, OrderedDict
 
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.analyzer.binfhe import memory
+from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
 from dioptra.analyzer.binfhe.calibration import BinFHECalibration, BinFHECalibrationData
-from dioptra.analyzer.binfhe.runtime import RuntimeAnnotation, RuntimeEstimate, RuntimeTotal
+from dioptra.analyzer.binfhe.memory import BinFHEMemoryEstimate
+from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
 from dioptra.analyzer.calibration import PKECalibration, PKECalibrationData
 from dioptra.analyzer.metrics.analysisbase import Analyzer
+from dioptra.analyzer.metrics.memory import PKEMemoryEstimate, PKEMemoryEstimate
 from dioptra.analyzer.metrics.runtime import Runtime
-from dioptra.analyzer.utils.util import format_ns
+from dioptra.analyzer.report.memory import MemoryMaxReport
+from dioptra.analyzer.report.runtime import RuntimeAnnotation, RuntimeTotal
+from dioptra.analyzer.utils.code_loc import TraceLoc
+from dioptra.analyzer.utils.util import format_bytes, format_ns, format_ns_approx
 from dioptra.visualization.annotation import annotate_lines
 
 # TODO: does this belong somewhere accessible more places
@@ -103,19 +109,25 @@ def report_main(sample_file: str, files: list[str]) -> None:
 
   for case in estimation_cases.values():
     runtime = None
+    maxmem = MemoryMaxReport()
     if case.schemetype == SchemeType.PKE and isinstance(calibration, PKECalibrationData):
       runtime_analysis = Runtime(calibration)
-      analyzer = Analyzer([runtime_analysis], calibration.get_scheme())
-      case.run(analyzer)
-      runtime = runtime_analysis.total_runtime
+      memory_analysis = PKEMemoryEstimate(calibration.setup_memory_size, calibration.ct_mem, calibration.pt_mem, maxmem)
+
+      with TraceLoc() as tloc:
+        analyzer = Analyzer([runtime_analysis, memory_analysis], calibration.get_scheme(), tloc)
+        case.run(analyzer)
+        runtime = runtime_analysis.total_runtime
 
     elif case.schemetype == SchemeType.BINFHE and isinstance(calibration, BinFHECalibrationData):
       avg_runtime = calibration.avg_case()
       total = RuntimeTotal()
-      est = RuntimeEstimate(avg_runtime, total)
-      analyzer = BinFHEAnalyzer(calibration.params, est)
-      case.run(analyzer)
-      runtime = total.total_runtime
+      runtime_analysis = RuntimeEstimate(avg_runtime, total)
+      memory_analysis = BinFHEMemoryEstimate(calibration.setup_memory_size, calibration.ciphertext_size, maxmem)
+      with TraceLoc() as tloc:
+        analyzer = BinFHEAnalyzer(calibration.params, BinFHEAnalysisGroup([runtime_analysis, memory_analysis]), tloc)
+        case.run(analyzer)
+        runtime = total.total_runtime
 
     else:
       print(f"[FAIL---] {case.description}: Cannot run case with this calibration data")
@@ -132,7 +144,10 @@ def report_main(sample_file: str, files: list[str]) -> None:
     else:
       status = "[TIMEOUT]"
 
-    print(f"{status} {case.description} ... { format_ns(runtime) }")
+    total = maxmem.max_value_size + maxmem.setup_size
+    print(f"{status } {case.description}")
+    print(f"  Runtime:     { format_ns_approx(runtime) }")
+    print(f"  Max Memory:  { format_bytes(total) }")
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
   calibration = load_calibration_data(sample_file)

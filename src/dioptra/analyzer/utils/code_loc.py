@@ -1,6 +1,7 @@
 import inspect
 import dis
-from typing import Iterable, Self
+import sys
+from typing import Any, Iterable, Self
 
 class SourceLocation:
     def __init__(self, filename: str, loc: dis.Positions):
@@ -70,7 +71,7 @@ class Frame:
     
     def source_location(self) -> SourceLocation:
         if self.positions is None:
-            return SourceLocation.UNKNOWN
+            return SourceLocation.unknown()
         else:
             return SourceLocation(self.filename, self.positions)
         
@@ -91,13 +92,32 @@ def calling_frame() -> Frame | None:
     else: 
         return Frame(cur_frame.f_back).caller()
 
-# def _trace(frame: any, event: str, arg: any):
-#     if event == 'call':
-#         caller = frame.f_back
-#         print(f"calling {frame.f_code.co_qualname} at {frame_loc(caller)}")
 
-#     if event == 'return' and frame.f_back is not None:
-#         caller = frame.f_back
-#         print(f"return from {frame.f_code.co_qualname} to {caller.f_code.co_qualname} at {frame_loc(caller)}")
+class TraceLoc:
+    def __init__(self):
+        self.stack = []
+        self.prev_trace = None
 
-#     return _trace
+    def __enter__(self):
+        self.prev_trace = sys.gettrace()
+        sys.settrace(self.trace)
+        TraceLoc.current_traceloc = self
+
+    def __exit__(self, type, val, tb):
+        sys.settrace(self.prev_trace)
+
+    def get_current_frame(self) -> Frame | None:
+        if len(self.stack) == 0:
+            return None
+        
+        return Frame(self.stack[-1])
+
+    def trace(self, frame, event: str, arg: Any):
+        if event == 'call':
+            frame.f_trace_lines = False
+            self.stack.append(frame)
+
+        if event == 'return':
+            self.stack.pop()
+
+        return self.trace

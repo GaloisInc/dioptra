@@ -5,6 +5,7 @@ from typing import IO, Any, Callable
 import openfhe
 
 import dioptra_native
+import psutil
 from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
 from dioptra.analyzer.binfhe.params import BinFHEParams
 from dioptra.analyzer.utils.util import format_ns
@@ -14,6 +15,7 @@ class BinFHECalibrationData:
     self.runtime_samples : dict[BinFHEEvent, list[int]] = {}
     self.params = params
     self.ciphertext_size: int = 0
+    self.setup_memory_size: int = 0
 
   def set_ciphertext_size(self, ctsize: int):
     self.ciphertext_size = ctsize
@@ -23,6 +25,9 @@ class BinFHECalibrationData:
       self.runtime_samples[event] = []
 
     self.runtime_samples[event].append(runtime)
+
+  def set_setup_memory_estimate(self, size: int) -> None:
+    self.setup_memory_size = size
 
   def avg_case(self) -> dict[BinFHEEvent, int]:
     return dict([(e, sum(s) // len(s)) for (e, s) in self.runtime_samples.items()])
@@ -37,7 +42,10 @@ class BinFHECalibrationData:
     return {
       "scheme": scheme,
       "runtime_samples": runtime_samples,
-      "memory": {"ciphertext_size": self.ciphertext_size }
+      "memory": {
+        "ciphertext": self.ciphertext_size, 
+        "setup": self.setup_memory_size,
+      }
     }
     
   @staticmethod
@@ -46,7 +54,8 @@ class BinFHECalibrationData:
     params = BinFHEParams.from_dict(d["scheme"]["params"])
     cd = BinFHECalibrationData(params)
     cd.runtime_samples = dict([(BinFHEEvent.from_dict(e), s) for (e, s) in d["runtime_samples"]])
-    cd.ciphertext_size = d["memory"]["ciphertext_size"]
+    cd.ciphertext_size = d["memory"]["ciphertext"]
+    cd.setup_memory_size = d["memory"]["setup"]
     return cd
   
   def write_json(self, file: str) -> None:
@@ -93,6 +102,9 @@ class BinFHECalibration:
   def run(self) -> BinFHECalibrationData:
     params = BinFHEParams(self.cc.Getn(), self.cc.Getq(), self.cc.GetBeta())
     data = BinFHECalibrationData(params)
+    setup_size = psutil.Process().memory_info().rss
+    data.set_setup_memory_estimate(setup_size)
+
 
     def measure(e: BinFHEEvent):
       self.log(f"Measuring {e}")
