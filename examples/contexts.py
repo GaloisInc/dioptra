@@ -54,6 +54,57 @@ def ckks1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS, ofhe.KeyPair, lis
     return (cryptocontext, parameters, key_pair, features)
 
 @dioptra_context()
+def ckks_small1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS, ofhe.KeyPair, list[ofhe.PKESchemeFeature]]:
+    parameters = ofhe.CCParamsCKKSRNS()
+
+    secret_key_dist = ofhe.SecretKeyDist.UNIFORM_TERNARY
+    parameters.SetSecretKeyDist(secret_key_dist)
+
+    parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_NotSet)
+    parameters.SetRingDim(1<<12)
+
+    if ofhe.get_native_int()==128:
+        rescale_tech = ofhe.ScalingTechnique.FIXEDAUTO
+        dcrt_bits = 78
+        first_mod = 89
+    else:
+        rescale_tech = ofhe.ScalingTechnique.FLEXIBLEAUTO
+        dcrt_bits = 59
+        first_mod = 60
+    
+    parameters.SetScalingModSize(dcrt_bits)
+    parameters.SetScalingTechnique(rescale_tech)
+    parameters.SetFirstModSize(first_mod)
+
+    level_budget = [4, 4]
+
+    levels_available_after_bootstrap = 10
+
+    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist)
+
+    parameters.SetMultiplicativeDepth(depth)
+
+    cryptocontext = ofhe.GenCryptoContext(parameters)
+
+    features = [
+        ofhe.PKESchemeFeature.PKE,
+        ofhe.PKESchemeFeature.KEYSWITCH,
+        ofhe.PKESchemeFeature.LEVELEDSHE,
+        ofhe.PKESchemeFeature.ADVANCEDSHE,
+        ofhe.PKESchemeFeature.FHE,
+    ]
+
+    for feature in features:
+        cryptocontext.Enable(feature)
+
+    cryptocontext.EvalBootstrapSetup(level_budget)
+
+    key_pair = cryptocontext.KeyGen()
+    cryptocontext.EvalMultKeyGen(key_pair.secretKey)
+    cryptocontext.EvalBootstrapKeyGen(key_pair.secretKey, parameters.GetRingDim() >> 1)
+    return (cryptocontext, parameters, key_pair, features)
+
+@dioptra_context()
 def bfv1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsBFVRNS, ofhe.KeyPair, list[ofhe.PKESchemeFeature]]:
     # Sample Program: Step 1: Set CryptoContext
     parameters = ofhe.CCParamsBFVRNS()
@@ -115,22 +166,3 @@ def binfhe1():
 
     return (cc, sk)
 
-
-def bfv_mult():
-    (cc, _, kp, _) = bfv1()
-    def mkct(v):
-        pt = cc.MakePackedPlaintext(v)
-        return cc.Encrypt(kp.publicKey, pt)
-    
-    def mul_lv(c1, c2, s):
-        result = cc.EvalMult(c1, c2)
-        print(f"{s} -- arg1 level: {c1.GetLevel()}  arg2 level: {c2.GetLevel()}  result level: {result.GetLevel()}")
-        return result
-    
-    c1 = mkct([1,2,3,4])
-    c2 = mkct([3,2,1,4])
-    c3 = mkct([5,3,4,5])
-
-    r = mul_lv(c1, c2, "r = c1 * c2")
-    r2 = mul_lv(r, c3, "r2 = r * c3")
-    r3 = mul_lv(r2, r2, "r3 = r2 * r2")

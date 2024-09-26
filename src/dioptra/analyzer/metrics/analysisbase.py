@@ -3,7 +3,7 @@ from typing import Any, Callable, Iterable, Self, Sequence, TypeVar
 import weakref
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelPke
 from dioptra.analyzer.utils import code_loc
-from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.analyzer.utils.code_loc import Frame, TraceLoc
 import dis
 import os.path
 
@@ -129,9 +129,9 @@ class AnalysisBase:
         pass
     def trace_alloc_pt(self, pt: Plaintext, call_loc: Frame|None) -> None:
         pass
-    def trace_dealloc_ct(self, vid: int, level: LevelInfo) -> None:
+    def trace_dealloc_ct(self, vid: int, level: LevelInfo, call_loc: Frame|None) -> None:
         pass
-    def trace_dealloc_pt(self, vid: int, level: LevelInfo) -> None:
+    def trace_dealloc_pt(self, vid: int, level: LevelInfo, call_loc: Frame|None) -> None:
         pass
 
     def anotate_metric(self) -> None:
@@ -158,9 +158,10 @@ class AnalysisBase:
 class Analyzer:
     analysis_list : list[AnalysisBase]
 
-    def __init__(self, analysis_list: list[AnalysisBase], scheme: SchemeModelPke):
+    def __init__(self, analysis_list: list[AnalysisBase], scheme: SchemeModelPke, trace_loc: TraceLoc|None = None):
         self.analysis_list = analysis_list
         self.scheme = scheme
+        self.trace_loc = trace_loc
 
     def KeyGen(self) -> KeyPair:
         return KeyPair(PrivateKey(), PublicKey())
@@ -281,12 +282,20 @@ class Analyzer:
         f(self, args, kwargs)
 
     def _dealloc_ct(self, vid: int, level: LevelInfo) -> None:
+        loc = None
+        if self.trace_loc is not None:
+            loc = self.trace_loc.get_current_frame()
+
         for analysis in self.analysis_list:
-            analysis.trace_dealloc_ct(vid, level)
+            analysis.trace_dealloc_ct(vid, level, loc)
 
     def _dealloc_pt(self, vid: int, level: LevelInfo) -> None:
+        loc = None
+        if self.trace_loc is not None:
+            loc = self.trace_loc.get_current_frame()
+
         for analysis in self.analysis_list:
-            analysis.trace_dealloc_pt(vid, level)
+            analysis.trace_dealloc_pt(vid, level, loc)
 
     def _mk_ct(self, level: LevelInfo, value: Any, loc: Frame|None) -> Ciphertext:
         ct = Ciphertext(level=level, value=value)

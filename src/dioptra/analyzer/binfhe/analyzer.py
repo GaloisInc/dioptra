@@ -5,7 +5,7 @@ from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
 import openfhe
 
 from dioptra.analyzer.utils import code_loc
-from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.analyzer.utils.code_loc import Frame, TraceLoc
 from dioptra.error import NotSupportedException
 
 class BinFHEAnalysisBase:
@@ -27,7 +27,7 @@ class BinFHEAnalysisBase:
   def trace_alloc_ct(self, dest: LWECiphertext, loc: Frame | None) -> None:
     pass
 
-  def trace_dealloc_ct(self, vid: int) -> None:
+  def trace_dealloc_ct(self, vid: int, loc: Frame | None) -> None:
     pass
 
 class BinFHEAnalysisGroup(BinFHEAnalysisBase):
@@ -58,16 +58,17 @@ class BinFHEAnalysisGroup(BinFHEAnalysisBase):
     for a in self.analyses:
       a.trace_alloc_ct(dest, loc)
 
-  def trace_dealloc_ct(self, vid: int) -> None:
+  def trace_dealloc_ct(self, vid: int, loc: Frame|None) -> None:
     for a in self.analyses:
-      a.trace_dealloc_ct(vid)
+      a.trace_dealloc_ct(vid, loc)
     
 
 # TODO: figure out plaintext modulus for p != 4
 class BinFHEAnalyzer:
-  def __init__(self, params: BinFHEParams, analysis: BinFHEAnalysisBase) -> None:
+  def __init__(self, params: BinFHEParams, analysis: BinFHEAnalysisBase, trace: TraceLoc|None = None) -> None:
     self.params = params
     self.analysis = analysis
+    self.trace = trace
 
   def _unsupported_feature_msg(self, feature: str) -> str:
     return f"{feature} is not supported for estimation in the current version of dioptra"
@@ -164,7 +165,10 @@ class BinFHEAnalyzer:
     return LWEPrivateKey(self.params.n)
   
   def _dealloc_ct(self, vid: int):
-    self.analysis.trace_dealloc_ct(vid)
+    loc = None
+    if self.trace is not None:
+      loc = self.trace.get_current_frame()
+    self.analysis.trace_dealloc_ct(vid, loc)
 
   def _mk_ct(self, value: int, loc: Frame|None) -> LWECiphertext:
     new = LWECiphertext(self.params.n, self.params.q, value, 4)

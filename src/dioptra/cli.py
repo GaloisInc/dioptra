@@ -30,7 +30,7 @@ def estimate() -> None:
 @click.argument("file", type=click.Path(exists=True), required=True)
 @click.option("--cd", type=click.Path(exists=True), required=True, help="file containing calibration data to use for the estimate")
 def report(file: Path, cd: Path) -> None:
-    """Estimate FHE runtime for decorated functions.
+    """Estimate FHE runtime and memory usage for decorated functions.
     
     FILE is the python file to look for functions decorated with
     "@dioptra_runtime" or "@dioptra_binfhe_runtime"

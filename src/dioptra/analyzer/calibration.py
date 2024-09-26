@@ -4,6 +4,7 @@ from typing import Any, Callable, Iterable, TextIO
 import enum
 import json
 import dioptra_native
+import psutil
 
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelBFV, SchemeModelBGV, SchemeModelCKKS, SchemeModelPke
 from dioptra.analyzer.utils.util import format_ns
@@ -112,6 +113,7 @@ class PKECalibrationData:
     self.scheme : SchemeModelPke = scheme
     self.ct_mem : dict[LevelInfo, int] = {}
     self.pt_mem : dict[LevelInfo, int] = {}
+    self.setup_memory_size = 0
     
   def set_memory_tables(self, pt_data: dict[LevelInfo, int] = {}, ct_data: dict[LevelInfo, int] = {}) -> None:
     self.ct_mem = ct_data
@@ -119,6 +121,9 @@ class PKECalibrationData:
 
   def set_plaintext_memory_dict(self, data: dict[LevelInfo, int] = {}) -> None:
     self.pt_mem = data
+
+  def set_setup_memory_estimate(self, size: int) -> None:
+    self.setup_memory_size = size
 
   def add_runtime_sample(self, e: Event, ns: int) -> None:
     if e not in self.runtime_samples:
@@ -143,6 +148,7 @@ class PKECalibrationData:
       "memory": {
         "ciphertext": ct_mems,
         "plaintext": pt_mems,
+        "setup": self.setup_memory_size,
       }
     }
 
@@ -156,6 +162,7 @@ class PKECalibrationData:
     cal.runtime_samples = dict(evts)
     cal.pt_mem = dict(pt_mems)
     cal.ct_mem = dict(ct_mems)
+    cal.setup_memory_size = obj["memory"]["setup"]
     cal.scheme = scheme
     return cal
 
@@ -308,7 +315,9 @@ class PKECalibration:
 
 
   def calibrate_base(self) -> PKECalibrationData:
+    setup_size = psutil.Process().memory_info().rss
     samples = PKECalibrationData(self.scheme)
+    samples.set_setup_memory_estimate(setup_size)
     ct_mem: dict[LevelInfo, int] = {} 
     pt_mem: dict[LevelInfo, int] = {} 
 
