@@ -3,7 +3,7 @@ from functools import reduce
 import time
 from typing import Callable, Iterable
 
-from dioptra.analyzer.metrics.analysisbase import Analyzer, Ciphertext
+from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
 from openfhe import CryptoContext
 
 from dioptra.decorator import dioptra_runtime

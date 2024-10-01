@@ -4,8 +4,8 @@ import openfhe as ofhe
 from dioptra.analyzer.calibration import PKECalibrationData
 import sys
 
-from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.runtime import Runtime
+from dioptra.analyzer.pke.analysisbase import Analyzer
+from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.analyzer.scheme import PkeSchemeModels
 

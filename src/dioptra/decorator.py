@@ -15,9 +15,9 @@ from dioptra.analyzer.binfhe.calibration import BinFHECalibration, BinFHECalibra
 from dioptra.analyzer.binfhe.memory import BinFHEMemoryEstimate
 from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
 from dioptra.analyzer.calibration import PKECalibration, PKECalibrationData
-from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.memory import PKEMemoryEstimate, PKEMemoryEstimate
-from dioptra.analyzer.metrics.runtime import Runtime
+from dioptra.analyzer.pke.analysisbase import Analyzer
+from dioptra.analyzer.pke.memory import PKEMemoryEstimate, PKEMemoryEstimate
+from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.report.memory import MemoryMaxReport
 from dioptra.analyzer.report.runtime import RuntimeAnnotation, RuntimeTotal
 from dioptra.analyzer.utils.code_loc import TraceLoc

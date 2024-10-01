@@ -1,6 +1,6 @@
-from dioptra.analyzer.metrics.analysisbase import Analyzer, Value, Ciphertext, Plaintext
-from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.metrics.runtime import Runtime
+from dioptra.analyzer.pke.analysisbase import Analyzer, Value, Ciphertext, Plaintext
+from dioptra.analyzer.pke.multdepth import MultDepth
+from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.calibration import PKECalibrationData, format_ns
 import openfhe
 import time
