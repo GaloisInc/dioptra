@@ -1,5 +1,5 @@
-from dioptra.analyzer.metrics.analysisbase import Analyzer, Ciphertext
-from dioptra.analyzer.metrics.multdepth import MultDepth
+from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
+from dioptra.analyzer.pke.multdepth import MultDepth
 
 def runexample(fun) -> None:#type: ignore
     md = MultDepth()
