@@ -4,8 +4,9 @@ from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.analyzer.binfhe.value import LWECiphertext
 from dioptra.decorator import dioptra_binfhe_runtime
 
+
 def simple_circuit(cc: ofhe.CryptoContext, ct1: LWECiphertext, ct2: LWECiphertext):
-# Sample Program: Step 4: Evaluation
+    # Sample Program: Step 4: Evaluation
 
     # Compute (1 AND 1) = 1; Other binary gate options are OR, NAND, and NOR
     ctAND1 = cc.EvalBinGate(ofhe.AND, ct1, ct2)
@@ -19,6 +20,7 @@ def simple_circuit(cc: ofhe.CryptoContext, ct1: LWECiphertext, ct2: LWECiphertex
     # Compute OR of the result in ctAND1 and ctAND2
     return cc.EvalBinGate(ofhe.OR, ctAND1, ctAND2)
 
+
 @dioptra_binfhe_runtime()
 def est_simple_circuit(cc: BinFHEAnalyzer):
     sk = cc.KeyGen()
@@ -27,6 +29,7 @@ def est_simple_circuit(cc: BinFHEAnalyzer):
     result_ct = simple_circuit(cc, ct1, ct2)
     result_plain = cc.Decrypt(sk, result_ct)
     assert result_plain == 1
+
 
 def main():
     ## Sample Program: Step 1: Set CryptoContext
@@ -39,7 +42,7 @@ def main():
     MEDIUM corresponds to the level of more than 100 bits for both quantum and
     classical computer attacks
     """
-    cc.GenerateBinFHEContext(ofhe.STD128,ofhe.GINX)
+    cc.GenerateBinFHEContext(ofhe.STD128, ofhe.GINX)
 
     ## Sample Program: Step 2: Key Generation
 
