@@ -7,8 +7,6 @@ from pathlib import Path
 from dioptra import decorator
 from dioptra.analyzer import calibration
 
-from .core.openfhe_script import OpenFHEScript
-
 
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
