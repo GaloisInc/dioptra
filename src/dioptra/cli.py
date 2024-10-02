@@ -8,7 +8,6 @@ from dioptra import decorator
 from dioptra.analyzer import calibration
 
 from .core.openfhe_script import OpenFHEScript
-from .run import passthrough
 
 
 logger = logging.getLogger(__name__)
