@@ -10,28 +10,45 @@ from dioptra.decorator import dioptra_runtime
 
 from typing import Self
 
+
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
     return cc.EvalMult(input, input)
 
-class NN():
-    def __init__(self, cc: ofhe.CryptoContext, weights: list[list[ofhe.Ciphertext]], biases: list[ofhe.Ciphertext]) -> Self:
+
+class NN:
+    def __init__(
+        self,
+        cc: ofhe.CryptoContext,
+        weights: list[list[ofhe.Ciphertext]],
+        biases: list[ofhe.Ciphertext],
+    ) -> Self:
         self.num_layers = len(weights)
         self.num_hidden_layers = len(weights[0])
-        self.num_inputs =len(weights[0][0])
+        self.num_inputs = len(weights[0][0])
 
         self.weights = weights
         self.biases = biases
 
-    def hidden_layer(self, cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], layer_num: int, hidden_layer_num: int):
+    def hidden_layer(
+        self,
+        cc: ofhe.CryptoContext,
+        x: list[ofhe.Ciphertext],
+        layer_num: int,
+        hidden_layer_num: int,
+    ):
         l = len(x)
         sum = cc.MakeCKKSPackedPlaintext([0])
         for i in range(l):
             weighted = cc.EvalMult(x[i], self.weights[layer_num][hidden_layer_num][i])
-            weighted_bias = cc.EvalAdd(weighted, self.biases[layer_num][hidden_layer_num])
+            weighted_bias = cc.EvalAdd(
+                weighted, self.biases[layer_num][hidden_layer_num]
+            )
             sum = cc.EvalAdd(weighted_bias, sum)
         return nn_activation(cc, sum)
-    
-    def neuron(self, cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], layer_num: int) -> ofhe.Ciphertext:
+
+    def neuron(
+        self, cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], layer_num: int
+    ) -> ofhe.Ciphertext:
         l = len(x)
         assert l == self.num_inputs
 
@@ -50,15 +67,39 @@ class NN():
             input = layer_out
         return input
 
-def rand_nn(cc: ofhe.CryptoContext, num_layers: int, num_hidden_layers: int, num_inputs: int) -> Self:
-        weights = [[[cc.MakeCKKSPackedPlaintext([i]) for i in range(num_inputs)] for _ in range(num_hidden_layers)] for _ in range(num_layers)]
-        biases = [[cc.MakeCKKSPackedPlaintext([0.0]) for _ in range(num_hidden_layers)] for _ in range(num_layers)]
-        return (weights, biases)
 
-def make_w_b(cc: ofhe.CryptoContext, weights: list[list[list[float]]], biases: list[list[float]]) -> Self:
-        weights_plt = [[[cc.MakeCKKSPackedPlaintext([w]) for w in weights[i][j]] for j in range(len(weights[i]))] for i in range(len(weights))]
-        biases_plt = [[cc.MakeCKKSPackedPlaintext([b]) for b in biases[i]] for i in range(len(biases))]
-        return (weights_plt, biases_plt)
+def rand_nn(
+    cc: ofhe.CryptoContext, num_layers: int, num_hidden_layers: int, num_inputs: int
+) -> Self:
+    weights = [
+        [
+            [cc.MakeCKKSPackedPlaintext([i]) for i in range(num_inputs)]
+            for _ in range(num_hidden_layers)
+        ]
+        for _ in range(num_layers)
+    ]
+    biases = [
+        [cc.MakeCKKSPackedPlaintext([0.0]) for _ in range(num_hidden_layers)]
+        for _ in range(num_layers)
+    ]
+    return (weights, biases)
+
+
+def make_w_b(
+    cc: ofhe.CryptoContext, weights: list[list[list[float]]], biases: list[list[float]]
+) -> Self:
+    weights_plt = [
+        [
+            [cc.MakeCKKSPackedPlaintext([w]) for w in weights[i][j]]
+            for j in range(len(weights[i]))
+        ]
+        for i in range(len(weights))
+    ]
+    biases_plt = [
+        [cc.MakeCKKSPackedPlaintext([b]) for b in biases[i]] for i in range(len(biases))
+    ]
+    return (weights_plt, biases_plt)
+
 
 def train(cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], num_layers):
     print("Running NN..")
@@ -70,6 +111,7 @@ def train(cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], num_layers):
     result = nn.forward(cc, x)
     return result
 
+
 # make a cryptocontext and return the context and the parameters used to create it
 def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     print("Setting up FHE program..")
@@ -79,9 +121,9 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     parameters.SetSecretKeyDist(secret_key_dist)
 
     parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_128_classic)
-    parameters.SetRingDim(1<<17)
+    parameters.SetRingDim(1 << 17)
 
-    if ofhe.get_native_int()==128:
+    if ofhe.get_native_int() == 128:
         rescale_tech = ofhe.ScalingTechnique.FIXEDAUTO
         dcrt_bits = 78
         first_mod = 89
@@ -89,7 +131,7 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
         rescale_tech = ofhe.ScalingTechnique.FLEXIBLEAUTO
         dcrt_bits = 59
         first_mod = 60
-    
+
     parameters.SetScalingModSize(dcrt_bits)
     parameters.SetScalingTechnique(rescale_tech)
     parameters.SetFirstModSize(first_mod)
@@ -98,7 +140,9 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
 
     levels_available_after_bootstrap = 10
 
-    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist)
+    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(
+        level_budget, secret_key_dist
+    )
 
     parameters.SetMultiplicativeDepth(depth)
 
@@ -112,6 +156,7 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     cryptocontext.EvalBootstrapSetup(level_budget)
     print("Setup complete..")
     return (cryptocontext, parameters)
+
 
 # Actually run program and time it
 def main():
@@ -129,7 +174,7 @@ def main():
     for x in xs_pt:
         x.SetLength(1)
     xs_ct = [cc.Encrypt(key_pair.publicKey, x_pt) for x_pt in xs_pt]
-    
+
     # time and run the program
     start_ns = time.time_ns()
     results = train(cc, xs_ct, num_layers)
@@ -141,8 +186,9 @@ def main():
         result.SetLength(1)
         results_unpacked.append(result.GetCKKSPackedValue())
     print(results_unpacked)
-    
+
     print(f"Actual runtime: {format_ns(end_ns - start_ns)}")
+
 
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
@@ -151,5 +197,6 @@ def report_runtime(cc: Analyzer):
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
     train(cc, xs_ct, num_layers)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -11,8 +11,13 @@ from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
-def matrix_mult(cc: ofhe.CryptoContext, x: list[list[ofhe.Ciphertext]],  y: list[list[ofhe.Ciphertext]]):
-    assert len(x[0]) == len(y) 
+
+def matrix_mult(
+    cc: ofhe.CryptoContext,
+    x: list[list[ofhe.Ciphertext]],
+    y: list[list[ofhe.Ciphertext]],
+):
+    assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 
     rows = len(x)
@@ -29,6 +34,7 @@ def matrix_mult(cc: ofhe.CryptoContext, x: list[list[ofhe.Ciphertext]],  y: list
             result[i][j] = sum
     return result
 
+
 # make a cryptocontext and return the context and the parameters used to create it
 def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     print("Setting up FHE program..")
@@ -38,9 +44,9 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     parameters.SetSecretKeyDist(secret_key_dist)
 
     parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_128_classic)
-    parameters.SetRingDim(1<<17)
+    parameters.SetRingDim(1 << 17)
 
-    if ofhe.get_native_int()==128:
+    if ofhe.get_native_int() == 128:
         rescale_tech = ofhe.ScalingTechnique.FIXEDAUTO
         dcrt_bits = 78
         first_mod = 89
@@ -48,7 +54,7 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
         rescale_tech = ofhe.ScalingTechnique.FLEXIBLEAUTO
         dcrt_bits = 59
         first_mod = 60
-    
+
     parameters.SetScalingModSize(dcrt_bits)
     parameters.SetScalingTechnique(rescale_tech)
     parameters.SetFirstModSize(first_mod)
@@ -57,7 +63,9 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
 
     levels_available_after_bootstrap = 10
 
-    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist)
+    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(
+        level_budget, secret_key_dist
+    )
 
     parameters.SetMultiplicativeDepth(depth)
 
@@ -72,10 +80,11 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     print("Setup complete..")
     return (cryptocontext, parameters)
 
+
 # Actually run program and time it
 def main():
     rows = 5
-    cols = 5 
+    cols = 5
     (cc, _) = setup_context()
 
     # do some additional setup for openfhe that is key dependent
@@ -106,7 +115,7 @@ def main():
     start_ns = time.time_ns()
     result_ct = matrix_mult(cc, x_ct, y_ct)
     end_ns = time.time_ns()
-    
+
     rows = len(xs)
     cols = len(ys[0])
     result = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
@@ -116,17 +125,18 @@ def main():
             result_dec.SetLength(1)
             result[i][j] = result_dec.GetCKKSPackedValue()
         print(result[i])
-    
+
     print(f"Actual runtime: {format_ns(end_ns - start_ns)}")
+
 
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
     rows = 5
-    cols = 5  
+    cols = 5
     x_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
     y_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
     matrix_mult(cc, x_ct, y_ct)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

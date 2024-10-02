@@ -13,7 +13,6 @@ import dis
 
 
 class Runtime(AnalysisBase):
-
     def __init__(self, runtime_samples: PKECalibrationData) -> None:
         self.total_runtime = 0
         self.runtime_table = runtime_samples.avg_runtime_table()
