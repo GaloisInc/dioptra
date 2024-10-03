@@ -17,14 +17,10 @@ RUN apt-get update && apt-get install -y \
 # Python tools we need
 RUN pip3 install --no-cache-dir \
                  "pybind11[global]" \
-                 jupyterlab \
                  mypy \
                  ruff \
                  pytest \
                  --break-system-packages
-
-
-
 
 # OpenFHE C++ bindings
 RUN git clone https://github.com/openfheorg/openfhe-development.git \
