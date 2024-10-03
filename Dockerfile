@@ -17,7 +17,6 @@ RUN apt-get update && apt-get install -y \
 # Python tools we need
 RUN pip3 install --no-cache-dir \
                  "pybind11[global]" \
-                 jupyterlab \
                  mypy \
                  ruff \
                  pytest \
@@ -31,7 +30,6 @@ RUN git clone https://github.com/openfheorg/openfhe-development.git \
     && cmake -DBUILD_UNITTESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BENCHMARKS=OFF .. \
     && make -j$(nproc) \
     && make install
-ENV LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 # OpenFHE Python bindings
 RUN git clone https://github.com/openfheorg/openfhe-python.git \
@@ -40,19 +38,8 @@ RUN git clone https://github.com/openfheorg/openfhe-python.git \
     && cd build \
     && cmake .. \
     && make -j$(nproc) \
-    && make install
+    && mkdir /usr/local/lib/openfhe-python \
+    && chmod 755 *.so \
+    && cp *.so /usr/local/lib/openfhe-python
 
-# Install Dioptra
-WORKDIR /dioptra
-COPY pyproject.toml ./pyproject.toml
-COPY src ./src
-COPY tests ./tests
-COPY README.md ./README.md
-RUN pip3 install . --break-system-packages
-
-# Move to a fresh workspace
-WORKDIR /workspace
-
-# Jupyterlab port & default command
-EXPOSE 8888
-CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.allow_origin='*'", "--NotebookApp.password=''", "--NotebookApp.password_required=False"]
+ENV PYTHONPATH=/usr/local/lib/openfhe-python
