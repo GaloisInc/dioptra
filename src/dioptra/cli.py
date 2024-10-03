@@ -28,39 +28,47 @@ def estimate() -> None:
 @estimate.command()
 @click.argument("file", type=click.Path(exists=True), required=True)
 @click.option(
-    "--cd",
+    "--calibration-data",
+    "-cd",
     type=click.Path(exists=True),
     required=True,
     help="File containing calibration data to use for the estimate.",
 )
-def report(file: Path, cd: Path) -> None:
+def report(file: Path, calibration_data: Path) -> None:
     """Estimate FHE runtime and memory usage for decorated functions.
 
     FILE is the python file to look for functions decorated with
     "@dioptra_runtime" or "@dioptra_binfhe_runtime".
     """
-    decorator.report_main(str(cd), [str(file)])
+    decorator.report_main(str(calibration_data), [str(file)])
 
 
 @estimate.command()
 @click.argument("file", type=click.Path(exists=True), required=True)
 @click.option(
-    "--cd",
+    "--calibration-data",
+    "-cd",
     type=click.Path(exists=True),
     required=True,
     help="File containing calibration data to use for the estimate.",
 )
-@click.option("-o", type=click.Path(), required=True, help="Output file name.")
 @click.option(
-    "--case", type=str, required=True, help="Name of the estimation case to run."
+    "--output", "-o", type=click.Path(), required=True, help="Output file name."
 )
-def annotate(file: Path, cd: Path, case: str, o: Path) -> None:
+@click.option(
+    "--name",
+    "-n",
+    type=str,
+    required=True,
+    help="Name of the estimation case to annotate.",
+)
+def annotate(file: Path, calibration_data: Path, name: str, output: Path) -> None:
     """Annotate a Python source file with estimated FHE runtimes.
 
     FILE is the python file to look for functions decorated with
     "@dioptra_runtime" or "@dioptra_binfhe_runtime".
     """
-    decorator.annotate_main(str(cd), str(file), case, str(o))
+    decorator.annotate_main(str(calibration_data), str(file), name, str(output))
 
 
 @cli.group()
@@ -73,11 +81,13 @@ def context() -> None:
 @click.argument("file", type=click.Path(exists=True), required=True)
 @click.option(
     "--name",
+    "-n",
     type=str,
     required=True,
     help="Name of the context function to generate data for.",
 )
 @click.option(
+    "--output",
     "-o",
     type=click.Path(exists=False),
     required=True,
@@ -85,17 +95,18 @@ def context() -> None:
 )
 @click.option(
     "--sample-count",
+    "-sc",
     type=int,
     default=5,
     help="Number of samples to take (default: 5).",
 )
-def calibrate(file: Path, name: str, o: Path, sample_count: int):
+def calibrate(file: Path, name: str, output: Path, sample_count: int):
     """Run calibration for a decorated context function.
 
     FILE is the python file to look for functions decorated with
     "@dioptra_context" or "@dioptra_binfhe_context".
     """
-    decorator.context_calibrate_main([str(file)], name, str(o), sample_count)
+    decorator.context_calibrate_main([str(file)], name, str(output), sample_count)
 
 
 @context.command()
