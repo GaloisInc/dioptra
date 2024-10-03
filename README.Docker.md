@@ -33,14 +33,6 @@ can easily add/modify your to-be-analyzed Python files:
 > docker run --rm -it --entrypoint bash -v /path/to/your/files:/inputs dioptra-docker
 ```
 
-## Dev Container
-
-Inside the `.devcontainer` directory there is a devcontainer spec suitable for
-development using Visual Studio Code (see https://code.visualstudio.com/docs/devcontainers/containers)
-for more information.  Opening the folder using the dev container VSCode extension
-should give you an environment that has OpenFHE and the Python bindings installed
-globally.
-
 ## Setting up the environment
 
 After entering a container, run `cd dioptra`, then `source setup_env.sh`. This
@@ -51,3 +43,11 @@ will:
 (3) Install dioptra
 
 Now, you can start using dioptra to perform FHE analyses.
+
+## Dev Container
+
+Inside the `.devcontainer` directory there is a devcontainer spec suitable for
+development using Visual Studio Code (see https://code.visualstudio.com/docs/devcontainers/containers)
+for more information.  Opening the folder using the dev container VSCode extension
+should give you an environment that has OpenFHE and the Python bindings installed
+globally.
