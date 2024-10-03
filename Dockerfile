@@ -43,3 +43,14 @@ RUN git clone https://github.com/openfheorg/openfhe-python.git \
     && cp *.so /usr/local/lib/openfhe-python
 
 ENV PYTHONPATH=/usr/local/lib/openfhe-python
+
+# Install dioptra sources
+WORKDIR /workspace
+RUN mkdir dioptra
+COPY dioptra_native ./dioptra/dioptra_native
+COPY examples ./dioptra/examples
+COPY pyproject.toml ./dioptra/pyproject.toml
+COPY README.md ./dioptra/README.md
+COPY setup_env.sh ./dioptra/setup_env.sh
+COPY src ./dioptra/src
+COPY tests ./dioptra/tests
