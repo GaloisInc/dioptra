@@ -1,7 +1,9 @@
 from dioptra.analyzer.metrics.analysisbase import AnalysisBase, Ciphertext, Plaintext, PublicKey, PrivateKey
 from dioptra.analyzer.metrics.multdepth import MultDepth
 from dioptra.analyzer.calibration import PKECalibrationData, Event, EventKind
+from dioptra.analyzer.scheme import LevelInfo
 from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.analyzer.utils.network import NetworkModel
 from dioptra.analyzer.utils.util import format_ns
 import dis
 
@@ -11,6 +13,7 @@ class Runtime(AnalysisBase):
         self.total_runtime = 0
         self.runtime_table = runtime_samples.avg_runtime_table()
         self.where = {}
+        self.ct_size = runtime_samples.ct_mem
 
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame) -> None:
         pass
@@ -88,7 +91,17 @@ class Runtime(AnalysisBase):
         self.total_runtime += line_runtime
         self.set_runtime(dest, line_runtime, call_loc)
 
-    def set_runtime(self, ct: Ciphertext, line_runtime: int, call_loc: Frame) -> None:
+    def trace_send_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None) -> None:
+        runtime = nm.send_latency_ns(self.ct_size[ct.level])
+        self.total_runtime += runtime
+        self.set_runtime(ct, runtime, call_loc)
+
+    def trace_recv_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None) -> None:
+        runtime = nm.recv_latency_ns(self.ct_size[ct.level])
+        self.total_runtime += runtime
+        self.set_runtime(ct, runtime, call_loc)
+
+    def set_runtime(self, ct: Ciphertext|Plaintext, line_runtime: int, call_loc: Frame) -> None:
         while call_loc is not None:
             (file_name, positions) = call_loc.location()
             runtime = 0

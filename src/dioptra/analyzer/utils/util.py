@@ -116,3 +116,6 @@ def blerp(xs, ys, zs, p):
   return lerp((y1, v1), (y2, v2), y)
 
   
+class BPS:
+  def __init__(self, Kbps:int=0, Mbps:int=0, Gbps:int=0):
+    self.bps = Kbps * 10**3 + Mbps * 10**6 + Gbps * 10**9

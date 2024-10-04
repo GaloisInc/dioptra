@@ -1,4 +1,5 @@
 
+import math
 from typing import Any, Callable, Iterable, Self, Sequence, TypeVar
 import weakref
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelPke
@@ -6,6 +7,9 @@ from dioptra.analyzer.utils import code_loc
 from dioptra.analyzer.utils.code_loc import Frame, TraceLoc
 import dis
 import os.path
+
+from dioptra.analyzer.utils.network import NetworkModel
+from dioptra.analyzer.utils.util import BPS
 
 class VectorMath:
     @staticmethod
@@ -133,6 +137,10 @@ class AnalysisBase:
         pass
     def trace_dealloc_pt(self, vid: int, level: LevelInfo, call_loc: Frame|None) -> None:
         pass
+    def trace_send_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame|None) -> None:
+        pass
+    def trace_recv_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame|None) -> None:
+        pass
 
     def anotate_metric(self) -> None:
         anotated_files: dict[str, list[str]] = dict()
@@ -153,6 +161,19 @@ class AnalysisBase:
             file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
             with open(file_name_anotated, 'w') as file_edited:
                 file_edited.writelines(lines)
+
+
+
+class Network:
+    def __init__(self, analyzer: 'Analyzer', model: NetworkModel) -> None:
+        self.net_model = model
+        self.analyzer = analyzer
+
+    def SendCiphertext(self, ct: Ciphertext) -> None:
+        self.analyzer._send_ciphertext(ct, self.net_model, code_loc.calling_frame())
+
+    def RecvCiphertext(self, ct: Ciphertext) -> None:
+        self.analyzer._recv_ciphertext(ct, self.net_model, code_loc.calling_frame())
 
 
 class Analyzer:
@@ -278,8 +299,10 @@ class Analyzer:
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
         return self._mk_ct(lv, None, caller_loc)
     
-    def Analyze(self, f: Callable, *args, **kwargs):
-        f(self, args, kwargs)
+    def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> Network:
+        nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
+        return Network(self, nm)
+
 
     def _dealloc_ct(self, vid: int, level: LevelInfo) -> None:
         loc = None
@@ -310,6 +333,15 @@ class Analyzer:
             analysis.trace_alloc_pt(pt, loc)
         pt.set_finalizer(weakref.finalize(pt, self._dealloc_ct, pt.id, level))
         return pt
+    
+    def _send_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame|None):
+        for analysis in self.analysis_list:
+            analysis.trace_send_ct(ct, nm, loc)
+
+    def _recv_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame|None):
+        for analysis in self.analysis_list:
+            analysis.trace_recv_ct(ct, nm, loc)
+
     
     # def _enable_trace(self):
     #     sys.settrace(self._trace)
