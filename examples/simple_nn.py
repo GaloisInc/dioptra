@@ -50,6 +50,48 @@ class Neuron:
         sum = cc.EvalAdd(sum, self.bias)
         return nn_activation(cc, sum)
 
+class Layer:
+    def __init__(
+        self, 
+        cc: ofhe.CryptoContext,
+        neurons: list[Neuron],
+        bias = None,
+    ) -> Self:
+        self.num_neuron = len(neurons)
+
+        for i, neuron in enumerate(neurons):
+            neuron.set_id(i)   
+            if bias != None:
+                neuron.set_bias(bias)      
+        self.neurons = neurons
+
+    def set_id(self, layer_id: int):
+        self.layer_id = layer_id
+
+    def layer_from_plaintexts(cc: ofhe.CryptoContext, weights_layer: list[list[int]]) -> Self:
+        neurons = []
+        for weights_neuron in weights_layer:
+            neuron = Neuron.neuron_from_plaintext(cc, weights_neuron)
+            neurons.append(neuron)
+        return Layer(cc, neurons)
+
+    def train(
+        self, 
+        cc: ofhe.CryptoContext, 
+        inputs: list[ofhe.Ciphertext]
+        ) -> list[ofhe.Ciphertext]:
+        self.check_correctness(len(inputs))
+
+        layer_out = []
+        for neuron in self.neurons:
+            neuron_out = neuron.train(cc, inputs)
+            layer_out.append(neuron_out)
+        return layer_out
+
+    def check_correctness(self, num_inputs: int):
+        for neuron in self.neurons:
+            assert num_inputs == neuron.num_inputs, f"On Layer #{self.layer_id}: Number of inputs{num_inputs} != Indegree of Neuron #{neuron.neuron_id} is {neuron.num_inputs}" 
+
 class NN:
     def __init__(
         self,
