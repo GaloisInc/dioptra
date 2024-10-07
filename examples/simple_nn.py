@@ -1,15 +1,14 @@
-import time
 import openfhe as ofhe
 
-import random
+from time import time_ns
+from random import random
+from functools import reduce
+from typing import Self
 
 from dioptra.analyzer.pke.analysisbase import Analyzer
 from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
-
-from typing import Self
-
 
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
     return cc.EvalMult(input, input)
@@ -190,11 +189,11 @@ def main():
     layer_weights = [neuron_weights, neuron_weights]
     nn_weights = [layer_weights, layer_weights]
     nn = NN.nn_from_plaintexts(cc, nn_weights)
-    
+
     # time and run the program
-    start_ns = time.time_ns()
+    start_ns = time_ns()
     results = train(cc, xs_ct, num_layers)
-    end_ns = time.time_ns()
+    end_ns = time_ns()
 
     results_unpacked = []
     for r in results:
