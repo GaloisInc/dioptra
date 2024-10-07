@@ -14,6 +14,41 @@ from typing import Self
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
     return cc.EvalMult(input, input)
 
+class Neuron:
+    def __init__(
+        self, 
+        cc: ofhe.CryptoContext,
+        weights: list[ofhe.Ciphertext], 
+        bias = None,
+    ) -> Self:
+        self.num_inputs = len(weights)
+        self.weights = weights
+        self.bias = cc.MakeCKKSPackedPlaintext([0.0])
+
+    def set_id(self, neuron_id: int):
+        self.neuron_id = neuron_id
+
+    def set_bias(self, bias: ofhe.Ciphertext):
+        self.bias = bias
+
+    def neuron_from_plaintext(cc: ofhe.CryptoContext, weights: list[int]) -> Self:
+        weights_ckks = []
+        for w in weights:
+            weights_ckks.append(cc.MakeCKKSPackedPlaintext([w]))
+        return Neuron(cc, weights_ckks)
+
+    def train(
+        self,
+        cc: ofhe.CryptoContext,
+        inputs: list[ofhe.Ciphertext]
+    ) -> ofhe.Ciphertext:
+        if len(inputs) != self.num_inputs:
+            raise ValueError(f"The number of inputs {len(inputs)} does not match the number of neuron inputs {self.num_inputs}")
+
+        mults = map(lambda x, y: cc.EvalMult(x,y), inputs, self.weights)
+        sum = reduce(lambda x, y: cc.EvalAdd(x,y), mults)
+        sum = cc.EvalAdd(sum, self.bias)
+        return nn_activation(cc, sum)
 
 class NN:
     def __init__(
