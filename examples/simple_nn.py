@@ -178,7 +178,7 @@ def main():
     cc.EvalMultKeyGen(key_pair.secretKey)
 
     # encode and encrypt inputs labels
-    xs = [[random.random()] for i in range(num_inputs)]
+    xs = [[random()] for i in range(num_inputs)]
     xs_pt = [cc.MakeCKKSPackedPlaintext(x) for x in xs]
     for x in xs_pt:
         x.SetLength(1)
@@ -192,7 +192,7 @@ def main():
 
     # time and run the program
     start_ns = time_ns()
-    results = train(cc, xs_ct, num_layers)
+    results = nn.train(cc, xs_ct)
     end_ns = time_ns()
 
     results_unpacked = []
