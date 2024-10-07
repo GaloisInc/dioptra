@@ -42,7 +42,12 @@ will:
 (2) Build and install `dioptra_native` in that environment
 (3) Install dioptra
 
-Now, you can start using dioptra to perform FHE analyses.
+Now, you can start using dioptra to perform FHE analyses. Note that you will
+only need to do this once as a typical user; developers should see the below
+section about the `devcontainer`.
+
+You can `deactivate` the virtual environment when you are done, and run
+`source venv/bin/activate` to restart it.
 
 ## Dev Container
 
