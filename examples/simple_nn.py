@@ -208,9 +208,15 @@ def main():
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
     num_inputs = 2
-    num_layers = 2
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
-    train(cc, xs_ct, num_layers)
+
+    # Generate arbitrary nn 
+    neuron_weights = [0.1, 0.4]
+    layer_weights = [neuron_weights, neuron_weights]
+    nn_weights = [layer_weights, layer_weights]
+    nn = NN.nn_from_plaintexts(cc, nn_weights)
+
+    nn.train(cc, xs_ct)
 
 
 if __name__ == "__main__":
