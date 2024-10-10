@@ -165,6 +165,7 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     cryptocontext.Enable(ofhe.PKESchemeFeature.FHE)
 
     cryptocontext.EvalBootstrapSetup(level_budget)
+
     print("Setup complete..")
     return (cryptocontext, parameters)
 
@@ -172,11 +173,12 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
 # Actually run program and time it
 def main():
     num_inputs = 11
-    (cc, _) = setup_context()
+    (cc, parameters) = setup_context()
 
     # do some additional setup for openfhe that is key dependent
     key_pair = cc.KeyGen()
     cc.EvalMultKeyGen(key_pair.secretKey)
+    cc.EvalBootstrapKeyGen(key_pair.secretKey, parameters.GetRingDim() >> 1)
 
     # encode and encrypt inputs labels
     xs = [[random()] for i in range(num_inputs)]
