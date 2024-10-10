@@ -82,8 +82,10 @@ class Layer:
         self.check_correctness(len(inputs))
 
         layer_out = []
-        for neuron in self.neurons:
+        for i, neuron in enumerate(self.neurons):
             neuron_out = neuron.train(cc, inputs)
+            if (i+1) % 10 == 0:
+                neuron_out = cc.EvalBootstrap(neuron_out)
             layer_out.append(neuron_out)
         return layer_out
 
@@ -163,19 +165,20 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     cryptocontext.Enable(ofhe.PKESchemeFeature.FHE)
 
     cryptocontext.EvalBootstrapSetup(level_budget)
+
     print("Setup complete..")
     return (cryptocontext, parameters)
 
 
 # Actually run program and time it
 def main():
-    num_inputs = 2
-    num_layers = 2
-    (cc, _) = setup_context()
+    num_inputs = 11
+    (cc, parameters) = setup_context()
 
     # do some additional setup for openfhe that is key dependent
     key_pair = cc.KeyGen()
     cc.EvalMultKeyGen(key_pair.secretKey)
+    cc.EvalBootstrapKeyGen(key_pair.secretKey, parameters.GetRingDim() >> 1)
 
     # encode and encrypt inputs labels
     xs = [[random()] for i in range(num_inputs)]
@@ -185,8 +188,8 @@ def main():
     xs_ct = [cc.Encrypt(key_pair.publicKey, x_pt) for x_pt in xs_pt]
 
     # Generate arbitrary nn 
-    neuron_weights = [0.1, 0.4]
-    layer_weights = [neuron_weights, neuron_weights]
+    neuron_weights = [0.1 for _ in range(11)]
+    layer_weights = [neuron_weights for _ in range(11)]
     nn_weights = [layer_weights, layer_weights]
     nn = NN.nn_from_plaintexts(cc, nn_weights)
 
@@ -207,12 +210,12 @@ def main():
 
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
-    num_inputs = 2
+    num_inputs = 11
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
 
     # Generate arbitrary nn 
-    neuron_weights = [0.1, 0.4]
-    layer_weights = [neuron_weights, neuron_weights]
+    neuron_weights = [0.1 for _ in range(11)]
+    layer_weights = [neuron_weights for _ in range(11)]
     nn_weights = [layer_weights, layer_weights]
     nn = NN.nn_from_plaintexts(cc, nn_weights)
 
