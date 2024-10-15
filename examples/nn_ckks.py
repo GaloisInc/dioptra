@@ -1,4 +1,5 @@
 import openfhe as ofhe
+from contexts import ckks1
 
 from time import time_ns
 from random import random
@@ -17,7 +18,7 @@ class Scheme:
         raise NotImplementedError("Plaintext packing is not implemented for this scheme")
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         raise NotImplementedError("The zero value is not implemented for this scheme")
-    def bootstrap(self, cc: ofhe.CryptoContext, level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         pass
 
 class CKKS(Scheme):
@@ -25,18 +26,15 @@ class CKKS(Scheme):
         return cc.MakeCKKSPackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         return cc.MakeCKKSPackedPlaintext([0.0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        if level % 10 == 0:
-            return cc.EvalBootstrap(value)        
-        else:
-            return value
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        return cc.EvalBootstrap(value)        
 
 class BFV(Scheme):
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
        return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         return value
 
 class BGV(Scheme):
@@ -44,7 +42,7 @@ class BGV(Scheme):
         return cc.MakePackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+    def bootstrap(self, cc: ofhe.CryptoContext,  value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         #OpenFHE does not support boostrapping for BGV
         return value
 
@@ -109,6 +107,9 @@ class Layer:
     def set_id(self, layer_id: int):
         self.layer_id = layer_id
 
+    def bootstrap(self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]) -> list[ofhe.Ciphertext]:
+         return [self.scheme.bootstrap(cc, input) for input in inputs]   
+        
     def layer_from_plaintexts(cc: ofhe.CryptoContext, scheme: Scheme, weights_layer: list[list[int]], bias = None) -> Self:
         neurons = []
         for weights_neuron in weights_layer:
@@ -126,7 +127,6 @@ class Layer:
         layer_out = []
         for i, neuron in enumerate(self.neurons):
             neuron_out = neuron.train(cc, inputs)
-            neuron_out = self.scheme.bootstrap(cc, i, neuron_out)
             layer_out.append(neuron_out)
         return layer_out
 
@@ -161,68 +161,17 @@ class NN:
         inputs: list[ofhe.Ciphertext]
     ) -> ofhe.Ciphertext:
         layer_input = inputs
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
             layer_input = layer.train(cc, layer_input)
+            if i % 5 == 0:
+                layer_input = layer.bootstrap(cc, layer_input)
         return layer_input
-
-
-
-# make a cryptocontext and return the context and the parameters used to create it
-def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
-    print("Setting up FHE program..")
-    parameters = ofhe.CCParamsCKKSRNS()
-
-    secret_key_dist = ofhe.SecretKeyDist.UNIFORM_TERNARY
-    parameters.SetSecretKeyDist(secret_key_dist)
-
-    parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_128_classic)
-    parameters.SetRingDim(1 << 17)
-
-    if ofhe.get_native_int() == 128:
-        rescale_tech = ofhe.ScalingTechnique.FIXEDAUTO
-        dcrt_bits = 78
-        first_mod = 89
-    else:
-        rescale_tech = ofhe.ScalingTechnique.FLEXIBLEAUTO
-        dcrt_bits = 59
-        first_mod = 60
-
-    parameters.SetScalingModSize(dcrt_bits)
-    parameters.SetScalingTechnique(rescale_tech)
-    parameters.SetFirstModSize(first_mod)
-
-    level_budget = [4, 4]
-
-    levels_available_after_bootstrap = 10
-
-    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(
-        level_budget, secret_key_dist
-    )
-
-    parameters.SetMultiplicativeDepth(depth)
-
-    cryptocontext = ofhe.GenCryptoContext(parameters)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.PKE)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.KEYSWITCH)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.LEVELEDSHE)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.ADVANCEDSHE)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.FHE)
-
-    cryptocontext.EvalBootstrapSetup(level_budget)
-
-    print("Setup complete..")
-    return (cryptocontext, parameters)
-
 
 # Actually run program and time it
 def main():
-    num_inputs = 11
-    (cc, parameters) = setup_context()
-
-    # do some additional setup for openfhe that is key dependent
-    key_pair = cc.KeyGen()
-    cc.EvalMultKeyGen(key_pair.secretKey)
-    cc.EvalBootstrapKeyGen(key_pair.secretKey, parameters.GetRingDim() >> 1)
+    num_inputs = 2
+    num_layers = 2
+    (cc, parameters, key_pair, _) = ckks1()
 
     # encode and encrypt inputs labels
     xs = [[random()] for i in range(num_inputs)]
@@ -232,9 +181,9 @@ def main():
     xs_ct = [cc.Encrypt(key_pair.publicKey, x_pt) for x_pt in xs_pt]
 
     # Generate arbitrary nn 
-    neuron_weights = [0.1 for _ in range(11)]
-    layer_weights = [neuron_weights for _ in range(11)]
-    nn_weights = [layer_weights, layer_weights]
+    neuron_weights = [0.1 for _ in range(num_inputs)]
+    layer_weights = [neuron_weights for _ in range(num_inputs)]
+    nn_weights = [layer_weights for _ in range(num_layers)]
     nn = NN.nn_from_plaintexts(cc, CKKS(), nn_weights)
 
     # time and run the program
@@ -255,12 +204,13 @@ def main():
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
     num_inputs = 11
+    num_layers = 5
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
 
     # Generate arbitrary nn 
-    neuron_weights = [0.1 for _ in range(11)]
-    layer_weights = [neuron_weights for _ in range(11)]
-    nn_weights = [layer_weights, layer_weights]
+    neuron_weights = [0.1 for _ in range(num_inputs)]
+    layer_weights = [neuron_weights for _ in range(num_inputs)]
+    nn_weights = [layer_weights for _ in range(num_layers)]
     nn = NN.nn_from_plaintexts(cc, CKKS(), nn_weights)
 
     nn.train(cc, xs_ct)
