@@ -1,10 +1,7 @@
 import json
 from typing import Iterator
 
-
-def NotSupportedException(Exception):
-    pass
-
+from dioptra.analyzer.utils.code_loc import Frame, MaybeFrame
 
 def format_bytes(bytes: int) -> str:
     if bytes / 10**3 < 1000:
@@ -120,3 +117,4 @@ def blerp(xs, ys, zs, p):
     v2 = lerp((x1, q12), (x2, q22), x)
 
     return lerp((y1, v1), (y2, v2), y)
+
