@@ -1,4 +1,5 @@
 import openfhe as ofhe
+from contexts import bfv1
 
 from time import time_ns
 from random import random
@@ -17,7 +18,7 @@ class Scheme:
         raise NotImplementedError("Plaintext packing is not implemented for this scheme")
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         raise NotImplementedError("The zero value is not implemented for this scheme")
-    def bootstrap(self, cc: ofhe.CryptoContext, level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         pass
 
 class CKKS(Scheme):
@@ -25,18 +26,15 @@ class CKKS(Scheme):
         return cc.MakeCKKSPackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         return cc.MakeCKKSPackedPlaintext([0.0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        if level % 10 == 0:
-            return cc.EvalBootstrap(value)        
-        else:
-            return value
+    def bootstrap(self, cc: ofhe.CryptoContext,  value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        return cc.EvalBootstrap(value)        
 
 class BFV(Scheme):
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
        return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         return value
 
 class BGV(Scheme):
@@ -44,7 +42,7 @@ class BGV(Scheme):
         return cc.MakePackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         #OpenFHE does not support boostrapping for BGV
         return value
 
@@ -116,6 +114,9 @@ class Layer:
             neurons.append(neuron)
         return Layer(cc, scheme, neurons, bias)
 
+    def bootstrap(self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]) -> list[ofhe.Ciphertext]:
+         return [self.scheme.bootstrap(cc, input) for input in inputs]   
+        
     def train(
         self, 
         cc: ofhe.CryptoContext, 
@@ -126,7 +127,6 @@ class Layer:
         layer_out = []
         for i, neuron in enumerate(self.neurons):
             neuron_out = neuron.train(cc, inputs)
-            neuron_out = self.scheme.bootstrap(cc, i, neuron_out)
             layer_out.append(neuron_out)
         return layer_out
 
@@ -161,51 +161,17 @@ class NN:
         inputs: list[ofhe.Ciphertext]
     ) -> ofhe.Ciphertext:
         layer_input = inputs
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
             layer_input = layer.train(cc, layer_input)
+            if i % 5 == 0:
+                layer_input = layer.bootstrap(cc, layer_input)
         return layer_input
-
-# make a cryptocontext and return the context and the parameters used to create it
-def setup_context(mult_depth) -> tuple[
-    ofhe.CryptoContext,
-    ofhe.CCParamsBGVRNS,
-    ofhe.KeyPair,
-    list[ofhe.PKESchemeFeature],
-]:
-    # Sample Program: Step 1: Set CryptoContext
-    parameters = ofhe.CCParamsBFVRNS()
-    parameters.SetPlaintextModulus(65537)
-    parameters.SetMultiplicativeDepth(2)
-
-    crypto_context = ofhe.GenCryptoContext(parameters)
-    # Enable features that you wish to use
-    features = [
-        ofhe.PKESchemeFeature.PKE,
-        ofhe.PKESchemeFeature.KEYSWITCH,
-        ofhe.PKESchemeFeature.LEVELEDSHE,
-    ]
-    for feature in features:
-        crypto_context.Enable(feature)
-
-    # Step 2: Key Generation
-
-    # Generate a public/private key pair
-    key_pair = crypto_context.KeyGen()
-
-    # Generate the relinearization key
-    crypto_context.EvalMultKeyGen(key_pair.secretKey)
-
-    # Generate the rotation evaluation keys
-    crypto_context.EvalRotateKeyGen(key_pair.secretKey, [1, 2, -1, -2])
-
-    return (crypto_context, parameters, key_pair, features)
-
 
 # Actually run program and time it
 def main():
-    num_inputs = 21
-    mult_depth = 21
-    (cc, parameters, key_pair, _) = setup_context(11)
+    num_inputs = 2
+    num_layers = 2
+    (cc, parameters, key_pair, _) = bfv1()
 
     # encode and encrypt inputs labels
     xs = [[i] for i in range(num_inputs)]
@@ -217,7 +183,7 @@ def main():
     # Generate arbitrary nn 
     neuron_weights = [i for i in range(num_inputs)]
     layer_weights = [neuron_weights for _ in range(num_inputs)]
-    nn_weights = [layer_weights, layer_weights]
+    nn_weights = [layer_weights for _ in range(num_layers)]
     nn = NN.nn_from_plaintexts(cc, BFV(), nn_weights)
 
     # time and run the program
@@ -238,12 +204,13 @@ def main():
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
     num_inputs = 11
+    num_layers = 5
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
 
     # Generate arbitrary nn 
     neuron_weights = [i for i in range(num_inputs)]
     layer_weights = [neuron_weights for _ in range(num_inputs)]
-    nn_weights = [layer_weights, layer_weights]
+    nn_weights = [layer_weights for _ in range(num_layers)]
     nn = NN.nn_from_plaintexts(cc, BFV(), nn_weights)
 
     nn.train(cc, xs_ct)
