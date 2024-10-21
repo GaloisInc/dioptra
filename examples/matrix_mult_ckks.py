@@ -1,5 +1,6 @@
 import time
 import openfhe as ofhe
+from contexts import ckks1, ckks_small1
 
 import random
 
@@ -11,8 +12,24 @@ from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
+class Scheme: 
+    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+        raise NotImplementedError("Plaintext packing is not implemented for this scheme")
+    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
+        raise NotImplementedError("The zero value is not implemented for this scheme")
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        pass
+
+class CKKS(Scheme):
+    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+        return cc.MakeCKKSPackedPlaintext(value)
+    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
+        return cc.MakeCKKSPackedPlaintext([0.0])
+    def bootstrap(self, cc: ofhe.CryptoContext,  value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        return cc.EvalBootstrap(value)     
 
 def matrix_mult(
+    scheme: Scheme,
     cc: ofhe.CryptoContext,
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
@@ -27,69 +44,21 @@ def matrix_mult(
     result = [[0 for _ in range(rows)] for _ in range(cols)]
     for i in range(rows):
         for j in range(cols):
-            sum = cc.MakeCKKSPackedPlaintext([0])
+            sum = scheme.zero(cc)
             for k in range(l):
                 mul = cc.EvalMult(x[i][k], y[k][j])
                 sum = cc.EvalAdd(mul, sum)
+                if k % 5 == 0:
+                    sum = scheme.bootstrap(cc, sum)
             result[i][j] = sum
     return result
-
-
-# make a cryptocontext and return the context and the parameters used to create it
-def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
-    print("Setting up FHE program..")
-    parameters = ofhe.CCParamsCKKSRNS()
-
-    secret_key_dist = ofhe.SecretKeyDist.UNIFORM_TERNARY
-    parameters.SetSecretKeyDist(secret_key_dist)
-
-    parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_128_classic)
-    parameters.SetRingDim(1 << 17)
-
-    if ofhe.get_native_int() == 128:
-        rescale_tech = ofhe.ScalingTechnique.FIXEDAUTO
-        dcrt_bits = 78
-        first_mod = 89
-    else:
-        rescale_tech = ofhe.ScalingTechnique.FLEXIBLEAUTO
-        dcrt_bits = 59
-        first_mod = 60
-
-    parameters.SetScalingModSize(dcrt_bits)
-    parameters.SetScalingTechnique(rescale_tech)
-    parameters.SetFirstModSize(first_mod)
-
-    level_budget = [4, 4]
-
-    levels_available_after_bootstrap = 10
-
-    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(
-        level_budget, secret_key_dist
-    )
-
-    parameters.SetMultiplicativeDepth(depth)
-
-    cryptocontext = ofhe.GenCryptoContext(parameters)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.PKE)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.KEYSWITCH)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.LEVELEDSHE)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.ADVANCEDSHE)
-    cryptocontext.Enable(ofhe.PKESchemeFeature.FHE)
-
-    cryptocontext.EvalBootstrapSetup(level_budget)
-    print("Setup complete..")
-    return (cryptocontext, parameters)
 
 
 # Actually run program and time it
 def main():
     rows = 5
     cols = 5
-    (cc, _) = setup_context()
-
-    # do some additional setup for openfhe that is key dependent
-    key_pair = cc.KeyGen()
-    cc.EvalMultKeyGen(key_pair.secretKey)
+    (cc, _, key_pair, _) = ckks_small1()
 
     # encode and encrypt inputs labels
     xs = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
@@ -113,7 +82,7 @@ def main():
 
     # time and run the program
     start_ns = time.time_ns()
-    result_ct = matrix_mult(cc, x_ct, y_ct)
+    result_ct = matrix_mult(CKKS(), cc, x_ct, y_ct)
     end_ns = time.time_ns()
 
     rows = len(xs)
