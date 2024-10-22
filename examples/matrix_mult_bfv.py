@@ -1,5 +1,9 @@
 import time
 import openfhe as ofhe
+<<<<<<< HEAD
+=======
+from contexts import bfv1
+>>>>>>> ae41317 (Fix bugs with BFV matrix mult)
 
 import random
 
@@ -11,8 +15,29 @@ from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
+<<<<<<< HEAD
 
 def matrix_mult(
+=======
+class Scheme: 
+    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+        raise NotImplementedError("Plaintext packing is not implemented for this scheme")
+    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
+        raise NotImplementedError("The zero value is not implemented for this scheme")
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        pass
+
+class BFV(Scheme):
+    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+        return cc.MakePackedPlaintext(value)
+    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
+       return cc.MakePackedPlaintext([0])
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        return value
+
+def matrix_mult(
+    scheme: Scheme,
+>>>>>>> ae41317 (Fix bugs with BFV matrix mult)
     cc: ofhe.CryptoContext,
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
@@ -27,14 +52,24 @@ def matrix_mult(
     result = [[0 for _ in range(rows)] for _ in range(cols)]
     for i in range(rows):
         for j in range(cols):
+<<<<<<< HEAD
             sum = cc.MakePackedPlaintext([0])
             for k in range(l):
                 mul = cc.EvalMult(x[i][k], y[k][j])
                 sum = cc.EvalAdd(mul, sum)
+=======
+            sum = scheme.zero(cc)
+            for k in range(l):
+                mul = cc.EvalMult(x[i][k], y[k][j])
+                sum = cc.EvalAdd(mul, sum)
+                if k % 5 == 0:
+                    sum = scheme.bootstrap(cc, sum)
+>>>>>>> ae41317 (Fix bugs with BFV matrix mult)
             result[i][j] = sum
     return result
 
 
+<<<<<<< HEAD
 # make a cryptocontext and return the context and the parameters used to create it
 def bfv1() -> tuple[
     ofhe.CryptoContext,
@@ -71,6 +106,8 @@ def bfv1() -> tuple[
     return (crypto_context, parameters, key_pair, features)
 
 
+=======
+>>>>>>> ae41317 (Fix bugs with BFV matrix mult)
 # Actually run program and time it
 def main():
     rows = 5
@@ -99,7 +136,11 @@ def main():
 
     # time and run the program
     start_ns = time.time_ns()
+<<<<<<< HEAD
     result_ct = matrix_mult(cc, x_ct, y_ct)
+=======
+    result_ct = matrix_mult(BFV(), cc, x_ct, y_ct)
+>>>>>>> ae41317 (Fix bugs with BFV matrix mult)
     end_ns = time.time_ns()
 
     rows = len(xs)
@@ -109,7 +150,11 @@ def main():
         for j in range(cols):
             result_dec = cc.Decrypt(key_pair.secretKey, result_ct[i][j])
             result_dec.SetLength(1)
+<<<<<<< HEAD
             result[i][j] = result_dec.GetCKKSPackedValue()
+=======
+            result[i][j] = result_dec.GetPackedValue()
+>>>>>>> ae41317 (Fix bugs with BFV matrix mult)
         print(result[i])
 
     print(f"Actual runtime: {format_ns(end_ns - start_ns)}")
