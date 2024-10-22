@@ -1,6 +1,7 @@
 import time
 import openfhe as ofhe
 from contexts import ckks1, ckks_small1
+from schemes import Scheme
 
 import random
 
@@ -11,14 +12,6 @@ from dioptra.decorator import dioptra_runtime
 from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
-
-class Scheme: 
-    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
-        raise NotImplementedError("Plaintext packing is not implemented for this scheme")
-    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
-        raise NotImplementedError("The zero value is not implemented for this scheme")
-    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        pass
 
 class CKKS(Scheme):
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
@@ -56,8 +49,8 @@ def matrix_mult(
 
 # Actually run program and time it
 def main():
-    rows = 5
-    cols = 5
+    rows = 2
+    cols = 2
     (cc, _, key_pair, _) = ckks_small1()
 
     # encode and encrypt inputs labels
