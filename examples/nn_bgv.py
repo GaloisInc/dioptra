@@ -22,22 +22,6 @@ class Scheme:
     def bootstrap(self, cc: ofhe.CryptoContext, level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
         pass
 
-class CKKS(Scheme):
-    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
-        return cc.MakeCKKSPackedPlaintext(value)
-    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
-        return cc.MakeCKKSPackedPlaintext([0.0])
-    def bootstrap(self, cc: ofhe.CryptoContext,  value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        return cc.EvalBootstrap(value) 
-
-class BFV(Scheme):
-    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
-        return cc.MakePackedPlaintext(value)
-    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
-       return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        return value
-
 class BGV(Scheme):
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
