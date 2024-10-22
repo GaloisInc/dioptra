@@ -18,9 +18,10 @@ class SourceLocation:
 
     def __str__(self) -> str:
         if self.is_unknown:
-            return f"{self.filename}:{self.position.lineno}:{self.position.col_offset}"
-        else:
             return f"<location unknown?>"
+        else:
+            return f"{self.filename}:{self.position.lineno}:{self.position.col_offset}"
+            
 
     def __hash__(self) -> int:
         if self.is_unknown:
@@ -52,7 +53,9 @@ class StackLocation:
             and self.source_location == value.source_location
             and self.function_name == value.function_name
         )
-
+    
+    def __str__(self) -> str:
+        return f"{self.function_name} at {self.source_location}"
 
 class Frame:
     def __init__(self, frame):  # type: ignore
@@ -87,6 +90,34 @@ class Frame:
             frame = frame.caller()
 
         return lst
+    
+
+class MaybeFrame:
+    def __init__(self, frame: Frame | None):
+        self.frame = frame
+
+    def get_frame(self) -> Frame|None:
+        return self.frame
+    
+    def caller(self) -> 'MaybeFrame':
+        if self.frame is None:
+            return self
+        else:
+            return MaybeFrame(self.frame.caller())
+        
+    def source_location(self) -> SourceLocation:
+        if self.frame is None:
+            return SourceLocation.unknown()
+        else:
+            return self.frame.source_location()
+        
+    @staticmethod
+    def current() -> 'MaybeFrame':
+        cur_frame = inspect.currentframe()    
+        if cur_frame is None:
+            return MaybeFrame(None)
+        
+        return MaybeFrame(Frame(cur_frame))
 
 
 # Find the stack frame of calling fn if it exists

@@ -1,3 +1,0 @@
-class NotSupportedException(Exception):
-  pass
-
