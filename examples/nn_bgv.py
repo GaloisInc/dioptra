@@ -1,5 +1,6 @@
 import openfhe as ofhe
 from contexts import bgv1
+from schemes import Scheme
 
 from time import time_ns
 from random import random
@@ -14,13 +15,6 @@ from dioptra.decorator import dioptra_runtime
 
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
     return cc.EvalMult(input, input)
-class Scheme: 
-    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
-        raise NotImplementedError("Plaintext packing is not implemented for this scheme")
-    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
-        raise NotImplementedError("The zero value is not implemented for this scheme")
-    def bootstrap(self, cc: ofhe.CryptoContext, level: int, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        pass
 
 class BGV(Scheme):
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
@@ -154,7 +148,7 @@ class NN:
 
 # Actually run program and time it
 def main():
-    num_inputs = 2
+    num_inputs = 10
     num_layers = 1
     (cc, parameters, key_pair, _) = bgv1()
 
