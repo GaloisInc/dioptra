@@ -22,6 +22,7 @@ from dioptra.analyzer.report.memory import MemoryMaxReport
 from dioptra.analyzer.report.runtime import RuntimeAnnotation, RuntimeTotal
 from dioptra.analyzer.utils.code_loc import TraceLoc
 from dioptra.analyzer.utils.util import format_bytes, format_ns, format_ns_approx
+from dioptra.analyzer.utils.error import NotSupportedException
 from dioptra.visualization.annotation import annotate_lines
 
 
@@ -43,6 +44,14 @@ class EstimationCase:
         self.run = f
         self.schemetype = schemetype
         self.limit = limit
+
+    def run_and_exit_if_unsupported(self, a: Analyzer | BinFHEAnalyzer) -> None:
+        try:
+            self.run(a)
+        except NotSupportedException as e:
+            print("Analysis failed:")
+            print(f"  { e.display()}")
+            sys.exit(1)
 
 
 class ContextFunction:
@@ -138,6 +147,7 @@ def report_main(sample_file: str, files: list[str]) -> None:
     for case in estimation_cases.values():
         runtime = None
         maxmem = MemoryMaxReport()
+
         if case.schemetype == SchemeType.PKE and isinstance(
             calibration, PKECalibrationData
         ):
@@ -154,15 +164,17 @@ def report_main(sample_file: str, files: list[str]) -> None:
                 analyzer = Analyzer(
                     [runtime_analysis, memory_analysis], calibration.get_scheme(), tloc
                 )
-                case.run(analyzer)
-                runtime = total.total_runtime
+                case.run_and_exit_if_unsupported(analyzer)
+                runtime = runtime_analysis.total_runtime
 
         elif case.schemetype == SchemeType.BINFHE and isinstance(
             calibration, BinFHECalibrationData
         ):
             avg_runtime = calibration.avg_case()
             total = RuntimeTotal()
-            runtime_analysis = RuntimeEstimate(avg_runtime, calibration.ciphertext_size, total)
+            runtime_analysis = RuntimeEstimate(
+                avg_runtime, calibration.ciphertext_size, total
+            )
             memory_analysis = BinFHEMemoryEstimate(
                 calibration.setup_memory_size, calibration.ciphertext_size, maxmem
             )
@@ -172,7 +184,7 @@ def report_main(sample_file: str, files: list[str]) -> None:
                     BinFHEAnalysisGroup([runtime_analysis, memory_analysis]),
                     tloc,
                 )
-                case.run(analyzer)
+                case.run_and_exit_if_unsupported(analyzer)
                 runtime = total.total_runtime
 
         else:
@@ -217,20 +229,19 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         annot_rpt = RuntimeAnnotation()
         runtime_analysis = Runtime(calibration, annot_rpt)
         analyzer = Analyzer([runtime_analysis], calibration.scheme)
-        case.run(analyzer)
-        annotation = dict(
-            (line, format_ns(ns))
-            for (line, ns) in annot_rpt.annotation_for(file).items()
-        )
+        case.run_and_exit_if_unsupported(analyzer)
+        annotation = runtime_analysis.annotation_dict(file)
         annotate_lines(file, output, annotation)
 
     elif case.schemetype == SchemeType.BINFHE and isinstance(
         calibration, BinFHECalibrationData
     ):
         annot_rpt = RuntimeAnnotation()
-        est = RuntimeEstimate(calibration.avg_case(), calibration.ciphertext_size, annot_rpt)
+        est = RuntimeEstimate(
+            calibration.avg_case(), calibration.ciphertext_size, annot_rpt
+        )
         analyzer = BinFHEAnalyzer(calibration.params, est)
-        case.run(analyzer)
+        case.run_and_exit_if_unsupported(analyzer)
         annotation = dict(
             (line, format_ns(ns))
             for (line, ns) in annot_rpt.annotation_for(file).items()

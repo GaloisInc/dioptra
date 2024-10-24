@@ -46,11 +46,16 @@ class BinFHEAnalysisBase:
     def trace_dealloc_ct(self, vid: int, loc: Frame | None) -> None:
         pass
 
-    def trace_send_ct(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None) -> None:
+    def trace_send_ct(
+        self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None
+    ) -> None:
         pass
 
-    def trace_recv_ct(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None) -> None:
+    def trace_recv_ct(
+        self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None
+    ) -> None:
         pass
+
 
 class BinFHEAnalysisGroup(BinFHEAnalysisBase):
     def __init__(self, grp: list[BinFHEAnalysisBase]) -> None:
@@ -99,7 +104,7 @@ class BinFHEAnalysisGroup(BinFHEAnalysisBase):
 
 
 class BinFHENetwork:
-    def __init__(self, analyzer: 'BinFHEAnalyzer', model: NetworkModel) -> None:
+    def __init__(self, analyzer: "BinFHEAnalyzer", model: NetworkModel) -> None:
         self.net_model = model
         self.analyzer = analyzer
 
@@ -108,6 +113,7 @@ class BinFHENetwork:
 
     def RecvCiphertext(self, ct: LWECiphertext) -> None:
         self.analyzer._recv_ciphertext(ct, self.net_model, code_loc.calling_frame())
+
 
 # TODO: figure out plaintext modulus for p != 4
 class BinFHEAnalyzer:
@@ -124,10 +130,11 @@ class BinFHEAnalyzer:
     def _unsupported_feature_msg(self, feature: str) -> str:
         return f"{feature} is not supported for estimation in the current version of dioptra"
 
-    def _check_plaintext_modulus(self, n: int) -> None:
+    def _check_plaintext_modulus(self, n: int, frame: Frame | None) -> None:
         if n != 4:
             raise NotSupportedException(
-                f"Non-default plaintext modulus ({n}) is not supported on this operation in the current version of dioptra"
+                f"Non-default plaintext modulus ({n}) is not supported on this operation in the current version of dioptra",
+                frame,
             )
 
     def BTKeyGen(
@@ -139,7 +146,7 @@ class BinFHEAnalyzer:
 
     def Decrypt(self, sk: LWEPrivateKey, ct: LWECiphertext, p: int = 4) -> int:
         loc = code_loc.calling_frame()
-        self._check_plaintext_modulus(p)
+        self._check_plaintext_modulus(p, loc)
         self.analysis.trace_decrypt(sk, ct, loc)
         return ct.value  # TODO: value is not correct
 
@@ -152,10 +159,11 @@ class BinFHEAnalyzer:
         mod: int = 0,
     ) -> LWECiphertext:
         loc = code_loc.calling_frame()
-        self._check_plaintext_modulus(p)
+        self._check_plaintext_modulus(p, loc)
         if m != 0 and m != 1:
             raise NotSupportedException(
-                "Plaintext must be binary (0 or 1) in the current version of dioptra"
+                "Plaintext must be binary (0 or 1) in the current version of dioptra",
+                loc,
             )
 
         ct = LWECiphertext(
@@ -195,13 +203,13 @@ class BinFHEAnalyzer:
 
     # TODO: need to figure out how long the resulting list is - ask Hilder
     def EvalDecomp(self, ct: LWECiphertext) -> list[LWECiphertext]:
-        raise NotSupportedException(self._unsupported_feature_msg("EvalDecomp"))
+        raise NotSupportedException.fn_not_impl("EvalDecomp")
 
     def EvalFloor(self, ct: LWECiphertext, roundbits: int = 0) -> LWECiphertext:
-        raise NotSupportedException(self._unsupported_feature_msg("EvalFloor"))
+        raise NotSupportedException.fn_not_impl("EvalFloor")
 
     def EvalFunc(self, ct: LWECiphertext, LUT: list[int]) -> LWECiphertext:
-        raise NotSupportedException(self._unsupported_feature_msg("EvalFunc"))
+        raise NotSupportedException.fn_not_impl("EvalFunc")
 
     def EvalNOT(self, ct: LWECiphertext) -> LWECiphertext:
         loc = code_loc.calling_frame()
@@ -210,15 +218,13 @@ class BinFHEAnalyzer:
         return dest
 
     def EvalSign(self, ct: LWECiphertext) -> LWECiphertext:
-        raise NotSupportedException(self._unsupported_feature_msg("EvalSign"))
+        raise NotSupportedException.fn_not_impl("EvalSign")
 
     def GenerateBinFHEContext(self, *args, **kwargs):
         pass  # TODO: we can probably ingore this for now
 
     def GenerateLUTviaFunction(self, f: Callable[[int, int], int], p: int) -> list[int]:
-        raise NotSupportedException(
-            self._unsupported_feature_msg("GenerateLUTviaFunction")
-        )
+        raise NotSupportedException.fn_not_impl("GenerateLUTviaFunction")
 
     def GetBeta(self) -> int:
         return self.params.beta
@@ -231,11 +237,13 @@ class BinFHEAnalyzer:
 
     def KeyGen(self) -> LWEPrivateKey:
         return LWEPrivateKey(self.params.n)
-    
-    def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> BinFHENetwork:
+
+    def MakeNetwork(
+        self, send_bps: BPS, recv_bps: BPS, latency_ms: int
+    ) -> BinFHENetwork:
         nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
         return BinFHENetwork(self, nm)
-    
+
     def ArbitraryCT(self) -> LWECiphertext:
         return LWECiphertext(
             length=self.params.n, modulus=self.params.q, value=0, pt_mod=4
@@ -252,9 +260,9 @@ class BinFHEAnalyzer:
         self.analysis.trace_alloc_ct(new, loc)
         new._set_finalizer(weakref.finalize(new, self._dealloc_ct, new.id))
         return new
-    
-    def _send_ciphertext(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame|None):
+
+    def _send_ciphertext(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None):
         self.analysis.trace_send_ct(ct, nm, loc)
 
-    def _recv_ciphertext(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame|None):
+    def _recv_ciphertext(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None):
         self.analysis.trace_recv_ct(ct, nm, loc)
