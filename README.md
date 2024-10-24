@@ -126,7 +126,8 @@ The above is implemented in `examples/matrix_mult_ckks.py`. We can use our
 calibrations from earlier to produce an estimate report using the following:
 
 ```console
-> dioptra estimate report --calibration-data /path/to/calibrations/ckks.dc examples/matrix_mult_ckks.py
+> dioptra estimate report --calibration-data /path/to/calibrations/ckks.dc \
+                          examples/matrix_mult_ckks.py
 ```
 
 Which will output a wall-clock time estimate, and a maximum memory usage
