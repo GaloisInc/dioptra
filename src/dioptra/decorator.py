@@ -216,8 +216,8 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         runtime_analysis = Runtime(calibration)
         analyzer = Analyzer([runtime_analysis], calibration.scheme)
         case.run(analyzer)
-        runtime_analysis.anotate_metric()
-        return
+        annotation = runtime_analysis.annotation_dict(file)
+        annotate_lines(file, output, annotation)
 
     elif case.schemetype == SchemeType.BINFHE and isinstance(
         calibration, BinFHECalibrationData

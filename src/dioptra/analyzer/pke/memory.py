@@ -9,8 +9,8 @@ class PKEMemoryEstimate(AnalysisBase):
     def __init__(
         self,
         setup_size: int,
-        ct_size: dict[LevelInfo, int],
-        pt_size: dict[LevelInfo, int],
+        ct_size: dict[int, int],
+        pt_size: dict[int, int],
         report: MemoryReport,
     ):
         self.ct_size = ct_size
@@ -20,24 +20,24 @@ class PKEMemoryEstimate(AnalysisBase):
 
     def trace_alloc_ct(self, ct: Ciphertext, call_loc: Frame | None) -> None:
         self.report.record_alloc(
-            AllocationType.CIPHERTEXT, ct.id, self.ct_size[ct.level], call_loc
+            AllocationType.CIPHERTEXT, ct.id, self.ct_size[ct.level.level], call_loc
         )
 
     def trace_dealloc_ct(
         self, vid: int, level: LevelInfo, call_loc: Frame | None
     ) -> None:
         self.report.record_dealloc(
-            AllocationType.CIPHERTEXT, vid, self.ct_size[level], call_loc
+            AllocationType.CIPHERTEXT, vid, self.ct_size[level.level], call_loc
         )
 
     def trace_alloc_pt(self, pt: Plaintext, call_loc: Frame | None) -> None:
         self.report.record_alloc(
-            AllocationType.PLAINTEXT, pt.id, self.pt_size[pt.level], call_loc
+            AllocationType.PLAINTEXT, pt.id, self.pt_size[pt.level.level], call_loc
         )
 
     def trace_dealloc_pt(
         self, vid: int, level: LevelInfo, call_loc: Frame | None
     ) -> None:
         self.report.record_dealloc(
-            AllocationType.PLAINTEXT, vid, self.pt_size[level], call_loc
+            AllocationType.PLAINTEXT, vid, self.pt_size[level.level], call_loc
         )

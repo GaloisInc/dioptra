@@ -18,9 +18,15 @@ class Runtime(AnalysisBase):
         self.runtime_table = runtime_samples.avg_runtime_table()
         self.where = {}
 
+    def annotation_dict(self, input_file: str) -> dict[int, str]:
+        return dict(
+            [(position.lineno, format_ns(runtime))
+            for position, (runtime, file_name) in self.where.items()
+            if file_name == input_file]
+        )
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame) -> None:
         pass
-
+    
     def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame) -> None:
 
         line_runtime = self.runtime_table.get_runtime_ns(
@@ -145,13 +151,11 @@ class Runtime(AnalysisBase):
             (file_name, positions) = call_loc.location()
             runtime = 0
             if positions in self.where.keys():
-                (runtime, _, file_name, positions) = self.where[positions]
+                (runtime, file_name) = self.where[positions]
 
             runtime += line_runtime
             self.where[positions] = (
                 runtime,
-                format_ns(int(runtime)),
-                file_name,
-                positions,
+                file_name
             )
             call_loc = call_loc.caller()

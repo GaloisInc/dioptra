@@ -140,18 +140,15 @@ class PKECalibrationData:
     def __init__(self, scheme: SchemeModelPke):
         self.runtime_samples: dict[Event, list[int]] = {}
         self.scheme: SchemeModelPke = scheme
-        self.ct_mem: dict[LevelInfo, int] = {}
-        self.pt_mem: dict[LevelInfo, int] = {}
+        self.ct_mem: dict[int, int] = {}
+        self.pt_mem: dict[int, int] = {}
         self.setup_memory_size = 0
 
     def set_memory_tables(
-        self, pt_data: dict[LevelInfo, int] = {}, ct_data: dict[LevelInfo, int] = {}
+        self, pt_data: dict[int, int] = {}, ct_data: dict[int, int] = {}
     ) -> None:
         self.ct_mem = ct_data
         self.pt_mem = pt_data
-
-    def set_plaintext_memory_dict(self, data: dict[LevelInfo, int] = {}) -> None:
-        self.pt_mem = data
 
     def set_setup_memory_estimate(self, size: int) -> None:
         self.setup_memory_size = size
@@ -171,8 +168,8 @@ class PKECalibrationData:
     def to_dict(self) -> dict[str, Any]:
         assert self.scheme is not None
         evts = [(evt.to_dict(), ts) for (evt, ts) in self.runtime_samples.items()]
-        ct_mems = [(lvl.to_dict(), m) for (lvl, m) in self.ct_mem.items()]
-        pt_mems = [(lvl.to_dict(), m) for (lvl, m) in self.pt_mem.items()]
+        ct_mems = list(self.ct_mem.items())
+        pt_mems = list(self.pt_mem.items())
         return {
             "scheme": self.scheme.to_dict(),
             "runtime": evts,
@@ -187,16 +184,10 @@ class PKECalibrationData:
     def from_dict(obj: dict[str, Any]) -> "PKECalibrationData":
         scheme = SchemeModelPke.from_dict(obj["scheme"])
         evts = [(Event.from_dict(evt), ts) for (evt, ts) in obj["runtime"]]
-        ct_mems = [
-            (LevelInfo.from_dict(lvl), m) for (lvl, m) in obj["memory"]["ciphertext"]
-        ]
-        pt_mems = [
-            (LevelInfo.from_dict(lvl), m) for (lvl, m) in obj["memory"]["plaintext"]
-        ]
         cal = PKECalibrationData(scheme)
         cal.runtime_samples = dict(evts)
-        cal.pt_mem = dict(pt_mems)
-        cal.ct_mem = dict(ct_mems)
+        cal.pt_mem = dict(obj["memory"]["plaintext"])
+        cal.ct_mem = dict(obj["memory"]["ciphertext"])
         cal.setup_memory_size = obj["memory"]["setup"]
         cal.scheme = scheme
         return cal
@@ -372,8 +363,8 @@ class PKECalibration:
         setup_size = psutil.Process().memory_info().rss
         samples = PKECalibrationData(self.scheme)
         samples.set_setup_memory_estimate(setup_size)
-        ct_mem: dict[LevelInfo, int] = {}
-        pt_mem: dict[LevelInfo, int] = {}
+        ct_mem: dict[int, int] = {}
+        pt_mem: dict[int, int] = {}
 
         def measure(
             label: EventKind, a1: LevelInfo | None = None, a2: LevelInfo | None = None
@@ -430,15 +421,15 @@ class PKECalibration:
                 with measure(EventKind.DECODE, level):
                     self.decode(pt)
 
-                if level not in ct_mem:
+                if level.level not in ct_mem:
                     ct_size = dioptra_native.ciphertext_size(ct)
                     self.log(f"Ciphertext {level}: {ct_size}")
-                    ct_mem[level] = ct_size
+                    ct_mem[level.level] = ct_size
 
-                if level not in pt_mem:
+                if level.level not in pt_mem:
                     pt_size = dioptra_native.plaintext_size(pt)
                     self.log(f"Plaintext {level}: {pt_size}")
-                    pt_mem[level] = pt_size
+                    pt_mem[level.level] = pt_size
 
             for level1, level2 in self.level_pairs_comm():
                 pt = self.scheme.arbitrary_pt(self.cc, level2)
