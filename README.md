@@ -1,6 +1,19 @@
 # Dioptra: FHE Performance Estimation
 
-TODO: Summarize Dipotra platform
+Dioptra is a Python library and command-line application for the analysis of
+runtime and memory properties of Python code utilizing the OpenFHE libraries.
+
+Dioptra works as follows:
+
+1. A calibration file is produced for your system, providing baseline
+   measurements on which all other estimations will be based
+2. Code to be analyzed is decorated with one of a small handful of Python
+   function decorators
+3. Dioptra is run with the calibration data and Python source to produce a
+   report on the terminal window, or an annotated version of the source
+
+See `examples/` for concrete examples of calibrations and decorated source files
+implementing a variety of FHE applications.
 
 ## Installation
 
@@ -8,84 +21,49 @@ TODO: Summarize Dipotra platform
 systems, and there is no intention to support Windows at this time.
 If you encounter any problems, please let us know!
 
-There are two installation methods described below:
-
-1. ["From scratch" / if you already have OpenFHE installed](#in-a-fresh-system-environment)
-2. [Via Docker](#docker)
-
-**You need only pick one method!**
-
-### In a fresh system environment
-
-The `dioptra` platform can be installed directly to your system with relative
-ease. The following assumes you have at least Python 3.9 installed.
-
-First, clone
-[the OpenFHE repository](https://github.com/openfheorg/openfhe-development) and
-follow the instructions
-[here](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html)
-to install for your platform (Linux or MacOS).
-
-For simplicity, we recommend that GMP, NTL, and tcmalloc **not** be installed.
-GMP/NTL have almost the same performance as the default backends for all
-schemes, and tcmalloc improves performance only when `OMP_NUM_THREADS > 1`. In
-this "building from scratch" case, you are free to utilize these features; but
-take note that the Nix and Docker options described below do not use these
-features.
-
-Next, we recommend creating a Python virtual environment to use for OpenFHE
-development (or a suitable alternative, such as a `conda` environment). For
-convenience, you can clone this repo and create the virtual environment at its
-root (`python -m venv .venv`). Activate the environment
-(`source .venv/bin/activate` in most cases).
-
-Follow the instructions to install
-[`openfhe-python`](https://github.com/openfheorg/openfhe-python). This will
-install the OpenFHE Python bindings to your virtual environment, which are
-required by `dioptra`.
-
-Finally, run `pip install .` (or `pip install -e .` if you're a developer) at
-the root of this repository. This will install the `dioptra` binary to your
-virtual environment. In cases where you already have an environment suitable for
-building and running OpenFHE Python applications, this step is all that's
-required to install the `dioptra` platform.
-
-### Docker
-
-See [the Docker README](README.Docker.md) for build/use details. Containers
-provide a JupyterLab web interface to build and run OpenFHE applications, and
-the `dioptra` platform is installed to be used interactively with shared volumes
-or scripts cloned to the container.
+We provide a `Dockerfile` describing an image that will handle the installation
+of OpenFHE, its Python bindings, all necessary Python packages, and the Dioptra
+sources. Please read [the Docker README](README.Docker.md) for more detailed
+instructions on building and using this image.
 
 ## Checking the installation
 
-To check that `dioptra` was installed in your environment, run:
+The easiest way to check that the installation proceeded as expected is to
+enter the `examples` directory and run `./run_examples.sh`. If this produces a
+series of reports without error, you are ready to use Dioptra.
 
-```shell
-> dioptra --help
-```
+## Using Dioptra
 
-You can check that OpenFHE is installed and available in an interactive Python
-shell:
+Once installed, the easiest way to get started is to explore `dioptra --help`
+and the `--help` option for all sub-commands. In general, you will need to run:
 
-```shell
->>> from openfhe import *
-```
+1. `dioptra context calibrate ...` to generate calibration data from an
+   appropriately-decorated function (note that `dioptra context list` is a
+   useful command to run first, as this will list the decorated functions in
+   the given Python source file, whose names you will need to run calibration).
+2. `dioptra estimate report ...` with your generated calibration data, and a
+   Python source. Note that the scheme of the calibration must match the scheme
+   of the actual Python source we care to analyze!
+3. `dioptra estimate annotate ...` if you would like to generate new source
+   files containing annotation comments showing more granular performance data,
+   so it is easier to see where time is being spent in your application.
 
-## Note for developers
+## For developers
 
-Note that changes to `dioptra` source code will **not** automatically result in
-a rebuild within an existing Nix shell - you will need to `exit` and re-run
-`nix-shell`.
-
-Similarly, the `Docker` image must be rebuilt and a new container started as the
-code changes. This makes Nix a relatively 'cheaper' option while developing
-`dioptra`, in terms of time spent rebuilding/reinstalling the tool for testing.
-
-## Quickstart
-
-TODO: Show a small FHE script (OpenFHE example maybe?) and how to use the tool on it
+There is a `.devcontainer` for VSCode development; this is virtually identical
+to the project-level image, but designed to allow for real-time editing of the
+source code. If you plan to modify any Dioptra source code, we recommend using
+the devcontainer to avoid unnecessary / excess rebuilds.
 
 ## Acknowledgments
 
-TODO: Credit ourselves, our academic partners (if appropriate), the client, etc
+We would like to thank all of the following for their contributions to Dioptra,
+both technical and theoretical:
+
+- David Archer
+- Rawane Issa
+- James LaMar
+- Hilder Vitor Lima Pereira
+- Chris Phifer
+
+TODO: NCSC distribution statement, if applicable?

@@ -1,11 +1,12 @@
-from dioptra.analyzer.metrics.analysisbase import Analyzer, Value, Ciphertext, Plaintext
-from dioptra.analyzer.metrics.multdepth import MultDepth
-from dioptra.analyzer.metrics.runtime import Runtime
+from dioptra.analyzer.pke.analysisbase import Analyzer, Value, Ciphertext, Plaintext
+from dioptra.analyzer.pke.multdepth import MultDepth
+from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.calibration import PKECalibrationData, format_ns
 import openfhe
 import time
 
-def runestimator(fun) -> None:#type: ignore
+
+def runestimator(fun) -> None:  # type: ignore
     # Read runtime table of each FHE operation
     runtime_samples_file = "src/dioptra/analyzer/balanced.samples"
     runtime_table = PKECalibrationData()
@@ -18,8 +19,10 @@ def runestimator(fun) -> None:#type: ignore
     print(f"Total Runtime: {rt.total_runtime} ns")
     rt.anotate_metric()
 
+
 def square(cryptocontext: Analyzer, c1: Ciphertext) -> Ciphertext:
     return cryptocontext.EvalMult(c1, c1)
+
 
 # @runestimator
 def example():
@@ -42,7 +45,11 @@ def example():
     num_iterations = 2
 
     level_budget = [3, 3]
-    depth = 10 + openfhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist) + (num_iterations - 1)
+    depth = (
+        10
+        + openfhe.FHECKKSRNS.GetBootstrapDepth(level_budget, secret_key_dist)
+        + (num_iterations - 1)
+    )
 
     parameters.SetMultiplicativeDepth(depth)
 
@@ -56,14 +63,14 @@ def example():
     print("Generating evaluation keys...")
     num_slots = parameters.GetRingDim() >> 1
     level_budget = [3, 3]
-    bsgs_dim = [0,0]
+    bsgs_dim = [0, 0]
     cc.EvalBootstrapSetup(level_budget, bsgs_dim, num_slots)
 
     # # key generation
     key_pair = cc.KeyGen()
     cc.EvalMultKeyGen(key_pair.secretKey)
     cc.EvalBootstrapKeyGen(key_pair.secretKey, num_slots)
-  
+
     max_mult_depth = parameters.GetMultiplicativeDepth()
 
     start_time = time.time_ns()
@@ -82,7 +89,7 @@ def example():
     v = cc.EvalMult(ciphertext1, ciphertext2)
     v2 = cc.EvalAdd(v, v)
     v3 = cc.EvalSub(v, v2)
-    v4 = cc.EvalMult(v, ciphertext1) 
+    v4 = cc.EvalMult(v, ciphertext1)
     v6 = square(cc, v)
     v7 = square(cc, v6)
     end_time = time.time_ns()

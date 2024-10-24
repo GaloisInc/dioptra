@@ -13,27 +13,26 @@ from dioptra.analyzer.utils.util import BPS
 
 class VectorMath:
     @staticmethod
-    def pw_mul(i1: Iterable|None, i2: Iterable|None) -> Iterable|None:
+    def pw_mul(i1: Iterable | None, i2: Iterable | None) -> Iterable | None:
         """Pointwise multiplication."""
         if i1 is None or i2 is None:
             return None
-        
+
         return [v1 * v2 for (v1, v2) in zip(i1, i2)]
-    
+
     @staticmethod
-    def pw_add(i1: Iterable|None, i2: Iterable|None) -> Iterable|None:
+    def pw_add(i1: Iterable | None, i2: Iterable | None) -> Iterable | None:
         """Pointwise multiplication."""
         if i1 is None or i2 is None:
             return None
         return [v1 + v2 for (v1, v2) in zip(i1, i2)]
 
     @staticmethod
-    def pw_sub(i1: Iterable|None, i2: Iterable|None) -> Iterable|None:
+    def pw_sub(i1: Iterable | None, i2: Iterable | None) -> Iterable | None:
         """Pointwise multiplication."""
         if i1 is None or i2 is None:
             return None
         return [v1 - v2 for (v1, v2) in zip(i1, i2)]
-    
 
 
 class Value:
@@ -50,7 +49,7 @@ class Value:
 
     def __hash__(self) -> int:
         return self.id.__hash__()
-    
+
     def __eq__(self, value: object) -> bool:
         if isinstance(value, Value):
             return self.id == value.id
@@ -62,7 +61,7 @@ class PrivateKey(Value):
 
 
 class Ciphertext(Value):
-    def __init__(self, level : LevelInfo = LevelInfo(), value:Any=None):
+    def __init__(self, level: LevelInfo = LevelInfo(), value: Any = None):
         super().__init__()
         self.value = value
         self.level = level
@@ -71,8 +70,9 @@ class Ciphertext(Value):
         self._finalizer = finalizer
         return self
 
+
 class Plaintext(Value):
-    def __init__(self, level : LevelInfo = LevelInfo(), value:Any=None):
+    def __init__(self, level: LevelInfo = LevelInfo(), value: Any = None):
         super().__init__()
         self.value = value
         self.level = level
@@ -80,21 +80,23 @@ class Plaintext(Value):
     def GetPackedValue(self):
         if self.value is None:
             raise ValueError("GetPackedValue(): Does not work for arbitrary values")
-        
+
         return list(self.value)
-    
+
     def GetRealPackedValue(self):
         if self.value is None:
             raise ValueError("GetRealPackedValue(): Does not work for arbitrary values")
-        
+
         return list(self.value)
-    
+
     def set_finalizer(self, finalizer: weakref.finalize) -> Self:
         self._finalizer = finalizer
         return self
 
+
 class PublicKey(Value):
     pass
+
 
 class KeyPair:
     publicKey: PublicKey
@@ -103,65 +105,81 @@ class KeyPair:
     def __init__(self, sk: PrivateKey, pk: PublicKey):
         self.publicKey = pk
         self.secretKey = sk
-    
+
 
 class AnalysisBase:
-    where : dict[int | dis.Positions, tuple[int, str, str, dis.Positions]]
-    def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame| None) -> None:
-        pass    
-    def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame| None) -> None:
-        pass    
-    def trace_encrypt(self, dest: Ciphertext, pt: Plaintext, key: PublicKey, call_loc: Frame| None) -> None:
-        pass    
-    def trace_decrypt(self, dest: Plaintext, ct1: Ciphertext, key: PrivateKey, call_loc: Frame| None) -> None:
-        pass
-    def trace_bootstrap(self, dest: Ciphertext, ct1: Ciphertext, call_loc: Frame| None) -> None:
-        pass
-    def trace_mul_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
-        pass
-    def trace_add_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
-        pass
-    def trace_sub_ctct(self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame| None) -> None:
-        pass
-    def trace_mul_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
-        pass
-    def trace_add_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
-        pass
-    def trace_sub_ctpt(self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame| None) -> None:
-        pass
-    def trace_alloc_ct(self, ct: Ciphertext, call_loc: Frame|None) -> None:
-        pass
-    def trace_alloc_pt(self, pt: Plaintext, call_loc: Frame|None) -> None:
-        pass
-    def trace_dealloc_ct(self, vid: int, level: LevelInfo, call_loc: Frame|None) -> None:
-        pass
-    def trace_dealloc_pt(self, vid: int, level: LevelInfo, call_loc: Frame|None) -> None:
+    where: dict[int | dis.Positions, tuple[int, str, str, dis.Positions]]
+
+    def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame | None) -> None:
         pass
     def trace_send_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame|None) -> None:
         pass
     def trace_recv_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame|None) -> None:
         pass
 
-    def anotate_metric(self) -> None:
-        anotated_files: dict[str, list[str]] = dict()
-        for metrics in self.where.values():
-            (_value, value_formated, file_name, position) = metrics
-            if os.path.exists(file_name):
-                lines = []
-                if file_name in anotated_files.keys():
-                    lines = anotated_files[file_name]
-                else:
-                    with open(file_name, "r") as file:
-                        lines = file.readlines()
-                lines[position.lineno - 1] = lines[position.lineno - 1].replace("\n", "") + " # "+type(self).__name__ +": " + str(value_formated) + "\n"
-                anotated_files[file_name] = lines
+    def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame | None) -> None:
+        pass
 
-        for file_name in anotated_files.keys():
-            anotated_files[file_name] = lines
-            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
-            with open(file_name_anotated, 'w') as file_edited:
-                file_edited.writelines(lines)
+    def trace_encrypt(
+        self, dest: Ciphertext, pt: Plaintext, key: PublicKey, call_loc: Frame | None
+    ) -> None:
+        pass
 
+    def trace_decrypt(
+        self, dest: Plaintext, ct1: Ciphertext, key: PrivateKey, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_bootstrap(
+        self, dest: Ciphertext, ct1: Ciphertext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_mul_ctct(
+        self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_add_ctct(
+        self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_sub_ctct(
+        self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_mul_ctpt(
+        self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_add_ctpt(
+        self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_sub_ctpt(
+        self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_alloc_ct(self, ct: Ciphertext, call_loc: Frame | None) -> None:
+        pass
+
+    def trace_alloc_pt(self, pt: Plaintext, call_loc: Frame | None) -> None:
+        pass
+
+    def trace_dealloc_ct(
+        self, vid: int, level: LevelInfo, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_dealloc_pt(
+        self, vid: int, level: LevelInfo, call_loc: Frame | None
+    ) -> None:
+        pass
 
 
 class Network:
@@ -177,23 +195,30 @@ class Network:
 
 
 class Analyzer:
-    analysis_list : list[AnalysisBase]
+    analysis_list: list[AnalysisBase]
 
-    def __init__(self, analysis_list: list[AnalysisBase], scheme: SchemeModelPke, trace_loc: TraceLoc|None = None):
+    def __init__(
+        self,
+        analysis_list: list[AnalysisBase],
+        scheme: SchemeModelPke,
+        trace_loc: TraceLoc | None = None,
+    ):
         self.analysis_list = analysis_list
         self.scheme = scheme
         self.trace_loc = trace_loc
 
     def KeyGen(self) -> KeyPair:
         return KeyPair(PrivateKey(), PublicKey())
-    
+
     def EvalMultKeyGen(self, sk: PrivateKey) -> None:
         pass
 
     def EvalRotateKeyGen(self, sk: PrivateKey, index_list: list[int]) -> None:
         pass
 
-    def MakePackedPlaintext(self, value: list[int], noise_scale_deg: int = 1, level: int = 0) -> Plaintext:
+    def MakePackedPlaintext(
+        self, value: list[int], noise_scale_deg: int = 1, level: int = 0
+    ) -> Plaintext:
         caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noise_scale_deg).max(self.scheme.min_level())
         new = self._mk_pt(lv, value, caller_loc)
@@ -201,9 +226,9 @@ class Analyzer:
             analysis.trace_encode(new, level, caller_loc)
         return new
 
-    def MakeCKKSPackedPlaintext(self, *args, **kwargs) -> Plaintext:#type: ignore
-        level = kwargs.get('level',0)
-        noise_scale_deg = kwargs.get('scaleDeg', 1)
+    def MakeCKKSPackedPlaintext(self, *args, **kwargs) -> Plaintext:  # type: ignore
+        level = kwargs.get("level", 0)
+        noise_scale_deg = kwargs.get("scaleDeg", 1)
 
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], list):
@@ -211,15 +236,17 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_encode_ckks(new, caller_loc)
             return new
-        raise NotImplementedError("MakeCKKSPackedPlaintext: analyzer does not implement this overload")
-    
+        raise NotImplementedError(
+            "MakeCKKSPackedPlaintext: analyzer does not implement this overload"
+        )
+
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
         caller_loc = code_loc.calling_frame()
         new = self._mk_ct(level=plaintext.level, value=plaintext.value, loc=caller_loc)
         for analysis in self.analysis_list:
             analysis.trace_encrypt(new, plaintext, public_key, caller_loc)
         return new
-        
+
     def Decrypt(self, *args, **kwargs):
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], PrivateKey) and isinstance(args[1], Ciphertext):
@@ -229,10 +256,10 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_decrypt(new, ct, pkey, caller_loc)
             return new
-        
+
         raise NotImplementedError("Decrypt: analyzer does not implement this overload")
-    
-    def EvalMult(self, *args, **kwargs) -> Ciphertext:#type: ignore
+
+    def EvalMult(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
             level = self.scheme.mul_level(args[0].level, args[1].level)
@@ -240,17 +267,19 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_mul_ctct(new, args[0], args[1], caller_loc)
             return new
-        
+
         elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
             level = self.scheme.mul_level(args[0].level, args[1].level)
-            new = self._mk_ct(level, VectorMath.pw_mul(args[0].value, args[1].value), caller_loc)
+            new = self._mk_ct(
+                level, VectorMath.pw_mul(args[0].value, args[1].value), caller_loc
+            )
             for analysis in self.analysis_list:
                 analysis.trace_mul_ctpt(new, args[0], args[1], caller_loc)
             return new
 
         raise NotImplementedError("EvalMult: analyzer does not implement this overload")
-    
-    def EvalAdd(self, *args, **kwargs) -> Ciphertext:#type: ignore
+
+    def EvalAdd(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
             level = self.scheme.add_level(args[0].level, args[1].level)
@@ -258,7 +287,7 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_add_ctct(new, args[0], args[1], caller_loc)
             return new
-        
+
         elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
             level = self.scheme.add_level(args[0].level, args[1].level)
             new = self._mk_ct(level, VectorMath.pw_add(args[0].value, args), caller_loc)
@@ -267,8 +296,8 @@ class Analyzer:
             return new
 
         raise NotImplementedError("EvalAdd: analyzer does not implement this overload")
-    
-    def EvalSub(self, *args, **kwargs) -> Ciphertext:#type: ignore
+
+    def EvalSub(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
 
         if isinstance(args[0], Ciphertext) and isinstance(args[1], Ciphertext):
@@ -277,7 +306,7 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_sub_ctct(new, args[0], args[1], caller_loc)
             return new
-        
+
         elif isinstance(args[0], Ciphertext) and isinstance(args[1], Plaintext):
             level = self.scheme.add_level(args[0].level, args[1].level)
             new = self._mk_ct(level, VectorMath.pw_sub(args[0].value, args), caller_loc)
@@ -286,14 +315,20 @@ class Analyzer:
             return new
 
         raise NotImplementedError("EvalAdd: analyzer does not implement this overload")
-    
-    def EvalBootstrap(self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0) -> Ciphertext: 
+
+    def EvalBootstrap(
+        self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0
+    ) -> Ciphertext:
         caller_loc = code_loc.calling_frame()
-        new = self._mk_ct(level=self.scheme.bootstrap_level(ciphertext.level), value=ciphertext.value, loc=caller_loc)
+        new = self._mk_ct(
+            level=self.scheme.bootstrap_level(ciphertext.level),
+            value=ciphertext.value,
+            loc=caller_loc,
+        )
         for analysis in self.analysis_list:
             analysis.trace_bootstrap(new, ciphertext, caller_loc)
         return new
-    
+
     def ArbitraryCT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
         caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
@@ -303,6 +338,8 @@ class Analyzer:
         nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
         return Network(self, nm)
 
+    def Analyze(self, f: Callable, *args, **kwargs):
+        f(self, args, kwargs)
 
     def _dealloc_ct(self, vid: int, level: LevelInfo) -> None:
         loc = None
@@ -320,14 +357,14 @@ class Analyzer:
         for analysis in self.analysis_list:
             analysis.trace_dealloc_pt(vid, level, loc)
 
-    def _mk_ct(self, level: LevelInfo, value: Any, loc: Frame|None) -> Ciphertext:
+    def _mk_ct(self, level: LevelInfo, value: Any, loc: Frame | None) -> Ciphertext:
         ct = Ciphertext(level=level, value=value)
         for analysis in self.analysis_list:
             analysis.trace_alloc_ct(ct, loc)
         ct.set_finalizer(weakref.finalize(ct, self._dealloc_ct, ct.id, level))
         return ct
-    
-    def _mk_pt(self, level: LevelInfo, value: Any, loc: Frame|None) -> Plaintext:
+
+    def _mk_pt(self, level: LevelInfo, value: Any, loc: Frame | None) -> Plaintext:
         pt = Plaintext(level=level, value=value)
         for analysis in self.analysis_list:
             analysis.trace_alloc_pt(pt, loc)
@@ -341,8 +378,8 @@ class Analyzer:
     def _recv_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame|None):
         for analysis in self.analysis_list:
             analysis.trace_recv_ct(ct, nm, loc)
-
     
+
     # def _enable_trace(self):
     #     sys.settrace(self._trace)
 

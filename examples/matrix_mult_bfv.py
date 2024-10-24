@@ -3,16 +3,21 @@ import openfhe as ofhe
 
 import random
 
-from dioptra.analyzer.metrics.analysisbase import Analyzer
-from dioptra.analyzer.metrics.runtime import Runtime
+from dioptra.analyzer.pke.analysisbase import Analyzer
+from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
 from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
-def matrix_mult(cc: ofhe.CryptoContext, x: list[list[ofhe.Ciphertext]],  y: list[list[ofhe.Ciphertext]]):
-    assert len(x[0]) == len(y) 
+
+def matrix_mult(
+    cc: ofhe.CryptoContext,
+    x: list[list[ofhe.Ciphertext]],
+    y: list[list[ofhe.Ciphertext]],
+):
+    assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 
     rows = len(x)
@@ -29,16 +34,26 @@ def matrix_mult(cc: ofhe.CryptoContext, x: list[list[ofhe.Ciphertext]],  y: list
             result[i][j] = sum
     return result
 
+
 # make a cryptocontext and return the context and the parameters used to create it
-def bgv1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsBGVRNS, ofhe.KeyPair, list[ofhe.PKESchemeFeature]]:
+def bfv1() -> tuple[
+    ofhe.CryptoContext,
+    ofhe.CCParamsBFVRNS,
+    ofhe.KeyPair,
+    list[ofhe.PKESchemeFeature],
+]:
     # Sample Program: Step 1: Set CryptoContext
-    parameters = ofhe.CCParamsBGVRNS()
+    parameters = ofhe.CCParamsBFVRNS()
     parameters.SetPlaintextModulus(65537)
     parameters.SetMultiplicativeDepth(2)
 
     crypto_context = ofhe.GenCryptoContext(parameters)
     # Enable features that you wish to use
-    features = [ofhe.PKESchemeFeature.PKE, ofhe.PKESchemeFeature.KEYSWITCH, ofhe.PKESchemeFeature.LEVELEDSHE]
+    features = [
+        ofhe.PKESchemeFeature.PKE,
+        ofhe.PKESchemeFeature.KEYSWITCH,
+        ofhe.PKESchemeFeature.LEVELEDSHE,
+    ]
     for feature in features:
         crypto_context.Enable(feature)
 
@@ -55,11 +70,12 @@ def bgv1() -> tuple[ofhe.CryptoContext, ofhe.CCParamsBGVRNS, ofhe.KeyPair, list[
 
     return (crypto_context, parameters, key_pair, features)
 
+
 # Actually run program and time it
 def main():
     rows = 5
-    cols = 5 
-    (cc, _, key_pair, _) = bgv1()
+    cols = 5
+    (cc, _, key_pair, _) = bfv1()
 
     # encode and encrypt inputs labels
     xs = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
@@ -85,7 +101,7 @@ def main():
     start_ns = time.time_ns()
     result_ct = matrix_mult(cc, x_ct, y_ct)
     end_ns = time.time_ns()
-    
+
     rows = len(xs)
     cols = len(ys[0])
     result = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
@@ -95,17 +111,18 @@ def main():
             result_dec.SetLength(1)
             result[i][j] = result_dec.GetCKKSPackedValue()
         print(result[i])
-    
+
     print(f"Actual runtime: {format_ns(end_ns - start_ns)}")
+
 
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
     rows = 5
-    cols = 5  
+    cols = 5
     x_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
     y_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
     matrix_mult(cc, x_ct, y_ct)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
