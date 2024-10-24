@@ -4,12 +4,13 @@ from typing import Any, Callable, Iterable, Self, Sequence, TypeVar
 import weakref
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelPke
 from dioptra.analyzer.utils import code_loc
-from dioptra.analyzer.utils.code_loc import Frame, TraceLoc
+from dioptra.analyzer.utils.code_loc import Frame, TraceLoc, calling_frame
 import dis
 import os.path
-
 from dioptra.analyzer.utils.network import NetworkModel
 from dioptra.analyzer.utils.util import BPS
+from dioptra.analyzer.utils.error import NotSupportedException
+
 
 class VectorMath:
     @staticmethod
@@ -22,14 +23,14 @@ class VectorMath:
 
     @staticmethod
     def pw_add(i1: Iterable | None, i2: Iterable | None) -> Iterable | None:
-        """Pointwise multiplication."""
+        """Pointwise addition."""
         if i1 is None or i2 is None:
             return None
         return [v1 + v2 for (v1, v2) in zip(i1, i2)]
 
     @staticmethod
     def pw_sub(i1: Iterable | None, i2: Iterable | None) -> Iterable | None:
-        """Pointwise multiplication."""
+        """Pointwise subtraction."""
         if i1 is None or i2 is None:
             return None
         return [v1 - v2 for (v1, v2) in zip(i1, i2)]
@@ -195,7 +196,7 @@ class Network:
 
 
 class Analyzer:
-    analysis_list: list[AnalysisBase]
+
 
     def __init__(
         self,
@@ -209,12 +210,6 @@ class Analyzer:
 
     def KeyGen(self) -> KeyPair:
         return KeyPair(PrivateKey(), PublicKey())
-
-    def EvalMultKeyGen(self, sk: PrivateKey) -> None:
-        pass
-
-    def EvalRotateKeyGen(self, sk: PrivateKey, index_list: list[int]) -> None:
-        pass
 
     def MakePackedPlaintext(
         self, value: list[int], noise_scale_deg: int = 1, level: int = 0
@@ -236,8 +231,8 @@ class Analyzer:
             for analysis in self.analysis_list:
                 analysis.trace_encode_ckks(new, caller_loc)
             return new
-        raise NotImplementedError(
-            "MakeCKKSPackedPlaintext: analyzer does not implement this overload"
+        raise NotSupportedException(
+            "MakeCKKSPackedPlaintext: analyzer does not implement this overload", caller_loc
         )
 
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
@@ -257,7 +252,7 @@ class Analyzer:
                 analysis.trace_decrypt(new, ct, pkey, caller_loc)
             return new
 
-        raise NotImplementedError("Decrypt: analyzer does not implement this overload")
+        raise NotSupportedException("Decrypt: analyzer does not implement this overload", caller_loc)
 
     def EvalMult(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
@@ -277,7 +272,7 @@ class Analyzer:
                 analysis.trace_mul_ctpt(new, args[0], args[1], caller_loc)
             return new
 
-        raise NotImplementedError("EvalMult: analyzer does not implement this overload")
+        raise NotSupportedException("EvalMult: analyzer does not implement this overload", caller_loc)
 
     def EvalAdd(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
@@ -295,7 +290,7 @@ class Analyzer:
                 analysis.trace_add_ctpt(new, args[0], args[1], caller_loc)
             return new
 
-        raise NotImplementedError("EvalAdd: analyzer does not implement this overload")
+        raise NotSupportedException("EvalAdd: analyzer does not implement this overload", caller_loc)
 
     def EvalSub(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
@@ -314,7 +309,7 @@ class Analyzer:
                 analysis.trace_sub_ctpt(new, args[0], args[1], caller_loc)
             return new
 
-        raise NotImplementedError("EvalAdd: analyzer does not implement this overload")
+        raise NotSupportedException("EvalAdd: analyzer does not implement this overload", caller_loc)
 
     def EvalBootstrap(
         self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0
@@ -328,6 +323,8 @@ class Analyzer:
         for analysis in self.analysis_list:
             analysis.trace_bootstrap(new, ciphertext, caller_loc)
         return new
+
+    # -- analyzer specific API
 
     def ArbitraryCT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
         caller_loc = code_loc.calling_frame()
@@ -377,15 +374,48 @@ class Analyzer:
             analysis.trace_recv_ct(ct, nm, loc)
     
 
-    # def _enable_trace(self):
-    #     sys.settrace(self._trace)
+    all_context_fns = set ([
+        "ClearEvalAutomorphismKeys", "ClearEvalMultKeys", "Decrypt", "DeserializeEvalAutomorphismKey",
+        "DeserializeEvalMultKey", "Enable", "Encrypt", "EvalAdd", "EvalAddInPlace",
+        "EvalAddManyInPlace", "EvalAddMutable", "EvalAddMutableInPlace", "EvalAtIndex", "EvalAtIndexKeyGen", 
+        "EvalAutomorphismKeyGen", "EvalBootstrap", "EvalBootstrapKeyGen", "EvalBootstrapSetup", 
+        "EvalCKKStoFHEW", "EvalCKKStoFHEWKeyGen", "EvalCKKStoFHEWPrecompute", "EvalCKKStoFHEWSetup", 
+        "EvalChebyshevFunction", "EvalChebyshevSeries", "EvalChebyshevSeriesLinear", "EvalChebyshevSeriesPS", 
+        "EvalCompareSchemeSwitching", "EvalCompareSwitchPrecompute", "EvalCos", "EvalDivide", "EvalFHEWtoCKKS", 
+        "EvalFHEWtoCKKSKeyGen", "EvalFHEWtoCKKSSetup", "EvalFastRotation", "EvalFastRotationExt", 
+        "EvalFastRotationPrecompute", "EvalInnerProduct", "EvalLinearWSum", "EvalLinearWSumMutable", 
+        "EvalLogistic", "EvalMaxSchemeSwitching", "EvalMaxSchemeSwitchingAlt", "EvalMerge", 
+        "EvalMinSchemeSwitching", "EvalMinSchemeSwitchingAlt", "EvalMult", "EvalMultAndRelinearize", 
+        "EvalMultKeyGen", "EvalMultKeysGen", "EvalMultMany", "EvalMultMutable", "EvalMultMutableInPlace", 
+        "EvalMultNoRelin", "EvalNegate", "EvalNegateInPlace", "EvalPoly", "EvalPolyLinear", "EvalPolyPS", 
+        "EvalRotate", "EvalRotateKeyGen", "EvalSchemeSwitchingKeyGen", "EvalSchemeSwitchingSetup", 
+        "EvalSin", "EvalSquare", "EvalSquareInPlace", "EvalSquareMutable", "EvalSub", "EvalSubInPlace", 
+        "EvalSubMutable", "EvalSubMutableInPlace", "EvalSum", "EvalSumCols", "EvalSumColsKeyGen", 
+        "EvalSumKeyGen", "EvalSumRows", "EvalSumRowsKeyGen", "FindAutomorphismIndex", "FindAutomorphismIndices", 
+        "GetBinCCForSchemeSwitch", "GetCyclotomicOrder", "GetDigitSize", "GetEvalSumKeyMap", "GetKeyGenLevel", 
+        "GetModulus", "GetModulusCKKS", "GetPlaintextModulus", "GetRingDimension", "GetScalingFactorReal", 
+        "GetScalingTechnique", "InsertEvalMultKey", "InsertEvalSumKey", "IntMPBootAdd", "IntMPBootAdjustScale", 
+        "IntMPBootDecrypt", "IntMPBootEncrypt", "IntMPBootRandomElementGen", "KeyGen", "KeySwitchGen", 
+        "MakeCKKSPackedPlaintext", "MakeCoefPackedPlaintext", "MakePackedPlaintext", "MakeStringPlaintext", 
+        "ModReduce", "ModReduceInPlace", "MultiAddEvalKeys", "MultiAddEvalMultKeys", "MultiAddEvalSumKeys", 
+        "MultiEvalSumKeyGen", "MultiKeySwitchGen", "MultiMultEvalKey", "MultipartyDecryptFusion", 
+        "MultipartyDecryptLead", "MultipartyDecryptMain", "MultipartyKeyGen", "ReEncrypt", "ReKeyGen", 
+        "Relinearize", "RelinearizeInPlace", "Rescale", "RescaleInPlace", "SerializeEvalAutomorphismKey", 
+        "SerializeEvalMultKey", "SetKeyGenLevel", "get_ptr"
+    ])
 
-    # def _trace(self, frame: any, event: str, arg: any) -> function:
-    #     if event == 'call':
-    #         caller = frame.f_back
-    #         print(f"calling {frame.f_code.co_qualname} at {frame_loc(caller)}")
+# Set all unimplemented functions to throw the proper error
+def add_unsupported_methods():
+    def mk_unsupported(nm):
+        def f(self, *args, **kwargs):
+            frm = calling_frame()
+            raise NotSupportedException.fn_not_impl(nm, frm)
+        return f
 
-    #     if event == 'return' and frame.f_back is not None:
-    #         caller = frame.f_back
-    #         print(f"return from {frame.f_code.co_qualname} to {caller.f_code.co_qualname} at {frame_loc(caller)}")
-    #     return self._trace
+    for name in Analyzer.all_context_fns:
+        if hasattr(Analyzer, name):
+            continue
+        
+        setattr(Analyzer, name, mk_unsupported(name))
+
+add_unsupported_methods()
