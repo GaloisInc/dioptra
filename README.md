@@ -72,6 +72,66 @@ set selected, but only needs to be run once for most applications (and, the
 calibration data for your system / the system of interest may be shared with
 other Dioptra users for their own estimation experiments).
 
+### Estimating runtime and memory performance
+
+Suppose we have the following Python function implementing matrix multiplication
+under FHE, using CKKS:
+
+```python
+def matrix_mult(
+    cc: ofhe.CryptoContext,
+    x: list[list[ofhe.Ciphertext]],
+    y: list[list[ofhe.Ciphertext]],
+):
+    assert len(x[0]) == len(y)
+
+    rows = len(x)
+    cols = len(y[0])
+    l = len(x[0])
+
+    result = [[0 for _ in range(rows)] for _ in range(cols)]
+    for i in range(rows):
+        for j in range(cols):
+            sum = cc.MakeCKKSPackedPlaintext([0])
+            for k in range(l):
+                mul = cc.EvalMult(x[i][k], y[k][j])
+                sum = cc.EvalAdd(mul, sum)
+            result[i][j] = sum
+    return result
+```
+
+And, suppose we are interested in how this function will perform for 5x5
+matrices. Furthermore, suppose we're going to setup the CKKS parameters to be
+the same as those for which we earlier produced calibration data.
+
+We can write the following function, which uses a Dioptra `Analyzer` object
+where we might expect an `ofhe.CryptoContext`:
+
+```python
+@dioptra_runtime()
+def report_runtime(cc: Analyzer):
+    rows = 5
+    cols = 5
+    x_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
+    y_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
+    matrix_mult(cc, x_ct, y_ct)
+```
+
+The decorator is how Dioptra will know to trace this function's execution and
+produce runtime and memory estimates. Notice that the `Analyzer` is passed to
+`matrix_mult`: This means that all operations in `matrix_mult` using this object
+will be considered during estimation.
+
+The above is implemented in `examples/matrix_mult_ckks.py`. We can use our
+calibrations from earlier to produce an estimate report using the following:
+
+```console
+> dioptra estimate report --calibration-data /path/to/calibrations/ckks.dc examples/matrix_mult_ckks.py
+```
+
+Which will output a wall-clock time estimate, and a maximum memory usage
+estimate.
+
 ## For developers
 
 There is a `.devcontainer` for VSCode development; this is virtually identical
