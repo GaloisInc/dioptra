@@ -34,19 +34,43 @@ series of reports without error, you are ready to use Dioptra.
 
 ## Using Dioptra
 
-Once installed, the easiest way to get started is to explore `dioptra --help`
-and the `--help` option for all sub-commands. In general, you will need to run:
+### Calibrating for your system
 
-1. `dioptra context calibrate ...` to generate calibration data from an
-   appropriately-decorated function (note that `dioptra context list` is a
-   useful command to run first, as this will list the decorated functions in
-   the given Python source file, whose names you will need to run calibration).
-2. `dioptra estimate report ...` with your generated calibration data, and a
-   Python source. Note that the scheme of the calibration must match the scheme
-   of the actual Python source we care to analyze!
-3. `dioptra estimate annotate ...` if you would like to generate new source
-   files containing annotation comments showing more granular performance data,
-   so it is easier to see where time is being spent in your application.
+Dioptra bases its estimates on calibration data collected for the specific
+system under test. **Important!** This step necessitates running FHE operations
+many times, which can take a significant amount of time. For a given choice of
+FHE scheme and parameters, however, this process only needs to be completed once
+for most applications.
+
+For convenience, we provide the contexts necessary to calibrate Dioptra for your
+system for a number of common schemes and parameter sets. These are defined in
+`examples/contexts.py`, though you do not need to read or modify this file to
+calibrate Dioptra on your system.
+
+To view the available contexts for calibration, first run:
+
+```console
+> dioptra context list examples/contexts.py
+```
+
+Which will display the names of the available calibration contexts (and their
+locations, if you need to adjust the parameters used).
+
+Suppose you want to collect calibration data for CKKS. At time of writing, the
+provided CKKS context we need is named `ckks1`. We run the following to actually
+collect calibration data:
+
+```console
+> dioptra context calibrate --name ckks1 --output /path/to/calibrations/ckks.dc examples/contexts.py
+```
+
+By default, 5 samples will be used during calibration. You can change this
+default using `--sample-count` (or the shorter `-sc`).
+
+Remember that this might take a long time, depending on the scheme and parameter
+set selected, but only needs to be run once for most applications (and, the
+calibration data for your system / the system of interest may be shared with
+other Dioptra users for their own estimation experiments).
 
 ## For developers
 
