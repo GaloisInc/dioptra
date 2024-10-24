@@ -162,7 +162,7 @@ def report_main(sample_file: str, files: list[str]) -> None:
         ):
             avg_runtime = calibration.avg_case()
             total = RuntimeTotal()
-            runtime_analysis = RuntimeEstimate(avg_runtime, total)
+            runtime_analysis = RuntimeEstimate(avg_runtime, calibration.ciphertext_size, total)
             memory_analysis = BinFHEMemoryEstimate(
                 calibration.setup_memory_size, calibration.ciphertext_size, maxmem
             )
@@ -228,7 +228,7 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         calibration, BinFHECalibrationData
     ):
         annot_rpt = RuntimeAnnotation()
-        est = RuntimeEstimate(calibration.avg_case(), annot_rpt)
+        est = RuntimeEstimate(calibration.avg_case(), calibration.ciphertext_size, annot_rpt)
         analyzer = BinFHEAnalyzer(calibration.params, est)
         case.run(analyzer)
         annotation = dict(

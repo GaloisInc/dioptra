@@ -5,12 +5,14 @@ from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
 from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
 from dioptra.analyzer.report.runtime import RuntimeReport
 from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.analyzer.utils.network import NetworkModel
 
 
 class RuntimeEstimate(BinFHEAnalysisBase):
-    def __init__(self, ort: dict[BinFHEEvent, int], report: RuntimeReport):
+    def __init__(self, ort: dict[BinFHEEvent, int], ct_size: int, report: RuntimeReport):
         self.operation_runtime_table = ort
         self.runtime_report = report
+        self.ct_size = ct_size
 
     def trace_evt(self, evt: BinFHEEvent, loc: Frame | None):
         runtime = self.operation_runtime_table[evt]
@@ -43,3 +45,11 @@ class RuntimeEstimate(BinFHEAnalysisBase):
 
     def trace_eval_not(self, dest: LWECiphertext, c: LWECiphertext, loc: Frame | None):
         self.trace_evt(BinFHEEvent(BinFHEEventKind.EVAL_NOT), loc)
+
+    def trace_send_ct(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None) -> None:
+        runtime = nm.send_latency_ns(self.ct_size)
+        self.runtime_report.runtime_estimate(loc, runtime)
+    
+    def trace_recv_ct(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None) -> None:
+        runtime = nm.recv_latency_ns(self.ct_size)
+        self.runtime_report.runtime_estimate(loc, runtime)

@@ -338,9 +338,6 @@ class Analyzer:
         nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
         return Network(self, nm)
 
-    def Analyze(self, f: Callable, *args, **kwargs):
-        f(self, args, kwargs)
-
     def _dealloc_ct(self, vid: int, level: LevelInfo) -> None:
         loc = None
         if self.trace_loc is not None:
