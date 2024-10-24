@@ -1,115 +1,126 @@
-import time
 import openfhe as ofhe
 
-import random
+from time import time_ns
+from random import random
+from functools import reduce
+from typing import Self
 
 from dioptra.analyzer.pke.analysisbase import Analyzer
 from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
 
-from typing import Self
-
-
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
     return cc.EvalMult(input, input)
+
+class Neuron:
+    def __init__(
+        self, 
+        cc: ofhe.CryptoContext,
+        weights: list[ofhe.Ciphertext], 
+        bias = None,
+    ) -> Self:
+        self.num_inputs = len(weights)
+        self.weights = weights
+        self.bias = cc.MakeCKKSPackedPlaintext([0.0])
+
+    def set_id(self, neuron_id: int):
+        self.neuron_id = neuron_id
+
+    def set_bias(self, bias: ofhe.Ciphertext):
+        self.bias = bias
+
+    def neuron_from_plaintext(cc: ofhe.CryptoContext, weights: list[int]) -> Self:
+        weights_ckks = []
+        for w in weights:
+            weights_ckks.append(cc.MakeCKKSPackedPlaintext([w]))
+        return Neuron(cc, weights_ckks)
+
+    def train(
+        self,
+        cc: ofhe.CryptoContext,
+        inputs: list[ofhe.Ciphertext]
+    ) -> ofhe.Ciphertext:
+        if len(inputs) != self.num_inputs:
+            raise ValueError(f"The number of inputs {len(inputs)} does not match the number of neuron inputs {self.num_inputs}")
+
+        mults = map(lambda x, y: cc.EvalMult(x,y), inputs, self.weights)
+        sum = reduce(lambda x, y: cc.EvalAdd(x,y), mults)
+        sum = cc.EvalAdd(sum, self.bias)
+        return nn_activation(cc, sum)
+
+class Layer:
+    def __init__(
+        self, 
+        cc: ofhe.CryptoContext,
+        neurons: list[Neuron],
+        bias = None,
+    ) -> Self:
+        self.num_neuron = len(neurons)
+
+        for i, neuron in enumerate(neurons):
+            neuron.set_id(i)   
+            if bias != None:
+                neuron.set_bias(bias)      
+        self.neurons = neurons
+
+    def set_id(self, layer_id: int):
+        self.layer_id = layer_id
+
+    def layer_from_plaintexts(cc: ofhe.CryptoContext, weights_layer: list[list[int]]) -> Self:
+        neurons = []
+        for weights_neuron in weights_layer:
+            neuron = Neuron.neuron_from_plaintext(cc, weights_neuron)
+            neurons.append(neuron)
+        return Layer(cc, neurons)
+
+    def train(
+        self, 
+        cc: ofhe.CryptoContext, 
+        inputs: list[ofhe.Ciphertext]
+        ) -> list[ofhe.Ciphertext]:
+        self.check_correctness(len(inputs))
+
+        layer_out = []
+        for i, neuron in enumerate(self.neurons):
+            neuron_out = neuron.train(cc, inputs)
+            if (i+1) % 10 == 0:
+                neuron_out = cc.EvalBootstrap(neuron_out)
+            layer_out.append(neuron_out)
+        return layer_out
+
+    def check_correctness(self, num_inputs: int):
+        for neuron in self.neurons:
+            assert num_inputs == neuron.num_inputs, f"On Layer #{self.layer_id}: Number of inputs{num_inputs} != Indegree of Neuron #{neuron.neuron_id} is {neuron.num_inputs}" 
 
 
 class NN:
     def __init__(
         self,
         cc: ofhe.CryptoContext,
-        weights: list[list[ofhe.Ciphertext]],
-        biases: list[ofhe.Ciphertext],
+        layers: list[Layer] 
     ) -> Self:
-        self.num_layers = len(weights)
-        self.num_hidden_layers = len(weights[0])
-        self.num_inputs = len(weights[0][0])
+        self.num_layers = len(layers)
+        for i, layer in enumerate(layers):
+            layer.set_id(i)
+        self.layers = layers
 
-        self.weights = weights
-        self.biases = biases
+    def nn_from_plaintexts(cc: ofhe.CryptoContext, weights_nn: list[list[list[float]]]) -> Self:
+        layers = []
+        for weights_layer in weights_nn:
+            layer = Layer.layer_from_plaintexts(cc, weights_layer)
+            layers.append(layer)
+        return NN(cc, layers)
 
-    def hidden_layer(
+    def train(
         self,
         cc: ofhe.CryptoContext,
-        x: list[ofhe.Ciphertext],
-        layer_num: int,
-        hidden_layer_num: int,
-    ):
-        l = len(x)
-        sum = cc.MakeCKKSPackedPlaintext([0])
-        for i in range(l):
-            weighted = cc.EvalMult(x[i], self.weights[layer_num][hidden_layer_num][i])
-            weighted_bias = cc.EvalAdd(
-                weighted, self.biases[layer_num][hidden_layer_num]
-            )
-            sum = cc.EvalAdd(weighted_bias, sum)
-        return nn_activation(cc, sum)
-
-    def neuron(
-        self, cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], layer_num: int
+        inputs: list[ofhe.Ciphertext]
     ) -> ofhe.Ciphertext:
-        l = len(x)
-        assert l == self.num_inputs
-
-        layer_out = []
-        for i in range(self.num_hidden_layers):
-            out = self.hidden_layer(cc, x, layer_num, i)
-            layer_out.append(out)
-        return layer_out
-
-    def forward(self, cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext]):
-        # Simplification
-        assert len(x) == self.num_hidden_layers
-        input = x
-        for layer in range(self.num_layers):
-            layer_out = self.neuron(cc, input, layer)
-            input = layer_out
-        return input
-
-
-def rand_nn(
-    cc: ofhe.CryptoContext, num_layers: int, num_hidden_layers: int, num_inputs: int
-) -> Self:
-    weights = [
-        [
-            [cc.MakeCKKSPackedPlaintext([i]) for i in range(num_inputs)]
-            for _ in range(num_hidden_layers)
-        ]
-        for _ in range(num_layers)
-    ]
-    biases = [
-        [cc.MakeCKKSPackedPlaintext([0.0]) for _ in range(num_hidden_layers)]
-        for _ in range(num_layers)
-    ]
-    return (weights, biases)
-
-
-def make_w_b(
-    cc: ofhe.CryptoContext, weights: list[list[list[float]]], biases: list[list[float]]
-) -> Self:
-    weights_plt = [
-        [
-            [cc.MakeCKKSPackedPlaintext([w]) for w in weights[i][j]]
-            for j in range(len(weights[i]))
-        ]
-        for i in range(len(weights))
-    ]
-    biases_plt = [
-        [cc.MakeCKKSPackedPlaintext([b]) for b in biases[i]] for i in range(len(biases))
-    ]
-    return (weights_plt, biases_plt)
-
-
-def train(cc: ofhe.CryptoContext, x: list[ofhe.Ciphertext], num_layers):
-    print("Running NN..")
-    num_inputs = len(x)
-    num_hidden_layers = num_inputs
-    (weights, biases) = rand_nn(cc, num_layers, num_hidden_layers, num_inputs)
-    # (weights, biases) = make_w_b(cc, weights, biases)
-    nn = NN(cc, weights, biases)
-    result = nn.forward(cc, x)
-    return result
+        layer_input = inputs
+        for layer in self.layers:
+            layer_input = layer.train(cc, layer_input)
+        return layer_input
 
 
 # make a cryptocontext and return the context and the parameters used to create it
@@ -154,31 +165,38 @@ def setup_context() -> tuple[ofhe.CryptoContext, ofhe.CCParamsCKKSRNS]:
     cryptocontext.Enable(ofhe.PKESchemeFeature.FHE)
 
     cryptocontext.EvalBootstrapSetup(level_budget)
+
     print("Setup complete..")
     return (cryptocontext, parameters)
 
 
 # Actually run program and time it
 def main():
-    num_inputs = 2
-    num_layers = 2
-    (cc, _) = setup_context()
+    num_inputs = 11
+    (cc, parameters) = setup_context()
 
     # do some additional setup for openfhe that is key dependent
     key_pair = cc.KeyGen()
     cc.EvalMultKeyGen(key_pair.secretKey)
+    cc.EvalBootstrapKeyGen(key_pair.secretKey, parameters.GetRingDim() >> 1)
 
     # encode and encrypt inputs labels
-    xs = [[random.random()] for i in range(num_inputs)]
+    xs = [[random()] for i in range(num_inputs)]
     xs_pt = [cc.MakeCKKSPackedPlaintext(x) for x in xs]
     for x in xs_pt:
         x.SetLength(1)
     xs_ct = [cc.Encrypt(key_pair.publicKey, x_pt) for x_pt in xs_pt]
 
+    # Generate arbitrary nn 
+    neuron_weights = [0.1 for _ in range(11)]
+    layer_weights = [neuron_weights for _ in range(11)]
+    nn_weights = [layer_weights, layer_weights]
+    nn = NN.nn_from_plaintexts(cc, nn_weights)
+
     # time and run the program
-    start_ns = time.time_ns()
-    results = train(cc, xs_ct, num_layers)
-    end_ns = time.time_ns()
+    start_ns = time_ns()
+    results = nn.train(cc, xs_ct)
+    end_ns = time_ns()
 
     results_unpacked = []
     for r in results:
@@ -192,10 +210,16 @@ def main():
 
 @dioptra_runtime()
 def report_runtime(cc: Analyzer):
-    num_inputs = 2
-    num_layers = 2
+    num_inputs = 11
     xs_ct = [cc.ArbitraryCT() for _ in range(num_inputs)]
-    train(cc, xs_ct, num_layers)
+
+    # Generate arbitrary nn 
+    neuron_weights = [0.1 for _ in range(11)]
+    layer_weights = [neuron_weights for _ in range(11)]
+    nn_weights = [layer_weights, layer_weights]
+    nn = NN.nn_from_plaintexts(cc, nn_weights)
+
+    nn.train(cc, xs_ct)
 
 
 if __name__ == "__main__":
