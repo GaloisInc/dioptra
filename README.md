@@ -133,6 +133,24 @@ calibrations from earlier to produce an estimate report using the following:
 Which will output a wall-clock time estimate, and a maximum memory usage
 estimate.
 
+### Producing annotated sources
+
+In addition to simple text reports on the console, Dioptra is capable of
+creating annotated versions of your Python scripts, where estimates are shown
+on a per-operation basis (per `Analyzer` operation, that is).
+
+Like calibration, this functionality is done on a per-function basis, so you
+must specify a `--name` of a function decorated with `@dioptra_runtime()`.
+
+To invoke this functionality, run:
+
+```console
+> dioptra estimate annotate --calibration-data /path/to/calibrations/ckks.dc \
+                            --output /path/to/annotated/matrix_mult_ckks_annotated.py \
+                            --name report_runtime \
+                            examples/matrix_mult_ckks.py
+```
+
 ## For developers
 
 There is a `.devcontainer` for VSCode development; this is virtually identical
