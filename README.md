@@ -34,19 +34,122 @@ series of reports without error, you are ready to use Dioptra.
 
 ## Using Dioptra
 
-Once installed, the easiest way to get started is to explore `dioptra --help`
-and the `--help` option for all sub-commands. In general, you will need to run:
+### Calibrating for your system
 
-1. `dioptra context calibrate ...` to generate calibration data from an
-   appropriately-decorated function (note that `dioptra context list` is a
-   useful command to run first, as this will list the decorated functions in
-   the given Python source file, whose names you will need to run calibration).
-2. `dioptra estimate report ...` with your generated calibration data, and a
-   Python source. Note that the scheme of the calibration must match the scheme
-   of the actual Python source we care to analyze!
-3. `dioptra estimate annotate ...` if you would like to generate new source
-   files containing annotation comments showing more granular performance data,
-   so it is easier to see where time is being spent in your application.
+Dioptra bases its estimates on calibration data collected for the specific
+system under test. **Important!** This step necessitates running FHE operations
+many times, which can take a significant amount of time. For a given choice of
+FHE scheme and parameters, however, this process only needs to be completed once
+for most applications.
+
+For convenience, we provide the contexts necessary to calibrate Dioptra for your
+system for a number of common schemes and parameter sets. These are defined in
+`examples/contexts.py`, though you do not need to read or modify this file to
+calibrate Dioptra on your system.
+
+To view the available contexts for calibration, first run:
+
+```console
+> dioptra context list examples/contexts.py
+```
+
+Which will display the names of the available calibration contexts (and their
+locations, if you need to adjust the parameters used).
+
+Suppose you want to collect calibration data for CKKS. At time of writing, the
+provided CKKS context we need is named `ckks1`. We run the following to actually
+collect calibration data:
+
+```console
+> dioptra context calibrate --name ckks1 --output /path/to/calibrations/ckks.dc examples/contexts.py
+```
+
+By default, 5 samples will be used during calibration. You can change this
+default using `--sample-count` (or the shorter `-sc`).
+
+Remember that this might take a long time, depending on the scheme and parameter
+set selected, but only needs to be run once for most applications (and, the
+calibration data for your system / the system of interest may be shared with
+other Dioptra users for their own estimation experiments).
+
+### Estimating runtime and memory performance
+
+Suppose we have the following Python function implementing matrix multiplication
+under FHE, using CKKS:
+
+```python
+def matrix_mult(
+    cc: ofhe.CryptoContext,
+    x: list[list[ofhe.Ciphertext]],
+    y: list[list[ofhe.Ciphertext]],
+):
+    assert len(x[0]) == len(y)
+
+    rows = len(x)
+    cols = len(y[0])
+    l = len(x[0])
+
+    result = [[0 for _ in range(rows)] for _ in range(cols)]
+    for i in range(rows):
+        for j in range(cols):
+            sum = cc.MakeCKKSPackedPlaintext([0])
+            for k in range(l):
+                mul = cc.EvalMult(x[i][k], y[k][j])
+                sum = cc.EvalAdd(mul, sum)
+            result[i][j] = sum
+    return result
+```
+
+And, suppose we are interested in how this function will perform for 5x5
+matrices. Furthermore, suppose we're going to setup the CKKS parameters to be
+the same as those for which we earlier produced calibration data.
+
+We can write the following function, which uses a Dioptra `Analyzer` object
+where we might expect an `ofhe.CryptoContext`:
+
+```python
+@dioptra_runtime()
+def report_runtime(cc: Analyzer):
+    rows = 5
+    cols = 5
+    x_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
+    y_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
+    matrix_mult(cc, x_ct, y_ct)
+```
+
+The decorator is how Dioptra will know to trace this function's execution and
+produce runtime and memory estimates. Notice that the `Analyzer` is passed to
+`matrix_mult`: This means that all operations in `matrix_mult` using this object
+will be considered during estimation.
+
+The above is implemented in `examples/matrix_mult_ckks.py`. We can use our
+calibrations from earlier to produce an estimate report using the following:
+
+```console
+> dioptra estimate report --calibration-data /path/to/calibrations/ckks.dc \
+                          examples/matrix_mult_ckks.py
+```
+
+Which will output a wall-clock time estimate, and a maximum memory usage
+estimate.
+
+### Producing annotated sources
+
+In addition to simple text reports on the console, Dioptra is capable of
+creating annotated versions of your Python scripts, where estimates are shown
+on a per-operation basis (per `Analyzer` operation, that is).
+
+Like calibration, this functionality is done on a per-function basis, so you
+must specify a `--name` of a function decorated with `@dioptra_runtime()`.
+
+To invoke this functionality, run:
+
+```console
+> dioptra estimate annotate --calibration-data /path/to/calibrations/ckks.dc \
+                            --output /path/to/annotated/matrix_mult_ckks_annotated.py \
+                            --name report_runtime \
+                            examples/matrix_mult_ckks.py
+```
 
 ## For developers
 
