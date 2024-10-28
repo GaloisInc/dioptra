@@ -1,3 +1,8 @@
+""" Matrix Multiplication in BGV
+
+This example implements matrix multiplication for variable length
+matrices in BGV.
+"""
 import time
 import openfhe as ofhe
 from contexts import bgv1
@@ -14,6 +19,7 @@ from dioptra.analyzer.calibration import PKECalibrationData
 from typing import Self
 
 class BGV(Scheme):
+    """Class which defines BGV specific behavior"""
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
@@ -28,6 +34,8 @@ def matrix_mult(
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
 ):
+    """ Matrix Multiplication in FHE
+    """
     assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 
@@ -52,9 +60,10 @@ def matrix_mult(
 def main():
     rows = 5
     cols = 5
+    # BGV specific setup
     (cc, _, key_pair, _) = bgv1()
 
-    # encode and encrypt inputs labels
+    # encode and encrypt inputs labels, the inputs are generated at random
     xs = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
     ys = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
 
@@ -79,6 +88,7 @@ def main():
     result_ct = matrix_mult(BGV(), cc, x_ct, y_ct)
     end_ns = time.time_ns()
 
+    # decrypt results
     rows = len(xs)
     cols = len(ys[0])
     result = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
