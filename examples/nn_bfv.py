@@ -1,3 +1,9 @@
+""" Simple Neural Network in BFV
+
+This example implements a simple neural network in BFV.
+This example only implementes forward propagations and supports
+varying numbers of neurons.
+"""
 import openfhe as ofhe
 from contexts import bfv1
 from schemes import Scheme
@@ -13,9 +19,12 @@ from dioptra.analyzer.utils.util import format_ns
 from dioptra.decorator import dioptra_runtime
 
 def nn_activation(cc: ofhe.CryptoContext, input: ofhe.Ciphertext):
+    # We consider the square as a linear approximation of an 
+    # activation function
     return cc.EvalMult(input, input)
 
 class BFV(Scheme):
+    """Class which defines BFV specific behavior"""
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
@@ -24,6 +33,12 @@ class BFV(Scheme):
         return value
 
 class Neuron:
+    """ Defines the behavior of a Neuron
+    
+    We assume that the neurons in the NN are strongly connected, 
+    i.e. if an edge does not contribute to the input weight of a 
+    neuron should be set to 0.
+    """
     def __init__(
         self, 
         cc: ofhe.CryptoContext,
@@ -41,12 +56,15 @@ class Neuron:
             self.bias = bias
 
     def set_id(self, neuron_id: int):
+        # Helper function that sets the id of a neuron
+        # This is used for book-keeping and debugging
         self.neuron_id = neuron_id
 
     def set_bias(self, bias: ofhe.Ciphertext):
         self.bias = bias
 
     def neuron_from_plaintext(cc: ofhe.CryptoContext, scheme: Scheme, weights: list[int], bias = None) -> Self:
+        # Helper function that creates a neuron from a list of plaintexts
         weights_ckks = []
         for w in weights:
             weights_ckks.append(scheme.make_plaintext(cc, [w]))
@@ -59,13 +77,18 @@ class Neuron:
     ) -> ofhe.Ciphertext:
         if len(inputs) != self.num_inputs:
             raise ValueError(f"The number of inputs {len(inputs)} does not match the number of neuron inputs {self.num_inputs}")
-
+        # The inputs are multiplied with the weights
         mults = map(lambda x, y: cc.EvalMult(x,y), inputs, self.weights)
+        # The results are then aggregated
         sum = reduce(lambda x, y: cc.EvalAdd(x,y), mults)
+        # The bias if it exists is added to the sum
         sum = cc.EvalAdd(sum, self.bias)
+        # The result is activated
         return nn_activation(cc, sum)
 
 class Layer:
+    """ Defines the behavior of a Layer
+    """
     def __init__(
         self,
         cc: ofhe.CryptoContext,
@@ -85,6 +108,7 @@ class Layer:
         self.layer_id = layer_id
 
     def layer_from_plaintexts(cc: ofhe.CryptoContext, scheme: Scheme, weights_layer: list[list[int]], bias = None) -> Self:
+        # Helper function that creates a layer from a list of plaintexts
         neurons = []
         for weights_neuron in weights_layer:
             neuron = Neuron.neuron_from_plaintext(cc, scheme, weights_neuron, bias)
@@ -92,6 +116,8 @@ class Layer:
         return Layer(cc, scheme, neurons, bias)
 
     def bootstrap(self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]) -> list[ofhe.Ciphertext]:
+         # Insert a bootstrapping layers into the NN that bootstraps every output of 
+         # the prior layer if the scheme requires it
          return [self.scheme.bootstrap(cc, input) for input in inputs]   
         
     def train(
@@ -102,6 +128,8 @@ class Layer:
         self.check_correctness(len(inputs))
 
         layer_out = []
+        # propagate the output of the prior layer's neurons into
+        # the current layer's neurons and train it
         for i, neuron in enumerate(self.neurons):
             neuron_out = neuron.train(cc, inputs)
             layer_out.append(neuron_out)
@@ -126,6 +154,8 @@ class NN:
         self.layers = layers
 
     def nn_from_plaintexts(cc: ofhe.CryptoContext, scheme: Scheme, weights_nn: list[list[list[float]]], bias = None) -> Self:
+        # propagate the output of the prior layer into
+        # the current layer and train it
         layers = []
         for weights_layer in weights_nn:
             layer = Layer.layer_from_plaintexts(cc, scheme, weights_layer)
@@ -140,6 +170,8 @@ class NN:
         layer_input = inputs
         for i, layer in enumerate(self.layers):
             layer_input = layer.train(cc, layer_input)
+            # Add a bootstrapping layer after every 5th layer
+            # if the scheme requires it
             if i % 5 == 0:
                 layer_input = layer.bootstrap(cc, layer_input)
         return layer_input
@@ -168,6 +200,7 @@ def main():
     results = nn.train(cc, xs_ct)
     end_ns = time_ns()
 
+    # decrypt the results
     results_unpacked = []
     for r in results:
         result = cc.Decrypt(key_pair.secretKey, r)

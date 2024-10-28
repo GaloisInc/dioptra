@@ -1,3 +1,9 @@
+""" Matrix Multiplication in CKKS
+
+This example implements matrix multiplication for variable length
+matrices in CKKS. This example bootstraps after a set number of 
+multiplications and handles large matrices. 
+"""
 import time
 import openfhe as ofhe
 from contexts import ckks1, ckks_small1
@@ -14,6 +20,7 @@ from dioptra.analyzer.calibration import PKECalibrationData
 from typing import Self
 
 class CKKS(Scheme):
+    """Class which defines CKKS specific behavior"""
     def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
         return cc.MakeCKKSPackedPlaintext(value)
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
@@ -27,6 +34,10 @@ def matrix_mult(
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
 ):
+    """ Matrix Multiplication in FHE
+
+    The aggregated result is bootstrapped every 5th multiplication.
+    """
     assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 
@@ -51,9 +62,10 @@ def matrix_mult(
 def main():
     rows = 2
     cols = 2
-    (cc, _, key_pair, _) = ckks_small1()
+    # CKKS specific setup
+    (cc, _, key_pair, _) = ckks1()
 
-    # encode and encrypt inputs labels
+    # encode and encrypt inputs labels, the inputs are generated at random
     xs = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
     ys = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
 
@@ -78,6 +90,7 @@ def main():
     result_ct = matrix_mult(CKKS(), cc, x_ct, y_ct)
     end_ns = time.time_ns()
 
+    # decrypt results
     rows = len(xs)
     cols = len(ys[0])
     result = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
