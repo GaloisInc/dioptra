@@ -1,4 +1,4 @@
-""" Matrix Multiplication in BFV
+"""Matrix Multiplication in BFV
 
 This example implements matrix multiplication for variable length
 matrices in BFV.
@@ -33,8 +33,8 @@ def matrix_mult(
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
 ):
-    """ Matrix Multiplication in FHE
-    """
+    """Matrix Multiplication in FHE"""
+
     assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 

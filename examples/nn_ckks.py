@@ -1,4 +1,4 @@
-""" Simple Neural Network in CKKS
+"""Simple Neural Network in CKKS
 
 This example implements a simple neural network in CKKS.
 This example only implementes forward propagations and supports
@@ -33,7 +33,7 @@ class CKKS(Scheme):
         return cc.EvalBootstrap(value)        
 
 class Neuron:
-    """ Defines the behavior of a Neuron
+    """Defines the behavior of a Neuron
     
     We assume that the neurons in the NN are strongly connected, 
     i.e. if an edge does not contribute to the input weight of a 
@@ -56,15 +56,16 @@ class Neuron:
             self.bias = bias
 
     def set_id(self, neuron_id: int):
-        # Helper function that sets the id of a neuron
-        # This is used for book-keeping and debugging
+        """Helper function that sets the id of a neuron
+        
+        This is used for book-keeping and debugging"""
         self.neuron_id = neuron_id
 
     def set_bias(self, bias: ofhe.Ciphertext):
         self.bias = bias
 
     def neuron_from_plaintext(cc: ofhe.CryptoContext, scheme: Scheme, weights: list[int], bias = None) -> Self:
-        # Helper function that creates a neuron from a list of plaintexts
+        """Helper function that creates a neuron from a list of plaintexts"""
         weights_ckks = []
         for w in weights:
             weights_ckks.append(scheme.make_plaintext(cc, [w]))
@@ -77,18 +78,15 @@ class Neuron:
     ) -> ofhe.Ciphertext:
         if len(inputs) != self.num_inputs:
             raise ValueError(f"The number of inputs {len(inputs)} does not match the number of neuron inputs {self.num_inputs}")
-        # The inputs are multiplied with the weights
+
         mults = map(lambda x, y: cc.EvalMult(x,y), inputs, self.weights)
-        # The results are then aggregated
         sum = reduce(lambda x, y: cc.EvalAdd(x,y), mults)
-        # The bias if it exists is added to the sum
         sum = cc.EvalAdd(sum, self.bias)
-       # The result is activated 
         return nn_activation(cc, sum)
 
 class Layer:
-    """ Defines the behavior of a Layer
-    """
+    """Defines the behavior of a Layer"""
+    
     def __init__(
         self,
         cc: ofhe.CryptoContext,
@@ -108,7 +106,7 @@ class Layer:
         self.layer_id = layer_id
 
     def layer_from_plaintexts(cc: ofhe.CryptoContext, scheme: Scheme, weights_layer: list[list[int]], bias = None) -> Self:
-        # Helper function that creates a layer from a list of plaintexts
+        """Helper function that creates a layer from a list of plaintexts"""
         neurons = []
         for weights_neuron in weights_layer:
             neuron = Neuron.neuron_from_plaintext(cc, scheme, weights_neuron, bias)
@@ -116,8 +114,7 @@ class Layer:
         return Layer(cc, scheme, neurons, bias)
 
     def bootstrap(self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]) -> list[ofhe.Ciphertext]:
-        # Insert a bootstrapping layers into the NN that bootstraps every output of 
-        # the prior layer if the scheme requires it
+        """Insert a bootstrapping layers into the NN that bootstraps every output of the prior layer if the scheme requires it"""
         return [self.scheme.bootstrap(cc, input) for input in inputs]   
 
     def train(
