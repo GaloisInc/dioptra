@@ -1,5 +1,12 @@
+"""Matrix Multiplication in BFV
+
+This example implements matrix multiplication for variable length
+matrices in BFV.
+"""
 import time
 import openfhe as ofhe
+from contexts import bfv1
+from schemes import Scheme
 
 import random
 
@@ -11,12 +18,23 @@ from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
+class BFV(Scheme):
+    """Class which defines BFV specific behavior"""
+    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+        return cc.MakePackedPlaintext(value)
+    def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
+       return cc.MakePackedPlaintext([0])
+    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        return value
 
 def matrix_mult(
+    scheme: Scheme,
     cc: ofhe.CryptoContext,
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
 ):
+    """Matrix Multiplication in FHE"""
+
     assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 
@@ -27,48 +45,14 @@ def matrix_mult(
     result = [[0 for _ in range(rows)] for _ in range(cols)]
     for i in range(rows):
         for j in range(cols):
-            sum = cc.MakePackedPlaintext([0])
+            sum = scheme.zero(cc)
             for k in range(l):
                 mul = cc.EvalMult(x[i][k], y[k][j])
                 sum = cc.EvalAdd(mul, sum)
+                if k % 5 == 0:
+                    sum = scheme.bootstrap(cc, sum)
             result[i][j] = sum
     return result
-
-
-# make a cryptocontext and return the context and the parameters used to create it
-def bfv1() -> tuple[
-    ofhe.CryptoContext,
-    ofhe.CCParamsBFVRNS,
-    ofhe.KeyPair,
-    list[ofhe.PKESchemeFeature],
-]:
-    # Sample Program: Step 1: Set CryptoContext
-    parameters = ofhe.CCParamsBFVRNS()
-    parameters.SetPlaintextModulus(65537)
-    parameters.SetMultiplicativeDepth(2)
-
-    crypto_context = ofhe.GenCryptoContext(parameters)
-    # Enable features that you wish to use
-    features = [
-        ofhe.PKESchemeFeature.PKE,
-        ofhe.PKESchemeFeature.KEYSWITCH,
-        ofhe.PKESchemeFeature.LEVELEDSHE,
-    ]
-    for feature in features:
-        crypto_context.Enable(feature)
-
-    # Sample Program: Step 2: Key Generation
-
-    # Generate a public/private key pair
-    key_pair = crypto_context.KeyGen()
-
-    # Generate the relinearization key
-    crypto_context.EvalMultKeyGen(key_pair.secretKey)
-
-    # Generate the rotation evaluation keys
-    crypto_context.EvalRotateKeyGen(key_pair.secretKey, [1, 2, -1, -2])
-
-    return (crypto_context, parameters, key_pair, features)
 
 
 # Actually run program and time it
@@ -77,7 +61,7 @@ def main():
     cols = 5
     (cc, _, key_pair, _) = bfv1()
 
-    # encode and encrypt inputs labels
+    # encode and encrypt inputs labels, the inputs are generated at random
     xs = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
     ys = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
 
@@ -99,9 +83,10 @@ def main():
 
     # time and run the program
     start_ns = time.time_ns()
-    result_ct = matrix_mult(cc, x_ct, y_ct)
+    result_ct = matrix_mult(BFV(), cc, x_ct, y_ct)
     end_ns = time.time_ns()
 
+    # decrypt results
     rows = len(xs)
     cols = len(ys[0])
     result = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
@@ -109,7 +94,7 @@ def main():
         for j in range(cols):
             result_dec = cc.Decrypt(key_pair.secretKey, result_ct[i][j])
             result_dec.SetLength(1)
-            result[i][j] = result_dec.GetCKKSPackedValue()
+            result[i][j] = result_dec.GetPackedValue()
         print(result[i])
 
     print(f"Actual runtime: {format_ns(end_ns - start_ns)}")
