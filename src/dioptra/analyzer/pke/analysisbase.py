@@ -184,14 +184,19 @@ class AnalysisBase:
 
 
 class Network:
+    """This class represents a simulated nework and should only ever be
+    constructed by calling `MakeNetwork` on an analyzer class.
+    """
     def __init__(self, analyzer: 'Analyzer', model: NetworkModel) -> None:
         self.net_model = model
         self.analyzer = analyzer
 
     def SendCiphertext(self, ct: Ciphertext) -> None:
+        """Simulate sending a ciphertext over the this network."""
         self.analyzer._send_ciphertext(ct, self.net_model, code_loc.calling_frame())
 
     def RecvCiphertext(self, ct: Ciphertext) -> None:
+        """Simulate receiving a ciphertext over this network."""
         self.analyzer._recv_ciphertext(ct, self.net_model, code_loc.calling_frame())
 
 
@@ -332,6 +337,7 @@ class Analyzer:
         return self._mk_ct(lv, None, caller_loc)
     
     def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> Network:
+        """Create a simulated network with the given parameters."""
         nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
         return Network(self, nm)
 

@@ -119,5 +119,13 @@ def blerp(xs, ys, zs, p):
     return lerp((y1, v1), (y2, v2), y)
 
 class BPS:
+  """Class representing a measurement of bits per second."""
   def __init__(self, Kbps:int=0, Mbps:int=0, Gbps:int=0):
+    """Construct a `BPS` instance.
+    Any combination of Kbps, Mbps, Gbps is supported as long
+    as the specified combination is greater than zero.
+    """
     self.bps = Kbps * 10**3 + Mbps * 10**6 + Gbps * 10**9
+
+    if self.bps < 0:
+        raise ValueError("BPS must be greater than zero.")
