@@ -97,14 +97,20 @@ class BinFHEAnalysisGroup(BinFHEAnalysisBase):
 
 
 class BinFHENetwork:
+    """This class represents a simulated nework and should only ever be
+    constructed by calling `MakeNetwork` on an analyzer class.
+    """
+    
     def __init__(self, analyzer: 'BinFHEAnalyzer', model: NetworkModel) -> None:
         self.net_model = model
         self.analyzer = analyzer
 
     def SendCiphertext(self, ct: LWECiphertext) -> None:
+        """Simulate sending a ciphertext over the this network."""
         self.analyzer._send_ciphertext(ct, self.net_model, code_loc.calling_frame())
 
     def RecvCiphertext(self, ct: LWECiphertext) -> None:
+        """Simulate receiving a ciphertext over this network."""
         self.analyzer._recv_ciphertext(ct, self.net_model, code_loc.calling_frame())
 
 # TODO: figure out plaintext modulus for p != 4
@@ -230,6 +236,7 @@ class BinFHEAnalyzer:
         return LWEPrivateKey(self.params.n)
     
     def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> BinFHENetwork:
+        """Create a simulated network with the given parameters."""
         nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
         return BinFHENetwork(self, nm)
     
