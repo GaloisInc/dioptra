@@ -130,5 +130,5 @@ class BPS:
         """
         self.bps = Kbps * 10**3 + Mbps * 10**6 + Gbps * 10**9
 
-        if self.bps < 0:
+        if self.bps <= 0:
             raise ValueError("BPS must be greater than zero.")
