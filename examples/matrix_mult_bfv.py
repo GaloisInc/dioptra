@@ -1,7 +1,8 @@
 """Matrix Multiplication in BFV
 
 This example implements matrix multiplication for variable length
-matrices in BFV.
+matrices in BFV. This example supports multiplying matrices of 
+different dimensions.
 """
 import time
 import openfhe as ofhe
@@ -42,7 +43,7 @@ def matrix_mult(
     cols = len(y[0])
     l = len(x[0])
 
-    result = [[0 for _ in range(rows)] for _ in range(cols)]
+    result = [[None for _ in range(cols)] for _ in range(rows)]
     for i in range(rows):
         for j in range(cols):
             sum = scheme.zero(cc)
@@ -57,25 +58,28 @@ def matrix_mult(
 
 # Actually run program and time it
 def main():
-    rows = 5
-    cols = 5
+    xrows = 3
+    xcols = 3
+
+    yrows = xcols
+    ycols = 1
     (cc, _, key_pair, _) = bfv1()
 
     # encode and encrypt inputs labels, the inputs are generated at random
-    xs = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
-    ys = [[[random.randint(0, 10)] for _ in range(cols)] for _ in range(rows)]
+    xs = [[[random.randint(0, 10)] for _ in range(xcols)] for _ in range(xrows)]
+    ys = [[[random.randint(0, 10)] for _ in range(ycols)] for _ in range(yrows)]
 
-    x_ct = [[[None] for _ in range(len(xs[0]))] for _ in range(len(xs))]
-    for i in range(len(xs)):
-        for j in range(len(xs[0])):
+    x_ct = [[[None] for _ in range(xcols)] for _ in range(xrows)]
+    for i in range(xrows):
+        for j in range(xcols):
             x_pt = cc.MakePackedPlaintext(xs[i][j])
             x_pt.SetLength(1)
             x_enc = cc.Encrypt(key_pair.publicKey, x_pt)
             x_ct[i][j] = x_enc
 
-    y_ct = [[[None] for _ in range(len(ys[0]))] for _ in range(len(ys))]
-    for i in range(len(ys)):
-        for j in range(len(ys[0])):
+    y_ct = [[[None] for _ in range(ycols)] for _ in range(yrows)]
+    for i in range(yrows):
+        for j in range(ycols):
             y_pt = cc.MakePackedPlaintext(ys[i][j])
             y_pt.SetLength(1)
             y_enc = cc.Encrypt(key_pair.publicKey, y_pt)
@@ -87,11 +91,9 @@ def main():
     end_ns = time.time_ns()
 
     # decrypt results
-    rows = len(xs)
-    cols = len(ys[0])
-    result = [[[random.random()] for _ in range(cols)] for _ in range(rows)]
-    for i in range(rows):
-        for j in range(cols):
+    result = [[[random.random()] for _ in range(ycols)] for _ in range(xrows)]
+    for i in range(xrows):
+        for j in range(ycols):
             result_dec = cc.Decrypt(key_pair.secretKey, result_ct[i][j])
             result_dec.SetLength(1)
             result[i][j] = result_dec.GetPackedValue()
