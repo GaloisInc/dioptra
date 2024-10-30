@@ -153,7 +153,8 @@ def report_main(sample_file: str, files: list[str]) -> None:
         if case.schemetype == SchemeType.PKE and isinstance(
             calibration, PKECalibrationData
         ):
-            runtime_analysis = Runtime(calibration)
+            total = RuntimeTotal()
+            runtime_analysis = Runtime(calibration, total)
             memory_analysis = PKEMemoryEstimate(
                 calibration.setup_memory_size,
                 calibration.ct_mem,
@@ -173,7 +174,7 @@ def report_main(sample_file: str, files: list[str]) -> None:
         ):
             avg_runtime = calibration.avg_case()
             total = RuntimeTotal()
-            runtime_analysis = RuntimeEstimate(avg_runtime, total)
+            runtime_analysis = RuntimeEstimate(avg_runtime, calibration.ciphertext_size, total)
             memory_analysis = BinFHEMemoryEstimate(
                 calibration.setup_memory_size, calibration.ciphertext_size, maxmem
             )
@@ -225,7 +226,8 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
     if case.schemetype == SchemeType.PKE and isinstance(
         calibration, PKECalibrationData
     ):
-        runtime_analysis = Runtime(calibration)
+        annot_rpt = RuntimeAnnotation()
+        runtime_analysis = Runtime(calibration, annot_rpt)
         analyzer = Analyzer([runtime_analysis], calibration.scheme)
         case.run_and_exit_if_unsupported(analyzer)
         annotation = runtime_analysis.annotation_dict(file)
@@ -235,7 +237,7 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         calibration, BinFHECalibrationData
     ):
         annot_rpt = RuntimeAnnotation()
-        est = RuntimeEstimate(calibration.avg_case(), annot_rpt)
+        est = RuntimeEstimate(calibration.avg_case(), calibration.ciphertext_size, annot_rpt)
         analyzer = BinFHEAnalyzer(calibration.params, est)
         case.run_and_exit_if_unsupported(analyzer)
         annotation = dict(
