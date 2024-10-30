@@ -5,8 +5,10 @@ from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
 import openfhe
 
 from dioptra.analyzer.utils import code_loc
-from dioptra.analyzer.utils.code_loc import Frame, TraceLoc, calling_frame
-from dioptra.analyzer.utils.error import NotSupportedException
+from dioptra.analyzer.utils.code_loc import Frame, TraceLoc
+from dioptra.analyzer.utils.network import NetworkModel
+from dioptra.analyzer.utils.util import BPS
+from dioptra.error import NotSupportedException
 
 
 class BinFHEAnalysisBase:
@@ -42,6 +44,16 @@ class BinFHEAnalysisBase:
         pass
 
     def trace_dealloc_ct(self, vid: int, loc: Frame | None) -> None:
+        pass
+
+    def trace_send_ct(
+        self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_recv_ct(
+        self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None
+    ) -> None:
         pass
 
 
@@ -91,6 +103,24 @@ class BinFHEAnalysisGroup(BinFHEAnalysisBase):
             a.trace_dealloc_ct(vid, loc)
 
 
+class BinFHENetwork:
+    """This class represents a simulated nework and should only ever be
+    constructed by calling `MakeNetwork` on an analyzer class.
+    """
+
+    def __init__(self, analyzer: "BinFHEAnalyzer", model: NetworkModel) -> None:
+        self.net_model = model
+        self.analyzer = analyzer
+
+    def SendCiphertext(self, ct: LWECiphertext) -> None:
+        """Simulate sending a ciphertext over the this network."""
+        self.analyzer._send_ciphertext(ct, self.net_model, code_loc.calling_frame())
+
+    def RecvCiphertext(self, ct: LWECiphertext) -> None:
+        """Simulate receiving a ciphertext over this network."""
+        self.analyzer._recv_ciphertext(ct, self.net_model, code_loc.calling_frame())
+
+
 # TODO: figure out plaintext modulus for p != 4
 class BinFHEAnalyzer:
     def __init__(
@@ -106,11 +136,11 @@ class BinFHEAnalyzer:
     def _unsupported_feature_msg(self, feature: str) -> str:
         return f"{feature} is not supported for estimation in the current version of dioptra"
 
-    def _check_plaintext_modulus(self, n: int, frame: Frame|None) -> None:
+    def _check_plaintext_modulus(self, n: int, frame: Frame | None) -> None:
         if n != 4:
             raise NotSupportedException(
                 f"Non-default plaintext modulus ({n}) is not supported on this operation in the current version of dioptra",
-                frame
+                frame,
             )
 
     def BTKeyGen(
@@ -138,7 +168,8 @@ class BinFHEAnalyzer:
         self._check_plaintext_modulus(p, loc)
         if m != 0 and m != 1:
             raise NotSupportedException(
-                "Plaintext must be binary (0 or 1) in the current version of dioptra", loc
+                "Plaintext must be binary (0 or 1) in the current version of dioptra",
+                loc,
             )
 
         ct = LWECiphertext(
@@ -213,6 +244,18 @@ class BinFHEAnalyzer:
     def KeyGen(self) -> LWEPrivateKey:
         return LWEPrivateKey(self.params.n)
 
+    def MakeNetwork(
+        self, send_bps: BPS, recv_bps: BPS, latency_ms: int
+    ) -> BinFHENetwork:
+        """Create a simulated network with the given parameters."""
+        nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
+        return BinFHENetwork(self, nm)
+
+    def ArbitraryCT(self) -> LWECiphertext:
+        return LWECiphertext(
+            length=self.params.n, modulus=self.params.q, value=0, pt_mod=4
+        )
+
     def _dealloc_ct(self, vid: int):
         loc = None
         if self.trace is not None:
@@ -224,3 +267,9 @@ class BinFHEAnalyzer:
         self.analysis.trace_alloc_ct(new, loc)
         new._set_finalizer(weakref.finalize(new, self._dealloc_ct, new.id))
         return new
+
+    def _send_ciphertext(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None):
+        self.analysis.trace_send_ct(ct, nm, loc)
+
+    def _recv_ciphertext(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None):
+        self.analysis.trace_recv_ct(ct, nm, loc)
