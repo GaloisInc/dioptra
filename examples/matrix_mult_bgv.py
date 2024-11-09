@@ -4,6 +4,7 @@ This example implements matrix multiplication for variable length
 matrices in BGV. This example supports multiplying matrices of 
 different dimensions.
 """
+
 import time
 import openfhe as ofhe
 from contexts import bgv1
@@ -19,15 +20,24 @@ from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
+
 class BGV(Scheme):
     """Class which defines BGV specific behavior"""
-    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+
+    def make_plaintext(
+        self, cc: ofhe.CryptoContext, value: list[int]
+    ) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
+
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
-        #OpenFHE does not support boostrapping for BGV
+
+    def bootstrap(
+        self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext
+    ) -> ofhe.Ciphertext:
+        # OpenFHE does not support boostrapping for BGV
         return value
+
 
 def matrix_mult(
     scheme: Scheme,
@@ -35,8 +45,8 @@ def matrix_mult(
     x: list[list[ofhe.Ciphertext]],
     y: list[list[ofhe.Ciphertext]],
 ):
-    """ Matrix Multiplication in FHE"""
-    
+    """Matrix Multiplication in FHE"""
+
     assert len(x[0]) == len(y)
     print("Running Matrix Multiplication ..")
 
