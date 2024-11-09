@@ -11,6 +11,8 @@ import runpy
 import sys
 from typing import Callable, OrderedDict
 
+import dioptra
+
 from dioptra.analyzer.binfhe import memory
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
 from dioptra.analyzer.binfhe.calibration import BinFHECalibration, BinFHECalibrationData
