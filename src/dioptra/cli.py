@@ -130,12 +130,20 @@ def list(file: Path):
 
 
 @estimate.command()
-@click.argument("file", type=click.Path(exists=True, path_type=Path))
-@click.option("--samples", type=click.Path(exists=True))
+@click.argument("file", type=click.Path(exists=True), required=True)
 @click.option(
-    "--outdir",
-    type=click.Path(file_okay=False, dir_okay=True, writable=True, path_type=Path),
+    "--calibration-data",
+    "-cd",
+    type=click.Path(exists=True),
+    required=True,
+    help="File containing calibration data to use for the estimate.",
 )
-def render(file: Path, samples: Path, outdir: Path) -> None:
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(file_okay=False, dir_okay=True, writable=True, path_type=Path),
+    help="Output directory for render results.",
+)
+def render(file: Path, calibration_data: Path, output: Path) -> None:
     """Run decorated functions and render analysis results."""
-    decorator.render_analysis(samples, file, outdir)
+    decorator.render_analysis(str(calibration_data), str(file), str(output))
