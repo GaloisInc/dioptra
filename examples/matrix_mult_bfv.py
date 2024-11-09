@@ -4,6 +4,7 @@ This example implements matrix multiplication for variable length
 matrices in BFV. This example supports multiplying matrices of 
 different dimensions.
 """
+
 import time
 import openfhe as ofhe
 from contexts import bfv1
@@ -19,14 +20,23 @@ from dioptra.analyzer.calibration import PKECalibrationData
 
 from typing import Self
 
+
 class BFV(Scheme):
     """Class which defines BFV specific behavior"""
-    def make_plaintext(self, cc: ofhe.CryptoContext, value: list[int]) -> ofhe.Plaintext:
+
+    def make_plaintext(
+        self, cc: ofhe.CryptoContext, value: list[int]
+    ) -> ofhe.Plaintext:
         return cc.MakePackedPlaintext(value)
+
     def zero(self, cc: ofhe.CryptoContext) -> ofhe.Plaintext:
-       return cc.MakePackedPlaintext([0])
-    def bootstrap(self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext) -> ofhe.Ciphertext:
+        return cc.MakePackedPlaintext([0])
+
+    def bootstrap(
+        self, cc: ofhe.CryptoContext, value: ofhe.Ciphertext
+    ) -> ofhe.Ciphertext:
         return value
+
 
 def matrix_mult(
     scheme: Scheme,
