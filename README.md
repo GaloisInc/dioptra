@@ -222,6 +222,27 @@ To invoke this functionality, run:
                             /path/to/matrix_mult.py
 ```
 
+### Rendering to HTML
+
+Dioptra also supports a basic results-rendering mechanism, allowing for more
+granular runtime data to be explored in a (serverless) website.
+
+**NOTE:** This functionality is merely a proof-of-concept, intended to show ways
+Dioptra can be extended to take advantage of the analyses it performs.
+
+To render an estimation website for the `matrix_mult` example above:
+
+```console
+> dioptra estimate render --calibration-data /path/to/calibrations/my_ckks.dc \
+                          --output /path/to/render/results # OK if the directory needs to be created \
+                          /path/to/matrix_mult.py
+```
+
+The below image shows a screenshot of actual rendered results for
+`dioptra_examples.decorator_example`:
+
+![Example rendering of Dioptra runtime estimation to HTML](images/render_example.png)
+
 ## For developers
 
 There is a `.devcontainer` for VSCode development; this is virtually identical
