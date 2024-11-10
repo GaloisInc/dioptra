@@ -14,9 +14,13 @@ authors = [
   { name="Chris Phifer", email="cphifer@galois.com" },
 ]
 description = "Dioptra examples."
+readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: POSIX :: Linux",
   "Operating System :: MacOS :: MacOS X",
+]
+dependencies = [
+  "dioptra",
 ]
