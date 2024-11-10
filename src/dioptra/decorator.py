@@ -8,6 +8,7 @@ from multiprocessing import Value
 from pathlib import Path
 from plistlib import InvalidFileException
 import runpy
+import shutil
 import sys
 from typing import Callable, OrderedDict
 
@@ -331,32 +332,62 @@ def context_calibrate_main(
 
 def render_main(sample_file: str, file: str, output: str) -> None:
     with ilr.as_file(ilr.files(dioptra.ui).joinpath(SKELETON_DIR)) as p:
-        shutil.copytree(p, outdir, dirs_exist_ok=True)
+        shutil.copytree(p, output, dirs_exist_ok=True)
 
-    samples = RuntimeSamples()
-    samples.read_json(str(sample_file))
+    calibration = load_calibration_data(sample_file)
 
-    print(f"Loading {file}...")
-    runpy.run_path(str(file))
+    load_files([file])
 
     runtime_analyses: dict[str, dict[tuple[int, int, int, int], str]] = {}
-    for limit, desc, f in runtime_functions:
-        depth_analysis = MultDepth()
-        runtime_analysis = Runtime(depth_analysis, samples)
-        analyzer = Analyzer([runtime_analysis])
+    for case in estimation_cases.values():
+        if case.schemetype == SchemeType.PKE and isinstance(
+            calibration, PKECalibrationData
+        ):
+            annot_rpt = RuntimeAnnotation()
+            runtime_analysis = Runtime(calibration, annot_rpt)
 
-        f(analyzer)
+            with TraceLoc() as tloc:
+                analyzer = Analyzer([runtime_analysis], calibration.get_scheme(), tloc)
+                case.run_and_exit_if_unsupported(analyzer)
 
-        # Map regions (matches Ace code editor order) to time
-        time_lookup: dict[tuple[int, int, int, int], str] = {}
-        for k, v in runtime_analysis.where.items():
-            if v[2] != str(file):
-                continue
+                # Map lines to time
+                time_lookup: dict[int, str] = {
+                    k - 1: format_ns(v)
+                    for (k, v) in annot_rpt.annotation_for(file).items()
+                }
 
-            time_lookup[
-                (k.lineno - 1, k.col_offset, k.end_lineno - 1, k.end_col_offset)
-            ] = v[1]
+                runtime_analyses[case.run.__name__] = time_lookup
 
-        runtime_analyses[f.__name__] = time_lookup
+        elif case.schemetype == SchemeType.BINFHE and isinstance(
+            calibration, BinFHECalibrationData
+        ):
+            annot_rpt = RuntimeAnnotation()
+            est = RuntimeEstimate(
+                calibration.avg_(), calibration.ciphertext_size, annot_rpt
+            )
+            with TraceLoc() as tloc:
+                analyzer = BinFHEAnalyzer(
+                    calibration.params,
+                    est,
+                    tloc,
+                )
+                case.run_and_exit_if_unsupported(analyzer)
+
+                # Map lines to time
+                time_lookup: dict[int, str] = {
+                    k - 1: format_ns(v)
+                    for (k, v) in annot_rpt.annotation_for(file).items()
+                }
+
+                runtime_analyses[case.run.__name__] = time_lookup
+        else:
+            print(
+                f"[FAIL---] {case.description}: Cannot run case with this calibration data"
+            )
+            print(
+                f"          Calibration is for a {calibration_type(calibration).name} context"
+            )
+            print(f"          But estimation case requires a {case.schemetype} context")
+            continue
 
     render_results(output, file, runtime_analyses)

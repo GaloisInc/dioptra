@@ -24,7 +24,7 @@
       {% for f, v in analyses.items() %}
       var inner = new Map();
       {% for r, time in v.items() %}
-      inner.set("Range: [{{r[0]}}/{{r[1]}}] -> [{{r[2]}}/{{r[3]}}]", "{{ time }}");
+      inner.set("{{ r }}", "{{ time }}");
       {% endfor %}
       analyses.set("{{ f }}", inner);
       {% endfor %}
@@ -42,17 +42,17 @@
       var selectedFunction;
       function onFunctionSelect(functionRadio) {
           selectedFunction = functionRadio.value;
-          document.getElementById("func_select").innerHTML = "Now, highlight an FHE operation (or a function that performs FHE operations) used in the selected function to display its runtime.";
+          document.getElementById("func_select").innerHTML = "Now, place your cursor on a line containing an FHE operation invoked by the selected function to see its runtime.";
       }
 
-      editor.session.selection.on("changeSelection", function(e) {
+      editor.session.selection.on("changeCursor", function(e) {
           if (typeof selectedFunction !== "undefined") {
               document.getElementById("results").innerHTML = "";
-              var selectedRange = String(editor.selection.getRange());
-              if (analyses.get(selectedFunction).has(selectedRange)) {
+              var cursorRow = String(editor.selection.getCursor().row);
+              if (analyses.get(selectedFunction).has(cursorRow)) {
                   document.getElementById("results").innerHTML =
-                      "Estimated time of selected operation: "
-                      + analyses.get(selectedFunction).get(selectedRange);
+                      "Estimated time of FHE operation(s): "
+                      + analyses.get(selectedFunction).get(cursorRow);
               }
           }
       });
