@@ -136,7 +136,7 @@ def matrix_mult(
 And, suppose we are interested in how this function will perform for 5x5
 matrices. Furthermore, suppose we're going to set up the CKKS parameters to be
 the same as those for which we earlier produced calibration data
-(`my_ckks.dc`)).
+(`my_ckks.dc`).
 
 We can write the following function, which uses a Dioptra `Analyzer` object
 where we might expect an `ofhe.CryptoContext`:
@@ -166,6 +166,43 @@ written to the console with:
 
 Which will output a wall-clock time estimate, and a maximum memory usage
 estimate.
+
+#### Network operations
+
+Dioptra supports basic simulation of (homogeneous) network operations in
+estimation cases. Expanding on the matrix_mult example above::
+
+```python
+@dioptra_runtime()
+def matrix_mult_5x5_networked(cc: Analyzer):
+    # Define the network parameters
+    network = cc.MakeNetwork(
+        send_bps=BPS(Mbps=100),
+        recv_bps=BPS(Gbps=1),
+        latency_ms=50,
+    )
+
+    rows = 5
+    cols = 5
+
+    # 'Receive' x/y ciphertexts from the network
+    x_ct = [[] for _ in range(rows)]
+    y_ct = [[] for _ in range(rows)]
+    for i in range(rows):
+        for _ in range(cols):
+            ct1 = cc.ArbitraryCT()
+            ct2 = cc.ArbitraryCT()
+
+            network.RecvCiphertext(ct1)
+            network.RecvCiphertext(ct2)
+
+            x_ct[i].append(ct1)
+            y_ct[i].append(ct2)
+
+    # Compute result, and 'send' it
+    res = matrix_mult(cc, x_ct, y_ct)
+    network.SendCiphertext(res)
+```
 
 ### Producing annotated sources
 
