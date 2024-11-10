@@ -51,6 +51,8 @@ COPY dioptra_native ./dioptra/dioptra_native
 COPY examples ./dioptra/examples
 COPY pyproject.toml ./dioptra/pyproject.toml
 COPY README.md ./dioptra/README.md
-COPY setup_env.sh ./dioptra/setup_env.sh
 COPY src ./dioptra/src
 COPY tests ./dioptra/tests
+COPY setup_env.sh ./dioptra/setup_env.sh
+COPY calibrate.sh ./dioptra/calibrate.sh
+COPY run_examples.sh ./dioptra/run_examples.sh
