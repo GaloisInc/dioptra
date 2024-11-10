@@ -332,13 +332,7 @@ def context_calibrate_main(
         cd.write_json(outfile)
 
 
-def render_analysis(sample_file: Path, file: Path, outdir: Path) -> None:
-    """Render the analysis of a given file with decorated functions.
-
-    This function takes a `sample_file` and Python `file` with Dioptra-decorated
-    functions and writes a simple website to `outdir`, allowing the analysis
-    results to be inspected in more detail.
-    """
+def render_main(sample_file: str, file: str, output: str) -> None:
     with ilr.as_file(ilr.files(dioptra.ui).joinpath(SKELETON_DIR)) as p:
         shutil.copytree(p, outdir, dirs_exist_ok=True)
 
@@ -368,4 +362,4 @@ def render_analysis(sample_file: Path, file: Path, outdir: Path) -> None:
 
         runtime_analyses[f.__name__] = time_lookup
 
-    render_results(outdir, file, runtime_analyses)
+    render_results(output, file, runtime_analyses)
