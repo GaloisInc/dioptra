@@ -146,4 +146,4 @@ def list(file: Path):
 )
 def render(file: Path, calibration_data: Path, output: Path) -> None:
     """Run decorated functions and render analysis results."""
-    decorator.render_analysis(str(calibration_data), str(file), str(output))
+    decorator.render_main(str(calibration_data), str(file), str(output))
