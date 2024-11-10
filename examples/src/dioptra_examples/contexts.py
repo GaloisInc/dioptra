@@ -167,7 +167,7 @@ def bgv1() -> tuple[
     # Sample Program: Step 1: Set CryptoContext
     parameters = ofhe.CCParamsBGVRNS()
     parameters.SetPlaintextModulus(65537)
-    parameters.SetMultiplicativeDepth(2)
+    parameters.SetMultiplicativeDepth(3)
 
     crypto_context = ofhe.GenCryptoContext(parameters)
     # Enable features that you wish to use
