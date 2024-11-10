@@ -5,10 +5,11 @@ benchmarking examples against which Dioptra will be evaluated and refined.
 
 ## Installation
 
-The easiest way to install this package and run all examples is using
-[`run_examples.sh`](../run_examples.sh) in a Docker container obtained by
+The easiest way to install this package and run all examples is by
 following the
-[`dioptra` installation instructions](../README.md#installation).
+[`dioptra` installation instructions](../README.md#installation), then running
+[`./run_examples.sh <estimate|execute>`](../run_examples.sh) in the resulting
+Docker container.
 
 If you have in some other way found yourself in a Python environment where
 `dioptra` is installed, you can simply run:

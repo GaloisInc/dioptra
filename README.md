@@ -29,8 +29,8 @@ instructions on building and using this image.
 ## Checking the installation
 
 The easiest way to check that the installation proceeded as expected is to
-enter the `examples` directory and run `./run_examples.sh`. If this produces a
-series of reports without error, you are ready to use Dioptra.
+run `./run_examples.sh estimate`. If this produces a series of reports without
+error, you are ready to use Dioptra.
 
 ## Using Dioptra
 
