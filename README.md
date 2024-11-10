@@ -42,30 +42,63 @@ many times, which can take a significant amount of time. For a given choice of
 FHE scheme and parameters, however, this process only needs to be completed once
 for most applications.
 
-For convenience, we provide the contexts necessary to calibrate Dioptra for your
-system for a number of common schemes and parameter sets. These are defined in
-`examples/contexts.py`, though you do not need to read or modify this file to
-calibrate Dioptra on your system.
+We provide a script, `calibrate.sh`, to simplify the process of producing
+calibration data, given a Python file defining "context functions".
 
-To view the available contexts for calibration, first run:
+#### For most users
+
+Dioptra provides an example of such a file with the following contexts defined:
+
+- `bfv1`        (Plaintext modulus: 2^16 - 1, Multiplicative depth 2)
+- `bgv1`        (ditto)
+- `binfhe1`     (128-bit security)
+- `ckks1`       (Uniform ternary secret key distribution, 128-bit security, Ring
+                 dimension: 2^17)
+- `ckks_small1` (Uniform ternary secret key distribution, INSECURE, Ring
+                 dimension: 2^12)
+
+These contexts are defined in
+[the Dioptra examples](examples/src/dioptra_examples/contexts.py). From the
+root of the Dioptra repository, you can produce these calibrations by running:
 
 ```console
-> dioptra context list examples/contexts.py
+> ./calibrate.sh examples/src/dioptra_examples/contexts.py /path/to/calibrations
 ```
 
-Which will display the names of the available calibration contexts (and their
-locations, if you need to adjust the parameters used).
+Where `/path/to/calibrations` is the directory to which you would like the
+output calibration files written. They will be named after the function defining
+the context.
 
-Suppose you want to collect calibration data for CKKS. At time of writing, the
-provided CKKS context we need is named `ckks1`. We run the following to actually
-collect calibration data:
+#### Advanced usage
+
+You can define your own FHE contexts to be used for calibration. In
+general, these will set up an OpenFHE `CryptoContext` with the proper parameters
+selected (e.g. ring dimension, multiplicative depth, security level).
+
+The following will search `/path/to/contexts.py` for functions decorated with
+`@dioptra_context()` (or `@dioptra_binfhe_context()`) in a given Python file,
+and report their names:
 
 ```console
-> dioptra context calibrate --name ckks1 --output /path/to/calibrations/ckks.dc examples/contexts.py
+> dioptra context list /path/to/contexts.py
+```
+
+Suppose you want to collect calibration data for a context named `my_ckks`
+defined in `/path/to/contexts.py`. You would run the following to produce a
+Dioptra calibration file for this:
+
+```console
+> dioptra context calibrate --name my_ckks \
+                            --output /path/to/calibrations/my_ckks.dc \
+                            /path/to/contexts.py
 ```
 
 By default, 5 samples will be used during calibration. You can change this
 default using `--sample-count` (or the shorter `-sc`).
+
+Of course, once you have defined `/path/to/contexts.py`, you can use
+`calibrate.sh` as above to automatically discover the decorated functions and
+run calibration.
 
 Remember that this might take a long time, depending on the scheme and parameter
 set selected, but only needs to be run once for most applications (and, the
@@ -101,15 +134,16 @@ def matrix_mult(
 ```
 
 And, suppose we are interested in how this function will perform for 5x5
-matrices. Furthermore, suppose we're going to setup the CKKS parameters to be
-the same as those for which we earlier produced calibration data.
+matrices. Furthermore, suppose we're going to set up the CKKS parameters to be
+the same as those for which we earlier produced calibration data
+(`my_ckks.dc`)).
 
 We can write the following function, which uses a Dioptra `Analyzer` object
 where we might expect an `ofhe.CryptoContext`:
 
 ```python
 @dioptra_runtime()
-def report_runtime(cc: Analyzer):
+def matrix_mult_5x5(cc: Analyzer):
     rows = 5
     cols = 5
     x_ct = [[cc.ArbitraryCT() for _ in range(cols)] for _ in range(rows)]
@@ -122,12 +156,12 @@ produce runtime and memory estimates. Notice that the `Analyzer` is passed to
 `matrix_mult`: This means that all operations in `matrix_mult` using this object
 will be considered during estimation.
 
-The above is implemented in `examples/matrix_mult_ckks.py`. We can use our
-calibrations from earlier to produce an estimate report using the following:
+If this is defined in `/path/to/matrix_mult.py`, we can get an estimation report
+written to the console with:
 
 ```console
-> dioptra estimate report --calibration-data /path/to/calibrations/ckks.dc \
-                          examples/matrix_mult_ckks.py
+> dioptra estimate report --calibration-data /path/to/calibrations/my_ckks.dc \
+                          /path/to/matrix_mult.py
 ```
 
 Which will output a wall-clock time estimate, and a maximum memory usage
@@ -145,10 +179,10 @@ must specify a `--name` of a function decorated with `@dioptra_runtime()`.
 To invoke this functionality, run:
 
 ```console
-> dioptra estimate annotate --calibration-data /path/to/calibrations/ckks.dc \
-                            --output /path/to/annotated/matrix_mult_ckks_annotated.py \
-                            --name report_runtime \
-                            examples/matrix_mult_ckks.py
+> dioptra estimate annotate --calibration-data /path/to/calibrations/my_ckks.dc \
+                            --output /path/to/annotated/matrix_mult_annotated.py \
+                            --name matrix_mult_5x5 \
+                            /path/to/matrix_mult.py
 ```
 
 ## For developers
