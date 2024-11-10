@@ -67,3 +67,7 @@ def main():
     result = cc.Decrypt(sk, ctResult)
 
     print(f"Result of encrypted computation of (1 AND 1) OR (1 AND (NOT 1)) = {result}")
+
+
+if __name__ == "__main__":
+    main()

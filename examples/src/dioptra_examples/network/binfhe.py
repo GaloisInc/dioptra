@@ -16,22 +16,18 @@ from dioptra.decorator import dioptra_binfhe_runtime
 
 @dioptra_binfhe_runtime()
 def network_example(a: BinFHEAnalyzer):
-  # definition of the network parameters
-  network = a.MakeNetwork(
-    send_bps=BPS(Mbps=100),
-    recv_bps=BPS(Gbps=1),
-    latency_ms=50
-  )
+    # definition of the network parameters
+    network = a.MakeNetwork(send_bps=BPS(Mbps=100), recv_bps=BPS(Gbps=1), latency_ms=50)
 
-  ct1 = a.ArbitraryCT()
-  ct2 = a.ArbitraryCT()
+    ct1 = a.ArbitraryCT()
+    ct2 = a.ArbitraryCT()
 
-  # simulate sending `ct1` and `ct2`
-  network.RecvCiphertext(ct1) 
-  network.RecvCiphertext(ct2)
+    # simulate sending `ct1` and `ct2`
+    network.RecvCiphertext(ct1)
+    network.RecvCiphertext(ct2)
 
-  # do a computation
-  ct3 = a.EvalBinGate(BINGATE.AND, ct1, ct2)
+    # do a computation
+    ct3 = a.EvalBinGate(BINGATE.AND, ct1, ct2)
 
-  # simulate receiving the result
-  network.SendCiphertext(ct3)
+    # simulate receiving the result
+    network.SendCiphertext(ct3)

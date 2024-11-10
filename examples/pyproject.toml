@@ -1,0 +1,22 @@
+[build-system]
+requires = [
+  "setuptools>=61.0",
+  "setuptools-scm>=8.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dioptra_examples"
+version = "0.0.1"
+authors = [
+  { name="Rawane Issa", email="rissa@galois.com" },
+  { name="James LaMar", email="james.lamar@galois.com"},
+  { name="Chris Phifer", email="cphifer@galois.com" },
+]
+description = "Dioptra examples."
+requires-python = ">=3.12"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+]
