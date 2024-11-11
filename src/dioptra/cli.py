@@ -1,9 +1,12 @@
-import logging
 from pathlib import Path
 
 import click
 
-from dioptra import decorator
+from dioptra.context.calibrate import calibrate_main
+from dioptra.context.list import list_main
+from dioptra.estimate.annotate import annotate_main
+from dioptra.estimate.render import render_main
+from dioptra.estimate.report import report_main
 
 
 @click.group()
@@ -33,7 +36,7 @@ def report(file: Path, calibration_data: Path) -> None:
     FILE is the python file to look for functions decorated with
     "@dioptra_runtime" or "@dioptra_binfhe_runtime".
     """
-    decorator.report_main(str(calibration_data), [str(file)])
+    report_main(str(calibration_data), [str(file)])
 
 
 @estimate.command()
@@ -61,7 +64,7 @@ def annotate(file: Path, calibration_data: Path, name: str, output: Path) -> Non
     FILE is the python file to look for functions decorated with
     "@dioptra_runtime" or "@dioptra_binfhe_runtime".
     """
-    decorator.annotate_main(str(calibration_data), str(file), name, str(output))
+    annotate_main(str(calibration_data), str(file), name, str(output))
 
 
 @cli.group()
@@ -99,7 +102,7 @@ def calibrate(file: Path, name: str, output: Path, sample_count: int):
     FILE is the python file to look for functions decorated with
     "@dioptra_context" or "@dioptra_binfhe_context".
     """
-    decorator.context_calibrate_main([str(file)], name, str(output), sample_count)
+    calibrate_main([str(file)], name, str(output), sample_count)
 
 
 @context.command()
@@ -110,7 +113,7 @@ def list(file: Path):
     FILE is the python file to look for functions decorated with
     "@dioptra_context" or "@dioptra_binfhe_context".
     """
-    decorator.context_list_main([str(file)])
+    list_main([str(file)])
 
 
 @estimate.command()
@@ -130,4 +133,4 @@ def list(file: Path):
 )
 def render(file: Path, calibration_data: Path, output: Path) -> None:
     """Run decorated functions and render analysis results."""
-    decorator.render_main(str(calibration_data), str(file), str(output))
+    render_main(str(calibration_data), str(file), str(output))

@@ -1,0 +1,59 @@
+import sys
+
+from dioptra._file_loading import load_calibration_data, load_files
+from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
+from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
+from dioptra.analyzer.calibration import PKECalibrationData
+from dioptra.analyzer.pke.analysisbase import Analyzer
+from dioptra.analyzer.pke.runtime import Runtime
+from dioptra.analyzer.report.runtime import RuntimeAnnotation
+from dioptra.analyzer.utils.util import format_ns
+from dioptra.estimate import estimation_cases
+from dioptra.scheme_type import SchemeType
+from dioptra.visualization.annotation import annotate_lines
+
+
+def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
+    calibration = load_calibration_data(sample_file)
+    load_files([file])
+    case = estimation_cases.get(test_case, None)
+
+    if case is None:
+        print(
+            f"ERROR: Could not find test case '{test_case}' in scope", file=sys.stderr
+        )
+        return
+
+    if case.schemetype == SchemeType.PKE and isinstance(
+        calibration, PKECalibrationData
+    ):
+        annot_rpt = RuntimeAnnotation()
+        runtime_analysis = Runtime(calibration, annot_rpt)
+        analyzer = Analyzer([runtime_analysis], calibration.scheme)
+        case.run_and_exit_if_unsupported(analyzer)
+        annotation = dict(
+            (line, format_ns(ns))
+            for (line, ns) in annot_rpt.annotation_for(file).items()
+        )
+        annotate_lines(file, output, annotation)
+
+    elif case.schemetype == SchemeType.BINFHE and isinstance(
+        calibration, BinFHECalibrationData
+    ):
+        annot_rpt = RuntimeAnnotation()
+        est = RuntimeEstimate(
+            calibration.avg_case(), calibration.ciphertext_size, annot_rpt
+        )
+        analyzer = BinFHEAnalyzer(calibration.params, est)
+        case.run_and_exit_if_unsupported(analyzer)
+        annotation = dict(
+            (line, format_ns(ns))
+            for (line, ns) in annot_rpt.annotation_for(file).items()
+        )
+        annotate_lines(file, output, annotation)
+
+    else:
+        print(
+            f"Calibration data '{sample_file}' is not compatible with estimation case '{test_case}'"
+        )

@@ -11,7 +11,7 @@ from openfhe import BINGATE
 
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.analyzer.utils.util import BPS
-from dioptra.decorator import dioptra_binfhe_runtime
+from dioptra.estimate import dioptra_binfhe_runtime
 
 
 @dioptra_binfhe_runtime()
