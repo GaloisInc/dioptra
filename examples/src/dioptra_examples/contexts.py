@@ -1,6 +1,6 @@
 import openfhe as ofhe
 
-from dioptra.decorator import dioptra_binfhe_context, dioptra_context
+from dioptra.context import dioptra_binfhe_context, dioptra_context
 
 
 @dioptra_context()

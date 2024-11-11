@@ -2,7 +2,7 @@ import openfhe as ofhe
 
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.analyzer.binfhe.value import LWECiphertext
-from dioptra.decorator import dioptra_binfhe_runtime
+from dioptra.estimate import dioptra_binfhe_runtime
 
 
 def simple_circuit(cc: ofhe.CryptoContext, ct1: LWECiphertext, ct2: LWECiphertext):

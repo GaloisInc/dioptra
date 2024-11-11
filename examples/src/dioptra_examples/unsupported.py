@@ -1,7 +1,7 @@
 import math
 
 from dioptra.analyzer.pke.analysisbase import Analyzer
-from dioptra.decorator import dioptra_runtime
+from dioptra.estimate import dioptra_runtime
 
 
 @dioptra_runtime()

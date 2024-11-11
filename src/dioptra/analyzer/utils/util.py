@@ -1,4 +1,9 @@
+import datetime
 from typing import Iterator
+
+
+def timedelta_as_ns(d: datetime.timedelta) -> int:
+    return d.microseconds * (10**3) + d.seconds * (10**9) + d.days * 24 * 3600 * (10**9)
 
 
 def format_bytes(bytes: int) -> str:
