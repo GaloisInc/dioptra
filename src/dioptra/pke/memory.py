@@ -1,4 +1,4 @@
-from dioptra.pke.analysisbase import AnalysisBase, Ciphertext, Plaintext
+from dioptra.pke.analyzer import AnalysisBase, Ciphertext, Plaintext
 from dioptra.pke.scheme import LevelInfo
 from dioptra.report.memory import AllocationType, MemoryReport
 from dioptra.utils.code_loc import Frame

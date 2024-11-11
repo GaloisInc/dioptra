@@ -3,7 +3,7 @@ import sys
 from typing import Callable
 
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.pke.analysisbase import Analyzer
+from dioptra.pke.analyzer import Analyzer
 from dioptra.utils.error import NotSupportedException
 from dioptra.scheme_type import SchemeType
 
