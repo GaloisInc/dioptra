@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import openfhe
 
-from dioptra.analyzer.scheme import LevelInfo, SchemeModelCKKS
+from dioptra.analyzer.pke.scheme import LevelInfo, SchemeModelCKKS
 from tests.test_contexts import ckks1
 
 

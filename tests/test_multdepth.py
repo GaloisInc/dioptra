@@ -1,6 +1,6 @@
 from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
 from dioptra.analyzer.pke.multdepth import MultDepth
-from dioptra.analyzer.scheme import SchemeModelCKKS
+from dioptra.analyzer.pke.scheme import SchemeModelCKKS
 
 
 def runexample(fun) -> None:  # type: ignore

@@ -2,7 +2,7 @@ import dis
 import weakref
 from typing import Any, Iterable, Self
 
-from dioptra.analyzer.scheme import LevelInfo, SchemeModelPke
+from dioptra.analyzer.pke.scheme import LevelInfo, SchemeModelPke
 from dioptra.analyzer.utils import code_loc
 from dioptra.analyzer.utils.code_loc import Frame, TraceLoc, calling_frame
 from dioptra.analyzer.utils.error import NotSupportedException
