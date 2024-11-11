@@ -5,7 +5,6 @@ from pathlib import Path
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 import dioptra
-from dioptra._file_loading import load_calibration_data, load_files
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.binfhe.runtime import RuntimeEstimate
@@ -16,6 +15,7 @@ from dioptra.pke.runtime import Runtime
 from dioptra.report.runtime import RuntimeAnnotation
 from dioptra.scheme_type import SchemeType, calibration_type
 from dioptra.utils.code_loc import TraceLoc
+from dioptra.utils.file_loading import load_calibration_data, load_files
 from dioptra.utils.measurement import format_ns
 
 SKELETON_DIR = "analysis_site_skeleton"
