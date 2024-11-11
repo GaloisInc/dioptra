@@ -4,12 +4,14 @@ from dioptra.decorator import dioptra_binfhe_context, dioptra_context
 
 
 @dioptra_context()
-def ckks1() -> tuple[
-    ofhe.CryptoContext,
-    ofhe.CCParamsCKKSRNS,
-    ofhe.KeyPair,
-    list[ofhe.PKESchemeFeature],
-]:
+def ckks1() -> (
+    tuple[
+        ofhe.CryptoContext,
+        ofhe.CCParamsCKKSRNS,
+        ofhe.KeyPair,
+        list[ofhe.PKESchemeFeature],
+    ]
+):
     parameters = ofhe.CCParamsCKKSRNS()
 
     secret_key_dist = ofhe.SecretKeyDist.UNIFORM_TERNARY
@@ -63,12 +65,14 @@ def ckks1() -> tuple[
 
 
 @dioptra_context()
-def ckks_small1() -> tuple[
-    ofhe.CryptoContext,
-    ofhe.CCParamsCKKSRNS,
-    ofhe.KeyPair,
-    list[ofhe.PKESchemeFeature],
-]:
+def ckks_small1() -> (
+    tuple[
+        ofhe.CryptoContext,
+        ofhe.CCParamsCKKSRNS,
+        ofhe.KeyPair,
+        list[ofhe.PKESchemeFeature],
+    ]
+):
     parameters = ofhe.CCParamsCKKSRNS()
 
     secret_key_dist = ofhe.SecretKeyDist.UNIFORM_TERNARY
@@ -122,12 +126,14 @@ def ckks_small1() -> tuple[
 
 
 @dioptra_context()
-def bfv1() -> tuple[
-    ofhe.CryptoContext,
-    ofhe.CCParamsBFVRNS,
-    ofhe.KeyPair,
-    list[ofhe.PKESchemeFeature],
-]:
+def bfv1() -> (
+    tuple[
+        ofhe.CryptoContext,
+        ofhe.CCParamsBFVRNS,
+        ofhe.KeyPair,
+        list[ofhe.PKESchemeFeature],
+    ]
+):
     # Sample Program: Step 1: Set CryptoContext
     parameters = ofhe.CCParamsBFVRNS()
     parameters.SetPlaintextModulus(65537)
@@ -158,12 +164,14 @@ def bfv1() -> tuple[
 
 
 @dioptra_context()
-def bgv1() -> tuple[
-    ofhe.CryptoContext,
-    ofhe.CCParamsBGVRNS,
-    ofhe.KeyPair,
-    list[ofhe.PKESchemeFeature],
-]:
+def bgv1() -> (
+    tuple[
+        ofhe.CryptoContext,
+        ofhe.CCParamsBGVRNS,
+        ofhe.KeyPair,
+        list[ofhe.PKESchemeFeature],
+    ]
+):
     # Sample Program: Step 1: Set CryptoContext
     parameters = ofhe.CCParamsBGVRNS()
     parameters.SetPlaintextModulus(65537)

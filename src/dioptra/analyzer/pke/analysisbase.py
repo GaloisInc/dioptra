@@ -1,4 +1,3 @@
-
 import math
 from typing import Any, Callable, Iterable, Self, Sequence, TypeVar
 import weakref
@@ -115,6 +114,16 @@ class AnalysisBase:
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame | None) -> None:
         pass
 
+    def trace_send_ct(
+        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_recv_ct(
+        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
+    ) -> None:
+        pass
+
     def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame | None) -> None:
         pass
 
@@ -184,7 +193,8 @@ class Network:
     """This class represents a simulated nework and should only ever be
     constructed by calling `MakeNetwork` on an analyzer class.
     """
-    def __init__(self, analyzer: 'Analyzer', model: NetworkModel) -> None:
+
+    def __init__(self, analyzer: "Analyzer", model: NetworkModel) -> None:
         self.net_model = model
         self.analyzer = analyzer
 
@@ -198,8 +208,6 @@ class Network:
 
 
 class Analyzer:
-
-
     def __init__(
         self,
         analysis_list: list[AnalysisBase],
@@ -234,7 +242,8 @@ class Analyzer:
                 analysis.trace_encode_ckks(new, caller_loc)
             return new
         raise NotSupportedException(
-            "MakeCKKSPackedPlaintext: analyzer does not implement this overload", caller_loc
+            "MakeCKKSPackedPlaintext: analyzer does not implement this overload",
+            caller_loc,
         )
 
     def Encrypt(self, public_key: PublicKey, plaintext: Plaintext) -> Ciphertext:
@@ -254,7 +263,9 @@ class Analyzer:
                 analysis.trace_decrypt(new, ct, pkey, caller_loc)
             return new
 
-        raise NotSupportedException("Decrypt: analyzer does not implement this overload", caller_loc)
+        raise NotSupportedException(
+            "Decrypt: analyzer does not implement this overload", caller_loc
+        )
 
     def EvalMult(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
@@ -274,7 +285,9 @@ class Analyzer:
                 analysis.trace_mul_ctpt(new, args[0], args[1], caller_loc)
             return new
 
-        raise NotSupportedException("EvalMult: analyzer does not implement this overload", caller_loc)
+        raise NotSupportedException(
+            "EvalMult: analyzer does not implement this overload", caller_loc
+        )
 
     def EvalAdd(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
@@ -292,7 +305,9 @@ class Analyzer:
                 analysis.trace_add_ctpt(new, args[0], args[1], caller_loc)
             return new
 
-        raise NotSupportedException("EvalAdd: analyzer does not implement this overload", caller_loc)
+        raise NotSupportedException(
+            "EvalAdd: analyzer does not implement this overload", caller_loc
+        )
 
     def EvalSub(self, *args, **kwargs) -> Ciphertext:  # type: ignore
         caller_loc = code_loc.calling_frame()
@@ -311,7 +326,9 @@ class Analyzer:
                 analysis.trace_sub_ctpt(new, args[0], args[1], caller_loc)
             return new
 
-        raise NotSupportedException("EvalAdd: analyzer does not implement this overload", caller_loc)
+        raise NotSupportedException(
+            "EvalAdd: analyzer does not implement this overload", caller_loc
+        )
 
     def EvalBootstrap(
         self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0
@@ -332,7 +349,7 @@ class Analyzer:
         caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
         return self._mk_ct(lv, None, caller_loc)
-    
+
     def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> Network:
         """Create a simulated network with the given parameters."""
         nm = NetworkModel(send_bps.bps, recv_bps.bps, latency=latency_ms * 10**6)
@@ -367,47 +384,144 @@ class Analyzer:
             analysis.trace_alloc_pt(pt, loc)
         pt.set_finalizer(weakref.finalize(pt, self._dealloc_ct, pt.id, level))
         return pt
-    
-    def _send_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame|None):
+
+    def _send_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame | None):
         for analysis in self.analysis_list:
             analysis.trace_send_ct(ct, nm, loc)
 
-    def _recv_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame|None):
+    def _recv_ciphertext(self, ct: Ciphertext, nm: NetworkModel, loc: Frame | None):
         for analysis in self.analysis_list:
             analysis.trace_recv_ct(ct, nm, loc)
 
-    
-    # def _enable_trace(self):
-    #     sys.settrace(self._trace)
-    all_context_fns = set ([
-        "ClearEvalAutomorphismKeys", "ClearEvalMultKeys", "Decrypt", "DeserializeEvalAutomorphismKey",
-        "DeserializeEvalMultKey", "Enable", "Encrypt", "EvalAdd", "EvalAddInPlace",
-        "EvalAddManyInPlace", "EvalAddMutable", "EvalAddMutableInPlace", "EvalAtIndex", "EvalAtIndexKeyGen", 
-        "EvalAutomorphismKeyGen", "EvalBootstrap", "EvalBootstrapKeyGen", "EvalBootstrapSetup", 
-        "EvalCKKStoFHEW", "EvalCKKStoFHEWKeyGen", "EvalCKKStoFHEWPrecompute", "EvalCKKStoFHEWSetup", 
-        "EvalChebyshevFunction", "EvalChebyshevSeries", "EvalChebyshevSeriesLinear", "EvalChebyshevSeriesPS", 
-        "EvalCompareSchemeSwitching", "EvalCompareSwitchPrecompute", "EvalCos", "EvalDivide", "EvalFHEWtoCKKS", 
-        "EvalFHEWtoCKKSKeyGen", "EvalFHEWtoCKKSSetup", "EvalFastRotation", "EvalFastRotationExt", 
-        "EvalFastRotationPrecompute", "EvalInnerProduct", "EvalLinearWSum", "EvalLinearWSumMutable", 
-        "EvalLogistic", "EvalMaxSchemeSwitching", "EvalMaxSchemeSwitchingAlt", "EvalMerge", 
-        "EvalMinSchemeSwitching", "EvalMinSchemeSwitchingAlt", "EvalMult", "EvalMultAndRelinearize", 
-        "EvalMultKeyGen", "EvalMultKeysGen", "EvalMultMany", "EvalMultMutable", "EvalMultMutableInPlace", 
-        "EvalMultNoRelin", "EvalNegate", "EvalNegateInPlace", "EvalPoly", "EvalPolyLinear", "EvalPolyPS", 
-        "EvalRotate", "EvalRotateKeyGen", "EvalSchemeSwitchingKeyGen", "EvalSchemeSwitchingSetup", 
-        "EvalSin", "EvalSquare", "EvalSquareInPlace", "EvalSquareMutable", "EvalSub", "EvalSubInPlace", 
-        "EvalSubMutable", "EvalSubMutableInPlace", "EvalSum", "EvalSumCols", "EvalSumColsKeyGen", 
-        "EvalSumKeyGen", "EvalSumRows", "EvalSumRowsKeyGen", "FindAutomorphismIndex", "FindAutomorphismIndices", 
-        "GetBinCCForSchemeSwitch", "GetCyclotomicOrder", "GetDigitSize", "GetEvalSumKeyMap", "GetKeyGenLevel", 
-        "GetModulus", "GetModulusCKKS", "GetPlaintextModulus", "GetRingDimension", "GetScalingFactorReal", 
-        "GetScalingTechnique", "InsertEvalMultKey", "InsertEvalSumKey", "IntMPBootAdd", "IntMPBootAdjustScale", 
-        "IntMPBootDecrypt", "IntMPBootEncrypt", "IntMPBootRandomElementGen", "KeyGen", "KeySwitchGen", 
-        "MakeCKKSPackedPlaintext", "MakeCoefPackedPlaintext", "MakePackedPlaintext", "MakeStringPlaintext", 
-        "ModReduce", "ModReduceInPlace", "MultiAddEvalKeys", "MultiAddEvalMultKeys", "MultiAddEvalSumKeys", 
-        "MultiEvalSumKeyGen", "MultiKeySwitchGen", "MultiMultEvalKey", "MultipartyDecryptFusion", 
-        "MultipartyDecryptLead", "MultipartyDecryptMain", "MultipartyKeyGen", "ReEncrypt", "ReKeyGen", 
-        "Relinearize", "RelinearizeInPlace", "Rescale", "RescaleInPlace", "SerializeEvalAutomorphismKey", 
-        "SerializeEvalMultKey", "SetKeyGenLevel", "get_ptr"
-    ])
+    all_context_fns = set(
+        [
+            "ClearEvalAutomorphismKeys",
+            "ClearEvalMultKeys",
+            "Decrypt",
+            "DeserializeEvalAutomorphismKey",
+            "DeserializeEvalMultKey",
+            "Enable",
+            "Encrypt",
+            "EvalAdd",
+            "EvalAddInPlace",
+            "EvalAddManyInPlace",
+            "EvalAddMutable",
+            "EvalAddMutableInPlace",
+            "EvalAtIndex",
+            "EvalAtIndexKeyGen",
+            "EvalAutomorphismKeyGen",
+            "EvalBootstrap",
+            "EvalBootstrapKeyGen",
+            "EvalBootstrapSetup",
+            "EvalCKKStoFHEW",
+            "EvalCKKStoFHEWKeyGen",
+            "EvalCKKStoFHEWPrecompute",
+            "EvalCKKStoFHEWSetup",
+            "EvalChebyshevFunction",
+            "EvalChebyshevSeries",
+            "EvalChebyshevSeriesLinear",
+            "EvalChebyshevSeriesPS",
+            "EvalCompareSchemeSwitching",
+            "EvalCompareSwitchPrecompute",
+            "EvalCos",
+            "EvalDivide",
+            "EvalFHEWtoCKKS",
+            "EvalFHEWtoCKKSKeyGen",
+            "EvalFHEWtoCKKSSetup",
+            "EvalFastRotation",
+            "EvalFastRotationExt",
+            "EvalFastRotationPrecompute",
+            "EvalInnerProduct",
+            "EvalLinearWSum",
+            "EvalLinearWSumMutable",
+            "EvalLogistic",
+            "EvalMaxSchemeSwitching",
+            "EvalMaxSchemeSwitchingAlt",
+            "EvalMerge",
+            "EvalMinSchemeSwitching",
+            "EvalMinSchemeSwitchingAlt",
+            "EvalMult",
+            "EvalMultAndRelinearize",
+            "EvalMultKeyGen",
+            "EvalMultKeysGen",
+            "EvalMultMany",
+            "EvalMultMutable",
+            "EvalMultMutableInPlace",
+            "EvalMultNoRelin",
+            "EvalNegate",
+            "EvalNegateInPlace",
+            "EvalPoly",
+            "EvalPolyLinear",
+            "EvalPolyPS",
+            "EvalRotate",
+            "EvalRotateKeyGen",
+            "EvalSchemeSwitchingKeyGen",
+            "EvalSchemeSwitchingSetup",
+            "EvalSin",
+            "EvalSquare",
+            "EvalSquareInPlace",
+            "EvalSquareMutable",
+            "EvalSub",
+            "EvalSubInPlace",
+            "EvalSubMutable",
+            "EvalSubMutableInPlace",
+            "EvalSum",
+            "EvalSumCols",
+            "EvalSumColsKeyGen",
+            "EvalSumKeyGen",
+            "EvalSumRows",
+            "EvalSumRowsKeyGen",
+            "FindAutomorphismIndex",
+            "FindAutomorphismIndices",
+            "GetBinCCForSchemeSwitch",
+            "GetCyclotomicOrder",
+            "GetDigitSize",
+            "GetEvalSumKeyMap",
+            "GetKeyGenLevel",
+            "GetModulus",
+            "GetModulusCKKS",
+            "GetPlaintextModulus",
+            "GetRingDimension",
+            "GetScalingFactorReal",
+            "GetScalingTechnique",
+            "InsertEvalMultKey",
+            "InsertEvalSumKey",
+            "IntMPBootAdd",
+            "IntMPBootAdjustScale",
+            "IntMPBootDecrypt",
+            "IntMPBootEncrypt",
+            "IntMPBootRandomElementGen",
+            "KeyGen",
+            "KeySwitchGen",
+            "MakeCKKSPackedPlaintext",
+            "MakeCoefPackedPlaintext",
+            "MakePackedPlaintext",
+            "MakeStringPlaintext",
+            "ModReduce",
+            "ModReduceInPlace",
+            "MultiAddEvalKeys",
+            "MultiAddEvalMultKeys",
+            "MultiAddEvalSumKeys",
+            "MultiEvalSumKeyGen",
+            "MultiKeySwitchGen",
+            "MultiMultEvalKey",
+            "MultipartyDecryptFusion",
+            "MultipartyDecryptLead",
+            "MultipartyDecryptMain",
+            "MultipartyKeyGen",
+            "ReEncrypt",
+            "ReKeyGen",
+            "Relinearize",
+            "RelinearizeInPlace",
+            "Rescale",
+            "RescaleInPlace",
+            "SerializeEvalAutomorphismKey",
+            "SerializeEvalMultKey",
+            "SetKeyGenLevel",
+            "get_ptr",
+        ]
+    )
+
 
 # Set all unimplemented functions to throw the proper error
 def add_unsupported_methods():
@@ -415,12 +529,14 @@ def add_unsupported_methods():
         def f(self, *args, **kwargs):
             frm = calling_frame()
             raise NotSupportedException.fn_not_impl(nm, frm)
+
         return f
 
     for name in Analyzer.all_context_fns:
         if hasattr(Analyzer, name):
             continue
-        
+
         setattr(Analyzer, name, mk_unsupported(name))
+
 
 add_unsupported_methods()
