@@ -12,7 +12,7 @@ from dioptra.report.memory import MemoryMaxReport
 from dioptra.report.runtime import RuntimeTotal
 from dioptra.scheme_type import SchemeType, calibration_type
 from dioptra.utils.code_loc import TraceLoc
-from dioptra.utils.util import format_bytes, format_ns_approx, timedelta_as_ns
+from dioptra.utils.measurement import format_bytes, format_ns_approx, timedelta_as_ns
 
 
 def report_main(sample_file: str, files: list[str]) -> None:

@@ -1,7 +1,7 @@
 import random
 import time
 
-from dioptra.utils.util import format_ns
+from dioptra.utils.measurement import format_ns
 from dioptra_examples.contexts import bfv1
 from dioptra_examples.matrix_mult import matrix_mult
 from dioptra_examples.schemes import BFV

@@ -6,8 +6,8 @@ from dioptra.pke.scheme import LevelInfo, SchemeModelPke
 from dioptra.utils import code_loc
 from dioptra.utils.code_loc import Frame, TraceLoc, calling_frame
 from dioptra.utils.error import NotSupportedException
+from dioptra.utils.measurement import BPS
 from dioptra.utils.network import NetworkModel
-from dioptra.utils.util import BPS
 
 
 class VectorMath:

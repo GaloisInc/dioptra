@@ -16,7 +16,7 @@ from dioptra.pke.runtime import Runtime
 from dioptra.report.runtime import RuntimeAnnotation
 from dioptra.scheme_type import SchemeType, calibration_type
 from dioptra.utils.code_loc import TraceLoc
-from dioptra.utils.util import format_ns
+from dioptra.utils.measurement import format_ns
 
 SKELETON_DIR = "analysis_site_skeleton"
 

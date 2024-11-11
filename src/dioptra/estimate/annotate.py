@@ -10,7 +10,7 @@ from dioptra.pke.calibration import PKECalibrationData
 from dioptra.pke.runtime import Runtime
 from dioptra.report.runtime import RuntimeAnnotation
 from dioptra.scheme_type import SchemeType
-from dioptra.utils.util import format_ns
+from dioptra.utils.measurement import format_ns
 
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
