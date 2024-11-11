@@ -7,9 +7,9 @@ computed.  Then, the product is "sent" back - the send also being
 simulated.
 """
 
+from dioptra.estimate import dioptra_runtime
 from dioptra.pke.analyzer import Analyzer
 from dioptra.utils.util import BPS
-from dioptra.estimate import dioptra_runtime
 
 
 @dioptra_runtime()

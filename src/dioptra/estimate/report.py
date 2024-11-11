@@ -3,16 +3,16 @@ from dioptra.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.binfhe.memory import BinFHEMemoryEstimate
 from dioptra.binfhe.runtime import RuntimeEstimate
+from dioptra.estimate import estimation_cases
 from dioptra.pke.analyzer import Analyzer
 from dioptra.pke.calibration import PKECalibrationData
 from dioptra.pke.memory import PKEMemoryEstimate
 from dioptra.pke.runtime import Runtime
 from dioptra.report.memory import MemoryMaxReport
 from dioptra.report.runtime import RuntimeTotal
+from dioptra.scheme_type import SchemeType, calibration_type
 from dioptra.utils.code_loc import TraceLoc
 from dioptra.utils.util import format_bytes, format_ns_approx, timedelta_as_ns
-from dioptra.estimate import estimation_cases
-from dioptra.scheme_type import SchemeType, calibration_type
 
 
 def report_main(sample_file: str, files: list[str]) -> None:

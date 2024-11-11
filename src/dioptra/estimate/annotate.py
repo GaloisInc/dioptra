@@ -4,13 +4,13 @@ from dioptra._file_loading import load_calibration_data, load_files
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.binfhe.runtime import RuntimeEstimate
+from dioptra.estimate import estimation_cases
 from dioptra.pke.analyzer import Analyzer
 from dioptra.pke.calibration import PKECalibrationData
 from dioptra.pke.runtime import Runtime
 from dioptra.report.runtime import RuntimeAnnotation
-from dioptra.utils.util import format_ns
-from dioptra.estimate import estimation_cases
 from dioptra.scheme_type import SchemeType
+from dioptra.utils.util import format_ns
 
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
