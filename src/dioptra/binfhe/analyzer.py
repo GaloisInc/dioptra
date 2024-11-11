@@ -8,8 +8,8 @@ from dioptra.binfhe.value import LWECiphertext, LWEPrivateKey
 from dioptra.utils import code_loc
 from dioptra.utils.code_loc import Frame, TraceLoc
 from dioptra.utils.error import NotSupportedException
+from dioptra.utils.measurement import BPS
 from dioptra.utils.network import NetworkModel
-from dioptra.utils.util import BPS
 
 
 class BinFHEAnalysisBase:
