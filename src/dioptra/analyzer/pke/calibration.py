@@ -7,7 +7,7 @@ import openfhe
 import psutil
 
 import dioptra_native
-from dioptra.analyzer.scheme import (
+from dioptra.analyzer.pke.scheme import (
     LevelInfo,
     SchemeModelBFV,
     SchemeModelBGV,
