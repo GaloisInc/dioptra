@@ -1,8 +1,8 @@
 import datetime
 from typing import Callable, Iterable
 
-from dioptra.pke.analyzer import Analyzer, Ciphertext
 from dioptra.estimate import dioptra_runtime
+from dioptra.pke.analyzer import Analyzer, Ciphertext
 
 
 # Three implementations of exponentiation

@@ -1,5 +1,5 @@
-from dioptra.pke.analyzer import Analyzer
 from dioptra.estimate import dioptra_runtime
+from dioptra.pke.analyzer import Analyzer
 from dioptra_examples.matrix_mult import matrix_mult
 from dioptra_examples.schemes import CKKS
 
