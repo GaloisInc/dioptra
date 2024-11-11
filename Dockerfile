@@ -18,7 +18,6 @@ RUN apt-get update && apt-get install -y \
 # Python tools we need
 RUN pip3 install --no-cache-dir \
                  "pybind11[global]" \
-                 mypy \
                  ruff \
                  pytest \
                  --break-system-packages
