@@ -2,16 +2,11 @@ import logging
 from pathlib import Path
 
 import click
-import click_log
 
 from dioptra import decorator
 
-logger = logging.getLogger(__name__)
-click_log.basic_config(logger)
-
 
 @click.group()
-@click_log.simple_verbosity_option(logger)
 def cli() -> None:
     """The Dioptra FHE platform."""
     pass
