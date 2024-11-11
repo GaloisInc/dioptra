@@ -1,8 +1,8 @@
 import sys
 
 from dioptra._file_loading import load_files
-from dioptra.analyzer.binfhe.calibration import BinFHECalibration
-from dioptra.analyzer.pke.calibration import PKECalibration
+from dioptra.binfhe.calibration import BinFHECalibration
+from dioptra.pke.calibration import PKECalibration
 from dioptra.context import context_functions
 from dioptra.scheme_type import SchemeType
 

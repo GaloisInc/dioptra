@@ -1,7 +1,7 @@
 import datetime
 from typing import Callable, Iterable
 
-from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
+from dioptra.pke.analysisbase import Analyzer, Ciphertext
 from dioptra.estimate import dioptra_runtime
 
 

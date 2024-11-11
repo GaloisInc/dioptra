@@ -2,12 +2,12 @@ import dis
 import weakref
 from typing import Any, Iterable, Self
 
-from dioptra.analyzer.pke.scheme import LevelInfo, SchemeModelPke
-from dioptra.analyzer.utils import code_loc
-from dioptra.analyzer.utils.code_loc import Frame, TraceLoc, calling_frame
-from dioptra.analyzer.utils.error import NotSupportedException
-from dioptra.analyzer.utils.network import NetworkModel
-from dioptra.analyzer.utils.util import BPS
+from dioptra.pke.scheme import LevelInfo, SchemeModelPke
+from dioptra.utils import code_loc
+from dioptra.utils.code_loc import Frame, TraceLoc, calling_frame
+from dioptra.utils.error import NotSupportedException
+from dioptra.utils.network import NetworkModel
+from dioptra.utils.util import BPS
 
 
 class VectorMath:

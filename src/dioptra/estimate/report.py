@@ -1,16 +1,16 @@
 from dioptra._file_loading import load_calibration_data, load_files
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
-from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
-from dioptra.analyzer.binfhe.memory import BinFHEMemoryEstimate
-from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
-from dioptra.analyzer.pke.analysisbase import Analyzer
-from dioptra.analyzer.pke.calibration import PKECalibrationData
-from dioptra.analyzer.pke.memory import PKEMemoryEstimate
-from dioptra.analyzer.pke.runtime import Runtime
-from dioptra.analyzer.report.memory import MemoryMaxReport
-from dioptra.analyzer.report.runtime import RuntimeTotal
-from dioptra.analyzer.utils.code_loc import TraceLoc
-from dioptra.analyzer.utils.util import format_bytes, format_ns_approx, timedelta_as_ns
+from dioptra.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
+from dioptra.binfhe.calibration import BinFHECalibrationData
+from dioptra.binfhe.memory import BinFHEMemoryEstimate
+from dioptra.binfhe.runtime import RuntimeEstimate
+from dioptra.pke.analysisbase import Analyzer
+from dioptra.pke.calibration import PKECalibrationData
+from dioptra.pke.memory import PKEMemoryEstimate
+from dioptra.pke.runtime import Runtime
+from dioptra.report.memory import MemoryMaxReport
+from dioptra.report.runtime import RuntimeTotal
+from dioptra.utils.code_loc import TraceLoc
+from dioptra.utils.util import format_bytes, format_ns_approx, timedelta_as_ns
 from dioptra.estimate import estimation_cases
 from dioptra.scheme_type import SchemeType, calibration_type
 
