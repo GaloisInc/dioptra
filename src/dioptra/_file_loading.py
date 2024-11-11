@@ -1,8 +1,8 @@
 import json
 import runpy
 
-from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
-from dioptra.analyzer.pke.calibration import PKECalibrationData
+from dioptra.binfhe.calibration import BinFHECalibrationData
+from dioptra.pke.calibration import PKECalibrationData
 
 
 def load_files(files: list[str]) -> None:

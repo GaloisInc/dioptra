@@ -1,6 +1,6 @@
 import time
 
-from dioptra.analyzer.utils.util import format_ns
+from dioptra.utils.util import format_ns
 from dioptra_examples.contexts import bfv1
 from dioptra_examples.nn import NN
 from dioptra_examples.schemes import BFV

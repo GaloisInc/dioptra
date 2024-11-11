@@ -1,4 +1,4 @@
-from dioptra.analyzer.pke.analysisbase import Analyzer
+from dioptra.pke.analysisbase import Analyzer
 from dioptra.estimate import dioptra_runtime
 from dioptra_examples.matrix_mult import matrix_mult
 from dioptra_examples.schemes import BFV

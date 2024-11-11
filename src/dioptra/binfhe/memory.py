@@ -1,7 +1,7 @@
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisBase
-from dioptra.analyzer.binfhe.value import LWECiphertext
-from dioptra.analyzer.report.memory import AllocationType, MemoryReport
-from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.binfhe.analyzer import BinFHEAnalysisBase
+from dioptra.binfhe.value import LWECiphertext
+from dioptra.report.memory import AllocationType, MemoryReport
+from dioptra.utils.code_loc import Frame
 
 
 class BinFHEMemoryEstimate(BinFHEAnalysisBase):

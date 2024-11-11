@@ -1,7 +1,7 @@
-from dioptra.analyzer.pke.analysisbase import AnalysisBase, Ciphertext, Plaintext
-from dioptra.analyzer.pke.scheme import LevelInfo
-from dioptra.analyzer.report.memory import AllocationType, MemoryReport
-from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.pke.analysisbase import AnalysisBase, Ciphertext, Plaintext
+from dioptra.pke.scheme import LevelInfo
+from dioptra.report.memory import AllocationType, MemoryReport
+from dioptra.utils.code_loc import Frame
 
 
 class PKEMemoryEstimate(AnalysisBase):
