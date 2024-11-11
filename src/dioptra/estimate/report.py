@@ -3,7 +3,7 @@ from dioptra.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.binfhe.memory import BinFHEMemoryEstimate
 from dioptra.binfhe.runtime import RuntimeEstimate
-from dioptra.pke.analysisbase import Analyzer
+from dioptra.pke.analyzer import Analyzer
 from dioptra.pke.calibration import PKECalibrationData
 from dioptra.pke.memory import PKEMemoryEstimate
 from dioptra.pke.runtime import Runtime

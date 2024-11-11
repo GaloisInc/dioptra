@@ -1,6 +1,6 @@
 import math
 
-from dioptra.pke.analysisbase import Analyzer
+from dioptra.pke.analyzer import Analyzer
 from dioptra.estimate import dioptra_runtime
 
 

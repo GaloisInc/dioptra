@@ -1,4 +1,4 @@
-from dioptra.pke.analysisbase import Analyzer
+from dioptra.pke.analyzer import Analyzer
 from dioptra.estimate import dioptra_runtime
 from dioptra_examples.nn import NN
 from dioptra_examples.schemes import BFV

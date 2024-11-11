@@ -1,6 +1,6 @@
 import dis
 
-from dioptra.pke.analysisbase import (
+from dioptra.pke.analyzer import (
     AnalysisBase,
     Ciphertext,
     Plaintext,
