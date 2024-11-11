@@ -1,4 +1,6 @@
+import os
 import sys
+from pathlib import Path
 
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
@@ -31,11 +33,16 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         runtime_analysis = Runtime(calibration, annot_rpt)
         analyzer = Analyzer([runtime_analysis], calibration.scheme)
         case.run_and_exit_if_unsupported(analyzer)
-        annotation = dict(
-            (line, format_ns(ns))
-            for (line, ns) in annot_rpt.annotation_for(file).items()
-        )
-        annotate_lines(file, output, annotation)
+
+        for fname, annotation in annot_rpt.annotation_dicts():
+            os.makedirs(Path(output).joinpath(Path(fname[1:]).parent), exist_ok=True)
+
+            annotation = {line: format_ns(ns) for (line, ns) in annotation.items()}
+            annotate_lines(
+                fname,
+                Path(output).joinpath(Path(fname[1:])),
+                annotation,
+            )
 
     elif case.schemetype == SchemeType.BINFHE and isinstance(
         calibration, BinFHECalibrationData
@@ -46,11 +53,16 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         )
         analyzer = BinFHEAnalyzer(calibration.params, est)
         case.run_and_exit_if_unsupported(analyzer)
-        annotation = dict(
-            (line, format_ns(ns))
-            for (line, ns) in annot_rpt.annotation_for(file).items()
-        )
-        annotate_lines(file, output, annotation)
+
+        for fname, annotation in annot_rpt.annotation_dicts():
+            os.makedirs(Path(output).joinpath(Path(fname[1:]).parent), exist_ok=True)
+
+            annotation = {line: format_ns(ns) for (line, ns) in annotation.items()}
+            annotate_lines(
+                fname,
+                Path(output).joinpath(Path(fname[1:])),
+                annotation,
+            )
 
     else:
         print(
