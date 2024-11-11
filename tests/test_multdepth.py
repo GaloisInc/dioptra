@@ -1,14 +1,12 @@
 from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
 from dioptra.analyzer.pke.multdepth import MultDepth
+from dioptra.analyzer.scheme import SchemeModelCKKS
 
 
 def runexample(fun) -> None:  # type: ignore
     md = MultDepth()
-    analyzer = Analyzer([md])
+    analyzer = Analyzer([md], SchemeModelCKKS(2))
     fun(analyzer)
-    print(f"Max Depth: {md.max_depth}")
-    print(f"Where Depths: {md.where}")
-    md.anotate_metric()
 
 
 def square(crypto_context: Analyzer, c1: Ciphertext) -> Ciphertext:
@@ -17,27 +15,8 @@ def square(crypto_context: Analyzer, c1: Ciphertext) -> Ciphertext:
 
 @runexample
 def example(crypto_context: Analyzer) -> None:
-    key_pair = crypto_context.KeyGen()
-
-    # Generate the relinearization key
-    crypto_context.EvalMultKeyGen(key_pair.secretKey)
-
-    # Generate the rotation evaluation keys
-    crypto_context.EvalRotateKeyGen(key_pair.secretKey, [1, 2, -1, -2])
-
-    # Sample Program: Step 3: Encryption
-
-    # First plaintext vector is encoded
-    vector_of_ints1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    plaintext1 = crypto_context.MakePackedPlaintext(vector_of_ints1)
-
-    # Second plaintext vector is encoded
-    vector_of_ints2 = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    plaintext2 = crypto_context.MakePackedPlaintext(vector_of_ints2)
-
-    # The encoded vectors are encrypted
-    ciphertext1 = crypto_context.Encrypt(key_pair.publicKey, plaintext1)
-    ciphertext2 = crypto_context.Encrypt(key_pair.publicKey, plaintext2)
+    ciphertext1 = crypto_context.ArbitraryCT()
+    ciphertext2 = crypto_context.ArbitraryCT()
 
     v = crypto_context.EvalMult(ciphertext1, ciphertext2)
     v2 = crypto_context.EvalAdd(v, v)

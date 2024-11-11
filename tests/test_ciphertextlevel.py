@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import openfhe
 
-from dioptra.analyzer.scheme import LevelInfo, PkeSchemeModels
+from dioptra.analyzer.scheme import LevelInfo, SchemeModelCKKS
 from tests.test_contexts import ckks1
 
 
@@ -32,7 +32,7 @@ class TestCiphertextLevel_CKKS(TestCase):
         if lv in self.cts:
             return self.cts[lv]
 
-        slots = PkeSchemeModels.CKKS.num_slots(self.cc())
+        slots = SchemeModelCKKS(2).num_slots(self.cc())
         vec = [0] * slots
 
         pt = self.cc().MakeCKKSPackedPlaintext(
@@ -53,7 +53,7 @@ class TestCiphertextLevel_CKKS(TestCase):
                 if frozenset([ct1, ct2]) in seen:
                     continue
 
-                mlev = PkeSchemeModels.CKKS.mul_level(ct1, ct2)
+                mlev = SchemeModelCKKS(2).mul_level(ct1, ct2)
                 mult_result = self.cc().EvalMult(self.mkct(ct1), self.mkct(ct2))
                 self.assertEqual(
                     mlev.level,
@@ -61,7 +61,7 @@ class TestCiphertextLevel_CKKS(TestCase):
                     f"mul incorrect l1: [{ct1}] l2: [{ct2}] est: [{mlev}] actual level: {mult_result.GetLevel()}",
                 )
 
-                alev = PkeSchemeModels.CKKS.add_level(ct1, ct2)
+                alev = SchemeModelCKKS(2).add_level(ct1, ct2)
                 add_result = self.cc().EvalAdd(self.mkct(ct1), self.mkct(ct2))
                 self.assertEqual(
                     alev.level,
@@ -69,7 +69,7 @@ class TestCiphertextLevel_CKKS(TestCase):
                     f"add incorrect l1: [{ct1}] l2: [{ct2}] est: [{alev}] actual level: {add_result.GetLevel()}",
                 )
 
-                amlev = PkeSchemeModels.CKKS.mul_level(alev, alev)
+                amlev = SchemeModelCKKS(2).mul_level(alev, alev)
                 add_sq_result = self.cc().EvalMult(add_result, add_result)
                 self.assertEqual(
                     amlev.level,
