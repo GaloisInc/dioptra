@@ -3,8 +3,8 @@ import sys
 from dioptra.binfhe.calibration import BinFHECalibration
 from dioptra.context import context_functions
 from dioptra.pke.calibration import PKECalibration
-from dioptra.scheme_type import SchemeType
 from dioptra.utils.file_loading import load_files
+from dioptra.utils.scheme_type import SchemeType
 
 
 def calibrate_main(

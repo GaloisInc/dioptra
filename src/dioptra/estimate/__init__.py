@@ -3,7 +3,7 @@ import inspect
 from typing import Callable, OrderedDict
 
 from dioptra.estimate.estimation_case import EstimationCase
-from dioptra.scheme_type import SchemeType
+from dioptra.utils.scheme_type import SchemeType
 
 estimation_cases: OrderedDict[str, EstimationCase] = OrderedDict()
 
