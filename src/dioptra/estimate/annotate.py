@@ -11,7 +11,6 @@ from dioptra.analyzer.report.runtime import RuntimeAnnotation
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.estimate import estimation_cases
 from dioptra.scheme_type import SchemeType
-from dioptra.visualization.annotation import annotate_lines
 
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
@@ -57,3 +56,18 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         print(
             f"Calibration data '{sample_file}' is not compatible with estimation case '{test_case}'"
         )
+
+
+def annotate_lines(infile: str, outfile: str, annotation: dict[int, str]):
+    line_number = 1
+    with open(infile) as inf:
+        with open(outfile, "w") as outf:
+            for line in inf:
+                line = line.rstrip()
+                ann = annotation.get(line_number, None)
+                if ann is not None:
+                    print(f"{line.rstrip()} # {ann}", file=outf)
+                else:
+                    print(line, file=outf)
+
+                line_number += 1
