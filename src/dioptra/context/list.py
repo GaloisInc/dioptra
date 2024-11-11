@@ -1,7 +1,7 @@
 import inspect
 
-from dioptra._file_loading import load_files
 from dioptra.context import context_functions
+from dioptra.utils.file_loading import load_files
 
 
 def list_main(files: list[str]):
