@@ -1,6 +1,5 @@
 from dioptra.analyzer.pke.analysisbase import Analyzer
 from dioptra.decorator import dioptra_runtime
-
 from dioptra_examples.nn import NN
 from dioptra_examples.schemes import CKKS
 

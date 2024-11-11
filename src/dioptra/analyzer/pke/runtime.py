@@ -1,18 +1,15 @@
+import dis
+
+from dioptra.analyzer.calibration import Event, EventKind, PKECalibrationData
 from dioptra.analyzer.pke.analysisbase import (
     AnalysisBase,
     Ciphertext,
     Plaintext,
     PublicKey,
-    PrivateKey,
 )
-from dioptra.analyzer.pke.multdepth import MultDepth
-from dioptra.analyzer.calibration import PKECalibrationData, Event, EventKind
 from dioptra.analyzer.report.runtime import RuntimeReport
-from dioptra.analyzer.scheme import LevelInfo
 from dioptra.analyzer.utils.code_loc import Frame
 from dioptra.analyzer.utils.network import NetworkModel
-from dioptra.analyzer.utils.util import format_ns
-import dis
 
 
 class Runtime(AnalysisBase):

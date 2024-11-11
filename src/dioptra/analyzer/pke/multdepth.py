@@ -1,11 +1,11 @@
+import dis
+
 from dioptra.analyzer.pke.analysisbase import (
     AnalysisBase,
     Ciphertext,
     Plaintext,
     PublicKey,
-    PrivateKey,
 )
-import dis
 from dioptra.analyzer.utils.code_loc import Frame
 
 
@@ -91,11 +91,6 @@ class MultDepth(AnalysisBase):
     def depth_of(self, ct: Ciphertext) -> int:
         if ct in self.depth:
             return self.depth[ct]
-        return 0
-
-    def depth_of(self, pt: Plaintext) -> int:
-        if pt in self.depth:
-            return self.depth[pt]
         return 0
 
     def set_depth(

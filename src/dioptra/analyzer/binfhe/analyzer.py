@@ -1,12 +1,15 @@
-from typing import Callable
 import weakref
-from dioptra.analyzer.binfhe.params import BinFHEParams
-from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
+from typing import Callable
+
 import openfhe
 
+from dioptra.analyzer.binfhe.params import BinFHEParams
+from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
 from dioptra.analyzer.utils import code_loc
-from dioptra.analyzer.utils.code_loc import Frame, TraceLoc, calling_frame
+from dioptra.analyzer.utils.code_loc import Frame, TraceLoc
 from dioptra.analyzer.utils.error import NotSupportedException
+from dioptra.analyzer.utils.network import NetworkModel
+from dioptra.analyzer.utils.util import BPS
 
 
 class BinFHEAnalysisBase:

@@ -1,6 +1,5 @@
 from dioptra.analyzer.pke.analysisbase import Analyzer
 from dioptra.decorator import dioptra_runtime
-
 from dioptra_examples.matrix_mult import matrix_mult
 from dioptra_examples.schemes import BGV
 

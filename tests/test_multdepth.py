@@ -41,7 +41,7 @@ def example(crypto_context: Analyzer) -> None:
 
     v = crypto_context.EvalMult(ciphertext1, ciphertext2)
     v2 = crypto_context.EvalAdd(v, v)
-    v3 = crypto_context.EvalSub(v, v2)
-    v4 = crypto_context.EvalMult(v, ciphertext1)
+    crypto_context.EvalSub(v, v2)
+    crypto_context.EvalMult(v, ciphertext1)
     v6 = square(crypto_context, v)
-    v7 = square(crypto_context, v6)
+    square(crypto_context, v6)

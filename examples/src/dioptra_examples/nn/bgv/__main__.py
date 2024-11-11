@@ -1,7 +1,6 @@
 import time
 
 from dioptra.analyzer.utils.util import format_ns
-
 from dioptra_examples.contexts import bgv1
 from dioptra_examples.nn import NN
 from dioptra_examples.schemes import BGV

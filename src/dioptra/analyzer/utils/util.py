@@ -1,7 +1,4 @@
-import json
 from typing import Iterator
-
-from dioptra.analyzer.utils.code_loc import Frame, MaybeFrame
 
 
 def format_bytes(bytes: int) -> str:

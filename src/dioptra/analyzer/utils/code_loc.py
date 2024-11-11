@@ -1,7 +1,7 @@
-import inspect
 import dis
+import inspect
 import sys
-from typing import Any, Iterable, Optional, Self
+from typing import Any, Optional
 
 
 class SourceLocation:
@@ -18,7 +18,7 @@ class SourceLocation:
 
     def __str__(self) -> str:
         if self.is_unknown:
-            return f"<location unknown?>"
+            return "<location unknown?>"
         else:
             return f"{self.filename}:{self.position.lineno}:{self.position.col_offset}"
 

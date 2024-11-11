@@ -1,9 +1,10 @@
-from dioptra.analyzer.pke.analysisbase import Analyzer, Value, Ciphertext, Plaintext
-from dioptra.analyzer.pke.multdepth import MultDepth
-from dioptra.analyzer.pke.runtime import Runtime
-from dioptra.analyzer.calibration import PKECalibrationData, format_ns
-import openfhe
 import time
+
+import openfhe
+
+from dioptra.analyzer.calibration import PKECalibrationData, format_ns
+from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
+from dioptra.analyzer.pke.runtime import Runtime
 
 
 def runestimator(fun) -> None:  # type: ignore
@@ -71,7 +72,7 @@ def example():
     cc.EvalMultKeyGen(key_pair.secretKey)
     cc.EvalBootstrapKeyGen(key_pair.secretKey, num_slots)
 
-    max_mult_depth = parameters.GetMultiplicativeDepth()
+    parameters.GetMultiplicativeDepth()
 
     start_time = time.time_ns()
     # First plaintext vector is encoded
@@ -88,9 +89,9 @@ def example():
 
     v = cc.EvalMult(ciphertext1, ciphertext2)
     v2 = cc.EvalAdd(v, v)
-    v3 = cc.EvalSub(v, v2)
-    v4 = cc.EvalMult(v, ciphertext1)
+    cc.EvalSub(v, v2)
+    cc.EvalMult(v, ciphertext1)
     v6 = square(cc, v)
-    v7 = square(cc, v6)
+    square(cc, v6)
     end_time = time.time_ns()
     print("Total Runtime without setup: " + str(format_ns(end_time - start_time)))
