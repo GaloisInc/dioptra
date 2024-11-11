@@ -341,7 +341,7 @@ def render_main(sample_file: str, file: str, output: str) -> None:
 
     load_files([file])
 
-    runtime_analyses: dict[str, dict[tuple[int, int, int, int], str]] = {}
+    runtime_analyses: dict[str, dict[int, str]] = {}
     for case in estimation_cases.values():
         if case.schemetype == SchemeType.PKE and isinstance(
             calibration, PKECalibrationData
@@ -366,7 +366,7 @@ def render_main(sample_file: str, file: str, output: str) -> None:
         ):
             annot_rpt = RuntimeAnnotation()
             est = RuntimeEstimate(
-                calibration.avg_(), calibration.ciphertext_size, annot_rpt
+                calibration.avg_case(), calibration.ciphertext_size, annot_rpt
             )
             with TraceLoc() as tloc:
                 analyzer = BinFHEAnalyzer(
