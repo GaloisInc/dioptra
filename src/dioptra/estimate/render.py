@@ -9,8 +9,8 @@ from dioptra._file_loading import load_calibration_data, load_files
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
 from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
-from dioptra.analyzer.calibration import PKECalibrationData
 from dioptra.analyzer.pke.analysisbase import Analyzer
+from dioptra.analyzer.pke.calibration import PKECalibrationData
 from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.report.runtime import RuntimeAnnotation
 from dioptra.analyzer.utils.code_loc import TraceLoc
