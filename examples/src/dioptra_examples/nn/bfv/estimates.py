@@ -1,10 +1,10 @@
-from dioptra.estimate import dioptra_runtime
+from dioptra.estimate import dioptra_estimation
 from dioptra.pke.analyzer import Analyzer
 from dioptra_examples.nn import NN
 from dioptra_examples.schemes import BFV
 
 
-@dioptra_runtime()
+@dioptra_estimation()
 def nn_11_input_5_layer(cc: Analyzer):
     num_inputs = 11
     num_layers = 5

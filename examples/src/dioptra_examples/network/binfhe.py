@@ -10,11 +10,11 @@ simulated.
 from openfhe import BINGATE
 
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.estimate import dioptra_binfhe_runtime
+from dioptra.estimate import dioptra_binfhe_estimation
 from dioptra.utils.measurement import BPS
 
 
-@dioptra_binfhe_runtime()
+@dioptra_binfhe_estimation()
 def network_example(a: BinFHEAnalyzer):
     # definition of the network parameters
     network = a.MakeNetwork(send_bps=BPS(Mbps=100), recv_bps=BPS(Gbps=1), latency_ms=50)

@@ -1,7 +1,7 @@
 import datetime
 from typing import Callable, Iterable
 
-from dioptra.estimate import dioptra_runtime
+from dioptra.estimate import dioptra_estimation
 from dioptra.pke.analyzer import Analyzer, Ciphertext
 
 
@@ -81,12 +81,12 @@ def pow_perf(
 # Compare the three implementations
 
 
-@dioptra_runtime(limit=datetime.timedelta(minutes=4))
+@dioptra_estimation(limit=datetime.timedelta(minutes=4))
 def eval_pow(cc: Analyzer) -> None:
     pow_perf(cc, ct_pow)
 
 
-@dioptra_runtime(limit=datetime.timedelta(minutes=4))
+@dioptra_estimation(limit=datetime.timedelta(minutes=4))
 def eval_pow_memo(cc: Analyzer) -> None:
     memo_table = {}
 
@@ -96,7 +96,7 @@ def eval_pow_memo(cc: Analyzer) -> None:
     pow_perf(cc, pow)
 
 
-@dioptra_runtime(limit=datetime.timedelta(minutes=4))
+@dioptra_estimation(limit=datetime.timedelta(minutes=4))
 def eval_pow_memo_rec(cc: Analyzer) -> None:
     memo_table = {}
 
