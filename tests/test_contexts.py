@@ -17,8 +17,8 @@ def ckks1() -> (
     secret_key_dist = ofhe.SecretKeyDist.UNIFORM_TERNARY
     parameters.SetSecretKeyDist(secret_key_dist)
 
-    parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_128_classic)
-    parameters.SetRingDim(1 << 17)
+    parameters.SetSecurityLevel(ofhe.SecurityLevel.HEStd_NotSet)
+    parameters.SetRingDim(1 << 12)
 
     if ofhe.get_native_int() == 128:
         rescale_tech = ofhe.ScalingTechnique.FIXEDAUTO
