@@ -1,6 +1,6 @@
 from enum import Enum
 
-from dioptra.analyzer.utils.code_loc import Frame
+from dioptra.utils.code_loc import Frame
 
 
 class AllocationType(Enum):

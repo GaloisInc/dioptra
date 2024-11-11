@@ -1,7 +1,7 @@
 import openfhe as ofhe
 
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.analyzer.binfhe.value import LWECiphertext
+from dioptra.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.binfhe.value import LWECiphertext
 from dioptra.estimate import dioptra_binfhe_runtime
 
 

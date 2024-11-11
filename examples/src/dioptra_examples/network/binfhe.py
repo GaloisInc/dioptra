@@ -9,8 +9,8 @@ simulated.
 
 from openfhe import BINGATE
 
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.analyzer.utils.util import BPS
+from dioptra.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.utils.util import BPS
 from dioptra.estimate import dioptra_binfhe_runtime
 
 

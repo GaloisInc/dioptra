@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from dioptra.analyzer.utils.code_loc import Frame, SourceLocation, StackLocation
+from dioptra.utils.code_loc import Frame, SourceLocation, StackLocation
 
 
 class RuntimeReport:

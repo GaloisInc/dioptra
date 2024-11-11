@@ -6,15 +6,15 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 import dioptra
 from dioptra._file_loading import load_calibration_data, load_files
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
-from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
-from dioptra.analyzer.pke.analysisbase import Analyzer
-from dioptra.analyzer.pke.calibration import PKECalibrationData
-from dioptra.analyzer.pke.runtime import Runtime
-from dioptra.analyzer.report.runtime import RuntimeAnnotation
-from dioptra.analyzer.utils.code_loc import TraceLoc
-from dioptra.analyzer.utils.util import format_ns
+from dioptra.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.binfhe.calibration import BinFHECalibrationData
+from dioptra.binfhe.runtime import RuntimeEstimate
+from dioptra.pke.analysisbase import Analyzer
+from dioptra.pke.calibration import PKECalibrationData
+from dioptra.pke.runtime import Runtime
+from dioptra.report.runtime import RuntimeAnnotation
+from dioptra.utils.code_loc import TraceLoc
+from dioptra.utils.util import format_ns
 from dioptra.estimate import estimation_cases
 from dioptra.scheme_type import SchemeType, calibration_type
 

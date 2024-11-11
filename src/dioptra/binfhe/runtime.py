@@ -1,11 +1,11 @@
 import openfhe
 
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisBase
-from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
-from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey
-from dioptra.analyzer.report.runtime import RuntimeReport
-from dioptra.analyzer.utils.code_loc import Frame
-from dioptra.analyzer.utils.network import NetworkModel
+from dioptra.binfhe.analyzer import BinFHEAnalysisBase
+from dioptra.binfhe.event import BinFHEEvent, BinFHEEventKind
+from dioptra.binfhe.value import LWECiphertext, LWEPrivateKey
+from dioptra.report.runtime import RuntimeReport
+from dioptra.utils.code_loc import Frame
+from dioptra.utils.network import NetworkModel
 
 
 class RuntimeEstimate(BinFHEAnalysisBase):

@@ -2,9 +2,9 @@ import datetime
 import sys
 from typing import Callable
 
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.analyzer.pke.analysisbase import Analyzer
-from dioptra.analyzer.utils.error import NotSupportedException
+from dioptra.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.pke.analysisbase import Analyzer
+from dioptra.utils.error import NotSupportedException
 from dioptra.scheme_type import SchemeType
 
 

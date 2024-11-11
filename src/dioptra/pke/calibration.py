@@ -7,14 +7,14 @@ import openfhe
 import psutil
 
 import dioptra_native
-from dioptra.analyzer.pke.scheme import (
+from dioptra.pke.scheme import (
     LevelInfo,
     SchemeModelBFV,
     SchemeModelBGV,
     SchemeModelCKKS,
     SchemeModelPke,
 )
-from dioptra.analyzer.utils.util import format_ns
+from dioptra.utils.util import format_ns
 
 
 class EventKind(enum.Enum):
