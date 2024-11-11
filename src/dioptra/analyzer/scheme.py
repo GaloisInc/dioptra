@@ -45,10 +45,16 @@ class LevelInfo:
 
     def __str__(self):
         return f"LevelInfo(level={self.level}, noise_scale_deg={self.noise_scale_deg})"
-    
-    def copy(self, level: int | None = None, noise_scale_deg: int | None = None) -> "LevelInfo":
-        return LevelInfo(level = self.level if level is None else level, \
-                         noise_scale_deg = self.noise_scale_deg if noise_scale_deg is None else noise_scale_deg)
+
+    def copy(
+        self, level: int | None = None, noise_scale_deg: int | None = None
+    ) -> "LevelInfo":
+        return LevelInfo(
+            level=self.level if level is None else level,
+            noise_scale_deg=self.noise_scale_deg
+            if noise_scale_deg is None
+            else noise_scale_deg,
+        )
 
 
 class SchemeModelPke:

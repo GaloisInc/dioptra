@@ -9,7 +9,9 @@ from dioptra.analyzer.utils.network import NetworkModel
 
 
 class RuntimeEstimate(BinFHEAnalysisBase):
-    def __init__(self, ort: dict[BinFHEEvent, int], ct_size: int, report: RuntimeReport):
+    def __init__(
+        self, ort: dict[BinFHEEvent, int], ct_size: int, report: RuntimeReport
+    ):
         self.operation_runtime_table = ort
         self.runtime_report = report
         self.ct_size = ct_size
@@ -46,10 +48,14 @@ class RuntimeEstimate(BinFHEAnalysisBase):
     def trace_eval_not(self, dest: LWECiphertext, c: LWECiphertext, loc: Frame | None):
         self.trace_evt(BinFHEEvent(BinFHEEventKind.EVAL_NOT), loc)
 
-    def trace_send_ct(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None) -> None:
+    def trace_send_ct(
+        self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None
+    ) -> None:
         runtime = nm.send_latency_ns(self.ct_size)
         self.runtime_report.runtime_estimate(loc, runtime)
-    
-    def trace_recv_ct(self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None) -> None:
+
+    def trace_recv_ct(
+        self, ct: LWECiphertext, nm: NetworkModel, loc: Frame | None
+    ) -> None:
         runtime = nm.recv_latency_ns(self.ct_size)
         self.runtime_report.runtime_estimate(loc, runtime)

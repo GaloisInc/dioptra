@@ -1,7 +1,7 @@
 import inspect
 import dis
 import sys
-from typing import Any, Iterable, Self
+from typing import Any, Iterable, Optional, Self
 
 
 class SourceLocation:
@@ -21,7 +21,6 @@ class SourceLocation:
             return f"<location unknown?>"
         else:
             return f"{self.filename}:{self.position.lineno}:{self.position.col_offset}"
-            
 
     def __hash__(self) -> int:
         if self.is_unknown:
@@ -53,12 +52,13 @@ class StackLocation:
             and self.source_location == value.source_location
             and self.function_name == value.function_name
         )
-    
+
     def __str__(self) -> str:
         return f"{self.function_name} at {self.source_location}"
 
+
 class Frame:
-    def __init__(self, frame):  # type: ignore
+    def __init__(self, frame):
         if frame is None:
             raise ValueError("Frame should not be none")
         self.frame = frame
@@ -67,7 +67,7 @@ class Frame:
         self.positions = cur_frame.positions
         self.fn_name = cur_frame.function
 
-    def caller(self) -> "Frame | None":
+    def caller(self) -> Optional["Frame"]:
         if self.frame.f_back is None:
             return None
         return Frame(self.frame.f_back)
@@ -84,39 +84,39 @@ class Frame:
 
     def stack_location(self) -> list[StackLocation]:
         lst = []
-        frame = self
+        frame: Optional["Frame"] = self
         while frame is not None:
             lst.append(StackLocation(frame.source_location(), frame.fn_name))
             frame = frame.caller()
 
         return lst
-    
+
 
 class MaybeFrame:
     def __init__(self, frame: Frame | None):
         self.frame = frame
 
-    def get_frame(self) -> Frame|None:
+    def get_frame(self) -> Frame | None:
         return self.frame
-    
-    def caller(self) -> 'MaybeFrame':
+
+    def caller(self) -> "MaybeFrame":
         if self.frame is None:
             return self
         else:
             return MaybeFrame(self.frame.caller())
-        
+
     def source_location(self) -> SourceLocation:
         if self.frame is None:
             return SourceLocation.unknown()
         else:
             return self.frame.source_location()
-        
+
     @staticmethod
-    def current() -> 'MaybeFrame':
-        cur_frame = inspect.currentframe()    
+    def current() -> "MaybeFrame":
+        cur_frame = inspect.currentframe()
         if cur_frame is None:
             return MaybeFrame(None)
-        
+
         return MaybeFrame(Frame(cur_frame))
 
 
