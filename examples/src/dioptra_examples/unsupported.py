@@ -1,10 +1,10 @@
 import math
 
-from dioptra.estimate import dioptra_runtime
+from dioptra.estimate import dioptra_estimation
 from dioptra.pke.analyzer import Analyzer
 
 
-@dioptra_runtime()
+@dioptra_estimation()
 def unsupported1(cc: Analyzer):
     ct1 = cc.ArbitraryCT()
     poly_degree = 50

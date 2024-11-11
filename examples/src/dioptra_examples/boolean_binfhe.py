@@ -2,7 +2,7 @@ import openfhe as ofhe
 
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.binfhe.value import LWECiphertext
-from dioptra.estimate import dioptra_binfhe_runtime
+from dioptra.estimate import dioptra_binfhe_estimation
 
 
 def simple_circuit(cc: ofhe.CryptoContext, ct1: LWECiphertext, ct2: LWECiphertext):
@@ -21,7 +21,7 @@ def simple_circuit(cc: ofhe.CryptoContext, ct1: LWECiphertext, ct2: LWECiphertex
     return cc.EvalBinGate(ofhe.OR, ctAND1, ctAND2)
 
 
-@dioptra_binfhe_runtime()
+@dioptra_binfhe_estimation()
 def est_simple_circuit(cc: BinFHEAnalyzer):
     sk = cc.KeyGen()
     ct1 = cc.Encrypt(sk, 1)

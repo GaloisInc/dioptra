@@ -27,7 +27,7 @@ def _estimation_case_decorator(
     return f
 
 
-def dioptra_runtime(
+def dioptra_estimation(
     limit: datetime.timedelta | None = None, description: str | None = None
 ) -> Callable:  # TODO better type
     def decorator(f):
@@ -36,7 +36,7 @@ def dioptra_runtime(
     return decorator
 
 
-def dioptra_binfhe_runtime(
+def dioptra_binfhe_estimation(
     limit: datetime.timedelta | None = None, description: str | None = None
 ) -> Callable:  # TODO better type
     def decorator(f):
