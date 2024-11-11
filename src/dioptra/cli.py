@@ -1,12 +1,10 @@
-import click
-import click_log
-
 import logging
 from pathlib import Path
 
-from dioptra import decorator
-from dioptra.analyzer import calibration
+import click
+import click_log
 
+from dioptra import decorator
 
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
@@ -23,15 +21,6 @@ def cli() -> None:
 def estimate() -> None:
     """Estimate properties of an OpenFHE program."""
     pass
-
-
-@estimate.command()
-@click.argument("script", type=click.Path(exists=True))
-def peakmem(script: Path) -> None:
-    """Estimate peak memory usage of an OpenFHE SCRIPT."""
-    click.echo("Estimating memory...")
-    s = OpenFHEScript(script)
-    s.show_ast()
 
 
 @estimate.command()

@@ -1,15 +1,13 @@
-import math
-from typing import Any, Callable, Iterable, Self, Sequence, TypeVar
+import dis
 import weakref
+from typing import Any, Iterable, Self
+
 from dioptra.analyzer.scheme import LevelInfo, SchemeModelPke
 from dioptra.analyzer.utils import code_loc
 from dioptra.analyzer.utils.code_loc import Frame, TraceLoc, calling_frame
-import dis
-import os.path
-
+from dioptra.analyzer.utils.error import NotSupportedException
 from dioptra.analyzer.utils.network import NetworkModel
 from dioptra.analyzer.utils.util import BPS
-from dioptra.analyzer.utils.error import NotSupportedException
 
 
 class VectorMath:

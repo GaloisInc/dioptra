@@ -1,5 +1,5 @@
-from enum import Enum
-from typing import Any, Callable, Iterable, Self
+from typing import Any
+
 import openfhe
 
 
@@ -116,7 +116,7 @@ class SchemeModelPke:
         elif name == "BFV":
             return SchemeModelBFV()
 
-        raise NotImplemented(
+        raise NotImplementedError(
             f"from_dict(): could not determine scheme model for '{name}'"
         )
 

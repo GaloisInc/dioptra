@@ -4,8 +4,9 @@ Implements only forward propagations, and supports any number of neurons.
 """
 
 from functools import reduce
-import openfhe as ofhe
 from typing import Self
+
+import openfhe as ofhe
 
 from dioptra_examples.schemes import Scheme
 
@@ -29,7 +30,7 @@ class Neuron:
         scheme: Scheme,
         weights: list[ofhe.Ciphertext],
         bias=None,
-    ) -> Self:
+    ):
         self.scheme = scheme
         self.num_inputs = len(weights)
         self.weights = weights
@@ -48,14 +49,19 @@ class Neuron:
     def set_bias(self, bias: ofhe.Ciphertext):
         self.bias = bias
 
+    @classmethod
     def neuron_from_plaintext(
-        cc: ofhe.CryptoContext, scheme: Scheme, weights: list[int], bias=None
+        cls,
+        cc: ofhe.CryptoContext,
+        scheme: Scheme,
+        weights: list[int | float],
+        bias=None,
     ) -> Self:
         """Helper function that creates a neuron from a list of plaintexts"""
         weights_ckks = []
         for w in weights:
             weights_ckks.append(scheme.make_plaintext(cc, [w]))
-        return Neuron(cc, scheme, weights_ckks, bias)
+        return cls(cc, scheme, weights_ckks, bias)
 
     def train(
         self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]
@@ -80,22 +86,24 @@ class Layer:
         scheme: Scheme,
         neurons: list[Neuron],
         bias=None,
-    ) -> Self:
+    ):
         self.num_neuron = len(neurons)
         self.scheme = scheme
         for i, neuron in enumerate(neurons):
             neuron.set_id(i)
-            if bias != None:
+            if bias is not None:
                 neuron.set_bias(bias)
         self.neurons = neurons
 
     def set_id(self, layer_id: int):
         self.layer_id = layer_id
 
+    @classmethod
     def layer_from_plaintexts(
+        cls,
         cc: ofhe.CryptoContext,
         scheme: Scheme,
-        weights_layer: list[list[int]],
+        weights_layer: list[list[int | float]],
         bias=None,
     ) -> Self:
         """Helper function that creates a layer from a list of plaintexts"""
@@ -103,7 +111,7 @@ class Layer:
         for weights_neuron in weights_layer:
             neuron = Neuron.neuron_from_plaintext(cc, scheme, weights_neuron, bias)
             neurons.append(neuron)
-        return Layer(cc, scheme, neurons, bias)
+        return cls(cc, scheme, neurons, bias)
 
     def bootstrap(
         self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]
@@ -137,17 +145,19 @@ class NN:
         cc: ofhe.CryptoContext,
         scheme: Scheme,
         layers: list[Layer],
-    ) -> Self:
+    ):
         self.num_layers = len(layers)
         self.scheme = scheme
         for i, layer in enumerate(layers):
             layer.set_id(i)
         self.layers = layers
 
+    @classmethod
     def nn_from_plaintexts(
+        cls,
         cc: ofhe.CryptoContext,
         scheme: Scheme,
-        weights_nn: list[list[list[float]]],
+        weights_nn: list[list[list[int | float]]],
         bias=None,
     ) -> Self:
         # propagate the output of the prior layer into
@@ -156,7 +166,7 @@ class NN:
         for weights_layer in weights_nn:
             layer = Layer.layer_from_plaintexts(cc, scheme, weights_layer)
             layers.append(layer)
-        return NN(cc, scheme, layers)
+        return cls(cc, scheme, layers)
 
     def train(
         self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]

@@ -1,4 +1,3 @@
-from enum import Enum
 from dioptra.analyzer.pke.analysisbase import AnalysisBase, Ciphertext, Plaintext
 from dioptra.analyzer.report.memory import AllocationType, MemoryReport
 from dioptra.analyzer.scheme import LevelInfo

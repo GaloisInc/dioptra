@@ -2,11 +2,9 @@ import random
 import time
 
 from dioptra.analyzer.utils.util import format_ns
-
 from dioptra_examples.contexts import ckks_small1
 from dioptra_examples.matrix_mult import matrix_mult
 from dioptra_examples.schemes import CKKS
-
 
 # Actually run a matrix multiply and time it.
 xrows = 3

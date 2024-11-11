@@ -1,11 +1,12 @@
-import openfhe
-import time
-from typing import Any, Callable, Iterable, TextIO
 import enum
 import json
-import dioptra_native
+import time
+from typing import Any, Callable, Iterable, TextIO
+
+import openfhe
 import psutil
 
+import dioptra_native
 from dioptra.analyzer.scheme import (
     LevelInfo,
     SchemeModelBFV,
@@ -210,11 +211,6 @@ class PKECalibrationData:
         return RuntimeTable(table, self.scheme.name == "BFV")
 
     def __eq__(self, value: object) -> bool:
-        def sorted(l: list) -> list:
-            s = list(l)
-            s.sort()
-            return s
-
         def key_eq(k: Event) -> bool:
             return (
                 isinstance(value, PKECalibrationData)
@@ -340,8 +336,8 @@ class PKECalibration:
 
     def level_pairs(self) -> Iterable[tuple[LevelInfo, LevelInfo]]:
         if self.is_bfv():
-            for l in self.all_levels():
-                yield (l, l)
+            for level in self.all_levels():
+                yield (level, level)
 
         else:
             for l1 in self.all_levels():
@@ -350,8 +346,8 @@ class PKECalibration:
 
     def level_pairs_comm(self) -> Iterable[tuple[LevelInfo, LevelInfo]]:
         if self.is_bfv():
-            for i in self.level_pairs():
-                yield i
+            for level_pair in self.level_pairs():
+                yield level_pair
 
         else:
             all = list(self.all_levels())
