@@ -9,7 +9,7 @@ simulated.
 
 from dioptra.estimate import dioptra_runtime
 from dioptra.pke.analyzer import Analyzer
-from dioptra.utils.util import BPS
+from dioptra.utils.measurement import BPS
 
 
 @dioptra_runtime()

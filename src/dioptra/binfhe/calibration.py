@@ -8,7 +8,7 @@ import psutil
 import dioptra_native
 from dioptra.binfhe.event import BinFHEEvent, BinFHEEventKind
 from dioptra.binfhe.params import BinFHEParams
-from dioptra.utils.util import format_ns
+from dioptra.utils.measurement import format_ns
 
 
 class BinFHECalibrationData:

@@ -14,7 +14,7 @@ from dioptra.pke.scheme import (
     SchemeModelCKKS,
     SchemeModelPke,
 )
-from dioptra.utils.util import format_ns
+from dioptra.utils.measurement import format_ns
 
 
 class EventKind(enum.Enum):
