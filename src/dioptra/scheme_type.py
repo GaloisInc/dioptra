@@ -1,7 +1,7 @@
 from enum import Enum
 
 from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
-from dioptra.analyzer.calibration import PKECalibrationData
+from dioptra.analyzer.pke.calibration import PKECalibrationData
 
 
 class SchemeType(Enum):
