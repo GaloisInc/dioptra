@@ -2,7 +2,7 @@ import json
 import runpy
 
 from dioptra.analyzer.binfhe.calibration import BinFHECalibrationData
-from dioptra.analyzer.calibration import PKECalibrationData
+from dioptra.analyzer.pke.calibration import PKECalibrationData
 
 
 def load_files(files: list[str]) -> None:

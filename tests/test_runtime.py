@@ -2,8 +2,8 @@ import time
 
 import openfhe
 
-from dioptra.analyzer.calibration import PKECalibrationData, format_ns
 from dioptra.analyzer.pke.analysisbase import Analyzer, Ciphertext
+from dioptra.analyzer.pke.calibration import PKECalibrationData, format_ns
 from dioptra.analyzer.pke.runtime import Runtime
 
 
