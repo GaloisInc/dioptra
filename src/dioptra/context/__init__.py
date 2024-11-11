@@ -2,7 +2,7 @@ import inspect
 from typing import Callable, OrderedDict
 
 from dioptra.context.context_function import ContextFunction
-from dioptra.scheme_type import SchemeType
+from dioptra.utils.scheme_type import SchemeType
 
 context_functions: OrderedDict[str, ContextFunction] = OrderedDict()
 
