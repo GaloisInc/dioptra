@@ -1,6 +1,6 @@
 from typing import Callable
 
-from dioptra.scheme_type import SchemeType
+from dioptra.utils.scheme_type import SchemeType
 
 
 class ContextFunction:

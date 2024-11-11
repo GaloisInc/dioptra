@@ -8,9 +8,9 @@ from dioptra.pke.analyzer import Analyzer
 from dioptra.pke.calibration import PKECalibrationData
 from dioptra.pke.runtime import Runtime
 from dioptra.report.runtime import RuntimeAnnotation
-from dioptra.scheme_type import SchemeType
 from dioptra.utils.file_loading import load_calibration_data, load_files
 from dioptra.utils.measurement import format_ns
+from dioptra.utils.scheme_type import SchemeType
 
 
 def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
