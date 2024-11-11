@@ -49,7 +49,11 @@ def report(file: Path, calibration_data: Path) -> None:
     help="File containing calibration data to use for the estimate.",
 )
 @click.option(
-    "--output", "-o", type=click.Path(), required=True, help="Output file name."
+    "--output",
+    "-o",
+    type=click.Path(file_okay=False, dir_okay=True, writable=True, path_type=Path),
+    required=True,
+    help="Output directory for annotated files.",
 )
 @click.option(
     "--name",
@@ -59,7 +63,7 @@ def report(file: Path, calibration_data: Path) -> None:
     help="Name of the estimation case to annotate.",
 )
 def annotate(file: Path, calibration_data: Path, name: str, output: Path) -> None:
-    """Annotate a Python source file with estimated FHE runtimes.
+    """Annotate Python source files with estimated FHE runtimes.
 
     FILE is the python file to look for functions decorated with
     "@dioptra_runtime" or "@dioptra_binfhe_runtime".
