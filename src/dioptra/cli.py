@@ -34,7 +34,7 @@ def report(file: Path, calibration_data: Path) -> None:
     """Estimate FHE runtime and memory usage for decorated functions.
 
     FILE is the python file to look for functions decorated with
-    "@dioptra_runtime" or "@dioptra_binfhe_runtime".
+    "@dioptra_estimation" or "@dioptra_binfhe_estimation".
     """
     report_main(str(calibration_data), [str(file)])
 
@@ -66,7 +66,7 @@ def annotate(file: Path, calibration_data: Path, name: str, output: Path) -> Non
     """Annotate Python source files with estimated FHE runtimes.
 
     FILE is the python file to look for functions decorated with
-    "@dioptra_runtime" or "@dioptra_binfhe_runtime".
+    "@dioptra_estimation" or "@dioptra_binfhe_estimation".
     """
     annotate_main(str(calibration_data), str(file), name, str(output))
 

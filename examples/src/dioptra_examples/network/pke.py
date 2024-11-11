@@ -7,12 +7,12 @@ computed.  Then, the product is "sent" back - the send also being
 simulated.
 """
 
-from dioptra.estimate import dioptra_runtime
+from dioptra.estimate import dioptra_estimation
 from dioptra.pke.analyzer import Analyzer
 from dioptra.utils.measurement import BPS
 
 
-@dioptra_runtime()
+@dioptra_estimation()
 def network_example(a: Analyzer):
     # definition of the network parameters
     network = a.MakeNetwork(send_bps=BPS(Mbps=100), recv_bps=BPS(Gbps=1), latency_ms=50)
