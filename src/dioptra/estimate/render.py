@@ -1,5 +1,8 @@
 import importlib.resources as ilr
 import shutil
+from pathlib import Path
+
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 import dioptra
 from dioptra._file_loading import load_calibration_data, load_files
@@ -14,13 +17,12 @@ from dioptra.analyzer.utils.code_loc import TraceLoc
 from dioptra.analyzer.utils.util import format_ns
 from dioptra.estimate import estimation_cases
 from dioptra.scheme_type import SchemeType, calibration_type
-from dioptra.ui.report_gen import render_results
 
 SKELETON_DIR = "analysis_site_skeleton"
 
 
 def render_main(sample_file: str, file: str, output: str) -> None:
-    with ilr.as_file(ilr.files(dioptra.ui).joinpath(SKELETON_DIR)) as p:
+    with ilr.as_file(ilr.files(dioptra.estimate).joinpath(SKELETON_DIR)) as p:
         shutil.copytree(p, output, dirs_exist_ok=True)
 
     calibration = load_calibration_data(sample_file)
@@ -80,3 +82,26 @@ def render_main(sample_file: str, file: str, output: str) -> None:
             continue
 
     render_results(output, file, runtime_analyses)
+
+
+def render_results(
+    outdir: str,
+    file: str,
+    runtime_analyses: dict[str, dict[int, str]],
+) -> None:
+    env = Environment(
+        loader=PackageLoader("dioptra.estimate"), autoescape=select_autoescape()
+    )
+    template = env.get_template("results_template.html")
+
+    with (
+        open(file, "r") as script,
+        open(Path(outdir).joinpath(f"{Path(file).name}.html"), "w") as rendered_html,
+    ):
+        rendered_html.write(
+            template.render(
+                filename=Path(file).name,
+                source=script.read(),
+                analyses=runtime_analyses,
+            )
+        )
