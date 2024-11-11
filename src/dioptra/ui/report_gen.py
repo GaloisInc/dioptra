@@ -13,9 +13,10 @@ def render_results(
     )
     template = env.get_template("results_template.html")
 
-    with open(file, "r") as script, open(
-        Path(outdir).joinpath(f"{Path(file).name}.html"), "w"
-    ) as rendered_html:
+    with (
+        open(file, "r") as script,
+        open(Path(outdir).joinpath(f"{Path(file).name}.html"), "w") as rendered_html,
+    ):
         rendered_html.write(
             template.render(
                 filename=Path(file).name,

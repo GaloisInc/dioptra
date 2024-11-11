@@ -1,7 +1,7 @@
 """Matrix Multiplication
 
 This example implements matrix multiplication for variable length
-matrices. This example supports multiplying matrices of 
+matrices. This example supports multiplying matrices of
 different dimensions.
 """
 

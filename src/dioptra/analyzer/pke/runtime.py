@@ -16,7 +16,9 @@ import dis
 
 
 class Runtime(AnalysisBase):
-    def __init__(self, runtime_samples: PKECalibrationData, report: RuntimeReport) -> None:
+    def __init__(
+        self, runtime_samples: PKECalibrationData, report: RuntimeReport
+    ) -> None:
         self.runtime_table = runtime_samples.avg_runtime_table()
         self.where: dict[dis.Positions, int] = {}
         self.ct_size = runtime_samples.ct_mem
@@ -27,7 +29,7 @@ class Runtime(AnalysisBase):
 
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame) -> None:
         self.report_event(Event(EventKind.ENCODE, dest.level), call_loc)
-    
+
     def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame) -> None:
         self.report_event(Event(EventKind.ENCODE, dest.level), call_loc)
 
@@ -52,17 +54,23 @@ class Runtime(AnalysisBase):
     def trace_mul_ctct(
         self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame
     ) -> None:
-        self.report_event(Event(EventKind.EVAL_MULT_CTCT, ct1.level, ct2.level), call_loc)
+        self.report_event(
+            Event(EventKind.EVAL_MULT_CTCT, ct1.level, ct2.level), call_loc
+        )
 
     def trace_add_ctct(
         self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame
     ) -> None:
-        self.report_event(Event(EventKind.EVAL_ADD_CTCT, ct1.level, ct2.level), call_loc)
+        self.report_event(
+            Event(EventKind.EVAL_ADD_CTCT, ct1.level, ct2.level), call_loc
+        )
 
     def trace_sub_ctct(
         self, dest: Ciphertext, ct1: Ciphertext, ct2: Ciphertext, call_loc: Frame
     ) -> None:
-       self.report_event(Event(EventKind.EVAL_SUB_CTCT, ct1.level, ct2.level), call_loc)
+        self.report_event(
+            Event(EventKind.EVAL_SUB_CTCT, ct1.level, ct2.level), call_loc
+        )
 
     def trace_mul_ctpt(
         self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame | None
@@ -77,20 +85,21 @@ class Runtime(AnalysisBase):
     def trace_sub_ctpt(
         self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame | None
     ) -> None:
-        self.report_event(
-            Event(EventKind.EVAL_SUB_CTPT, ct.level, pt.level),
-            call_loc)
+        self.report_event(Event(EventKind.EVAL_SUB_CTPT, ct.level, pt.level), call_loc)
 
     def trace_bootstrap(
         self, dest: Ciphertext, ct: Ciphertext, call_loc: Frame | None
     ) -> None:
         self.report_event(Event(EventKind.EVAL_BOOTSTRAP), call_loc)
 
-    def trace_send_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None) -> None:
+    def trace_send_ct(
+        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
+    ) -> None:
         runtime = nm.send_latency_ns(self.ct_size[ct.level.level])
         self.report.runtime_estimate(call_loc, runtime)
 
-    def trace_recv_ct(self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None) -> None:
+    def trace_recv_ct(
+        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
+    ) -> None:
         runtime = nm.recv_latency_ns(self.ct_size[ct.level.level])
         self.report.runtime_estimate(call_loc, runtime)
-

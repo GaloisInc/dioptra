@@ -114,6 +114,16 @@ class AnalysisBase:
     def trace_encode(self, dest: Plaintext, level: int, call_loc: Frame | None) -> None:
         pass
 
+    def trace_send_ct(
+        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_recv_ct(
+        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
+    ) -> None:
+        pass
+
     def trace_encode_ckks(self, dest: Plaintext, call_loc: Frame | None) -> None:
         pass
 
@@ -420,8 +430,6 @@ class Analyzer:
         for analysis in self.analysis_list:
             analysis.trace_recv_ct(ct, nm, loc)
 
-    # def _enable_trace(self):
-    #     sys.settrace(self._trace)
     all_context_fns = set(
         [
             "ClearEvalAutomorphismKeys",
