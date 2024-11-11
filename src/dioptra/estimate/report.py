@@ -1,4 +1,3 @@
-from dioptra._file_loading import load_calibration_data, load_files
 from dioptra.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.binfhe.memory import BinFHEMemoryEstimate
@@ -12,6 +11,7 @@ from dioptra.report.memory import MemoryMaxReport
 from dioptra.report.runtime import RuntimeTotal
 from dioptra.scheme_type import SchemeType, calibration_type
 from dioptra.utils.code_loc import TraceLoc
+from dioptra.utils.file_loading import load_calibration_data, load_files
 from dioptra.utils.measurement import format_bytes, format_ns_approx, timedelta_as_ns
 
 

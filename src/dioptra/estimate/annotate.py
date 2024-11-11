@@ -1,6 +1,5 @@
 import sys
 
-from dioptra._file_loading import load_calibration_data, load_files
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.binfhe.runtime import RuntimeEstimate
@@ -10,6 +9,7 @@ from dioptra.pke.calibration import PKECalibrationData
 from dioptra.pke.runtime import Runtime
 from dioptra.report.runtime import RuntimeAnnotation
 from dioptra.scheme_type import SchemeType
+from dioptra.utils.file_loading import load_calibration_data, load_files
 from dioptra.utils.measurement import format_ns
 
 
