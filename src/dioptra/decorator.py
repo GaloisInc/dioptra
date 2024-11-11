@@ -1,36 +1,29 @@
 import datetime
-from enum import Enum
 import importlib.resources as ilr
-import importlib.util
 import inspect
 import json
-from multiprocessing import Value
-from pathlib import Path
-from plistlib import InvalidFileException
 import runpy
 import shutil
 import sys
+from enum import Enum
 from typing import Callable, OrderedDict
 
 import dioptra
-
-from dioptra.analyzer.binfhe import memory
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisGroup, BinFHEAnalyzer
 from dioptra.analyzer.binfhe.calibration import BinFHECalibration, BinFHECalibrationData
 from dioptra.analyzer.binfhe.memory import BinFHEMemoryEstimate
 from dioptra.analyzer.binfhe.runtime import RuntimeEstimate
 from dioptra.analyzer.calibration import PKECalibration, PKECalibrationData
 from dioptra.analyzer.pke.analysisbase import Analyzer
-from dioptra.analyzer.pke.memory import PKEMemoryEstimate, PKEMemoryEstimate
+from dioptra.analyzer.pke.memory import PKEMemoryEstimate
 from dioptra.analyzer.pke.runtime import Runtime
 from dioptra.analyzer.report.memory import MemoryMaxReport
 from dioptra.analyzer.report.runtime import RuntimeAnnotation, RuntimeTotal
 from dioptra.analyzer.utils.code_loc import TraceLoc
-from dioptra.analyzer.utils.util import format_bytes, format_ns, format_ns_approx
 from dioptra.analyzer.utils.error import NotSupportedException
-from dioptra.visualization.annotation import annotate_lines
+from dioptra.analyzer.utils.util import format_bytes, format_ns, format_ns_approx
 from dioptra.ui.report_gen import render_results
-
+from dioptra.visualization.annotation import annotate_lines
 
 SKELETON_DIR = "analysis_site_skeleton"
 

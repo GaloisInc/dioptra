@@ -1,11 +1,11 @@
 import json
-from random import sample
 import time
 from typing import IO, Any, Callable
+
 import openfhe
+import psutil
 
 import dioptra_native
-import psutil
 from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
 from dioptra.analyzer.binfhe.params import BinFHEParams
 from dioptra.analyzer.utils.util import format_ns

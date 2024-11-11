@@ -1,9 +1,10 @@
-from audioop import add
 from typing import Iterator
-from unittest import TestCase, TestSuite
+from unittest import TestCase
+
+import openfhe
+
 from dioptra.analyzer.scheme import LevelInfo, PkeSchemeModels
 from tests.test_contexts import ckks1
-import openfhe
 
 
 class TestCiphertextLevel_CKKS(TestCase):

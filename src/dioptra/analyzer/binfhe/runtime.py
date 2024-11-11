@@ -1,5 +1,5 @@
-from typing import Iterable
 import openfhe
+
 from dioptra.analyzer.binfhe.analyzer import BinFHEAnalysisBase
 from dioptra.analyzer.binfhe.event import BinFHEEvent, BinFHEEventKind
 from dioptra.analyzer.binfhe.value import LWECiphertext, LWEPrivateKey

@@ -1,4 +1,5 @@
 from enum import Enum
+
 from dioptra.analyzer.utils.code_loc import Frame
 
 

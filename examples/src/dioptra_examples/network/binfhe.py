@@ -7,10 +7,10 @@ Then, the result of the AND is "sent" back - the send also being
 simulated.
 """
 
-from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
-from dioptra.analyzer.utils.util import BPS
 from openfhe import BINGATE
 
+from dioptra.analyzer.binfhe.analyzer import BinFHEAnalyzer
+from dioptra.analyzer.utils.util import BPS
 from dioptra.decorator import dioptra_binfhe_runtime
 
 

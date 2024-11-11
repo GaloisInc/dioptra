@@ -1,4 +1,4 @@
-from dioptra.analyzer.utils.code_loc import Frame, MaybeFrame, calling_frame
+from dioptra.analyzer.utils.code_loc import Frame, MaybeFrame
 
 
 class NotSupportedException(Exception):
