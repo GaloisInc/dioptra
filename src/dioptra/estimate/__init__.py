@@ -1,7 +1,8 @@
 """Dioptra estimation decorators.
 
-Definitions of the `@dioptra_estimation()` and `@dioptra_binfhe_estimation()`
-decorators used to mark estimation cases for Dioptra's command-line tools.
+Definitions of the `@dioptra_pke_estimation()` and
+`@dioptra_binfhe_estimation()` decorators used to mark estimation cases for
+Dioptra's command-line tools.
 """
 
 import datetime
@@ -33,7 +34,7 @@ def _estimation_case_decorator(
     return f
 
 
-def dioptra_estimation(
+def dioptra_pke_estimation(
     limit: datetime.timedelta | None = None, description: str | None = None
 ) -> Callable:
     """Mark a Dioptra PKE estimation case.

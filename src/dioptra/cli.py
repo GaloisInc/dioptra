@@ -53,7 +53,8 @@ def report(file: Path, calibration_data: Path) -> None:
     """Report runtime and memory performance estimates for all estimation cases.
 
     FILE is the Python file in which to look for estimation cases (functions
-    decorated with "@dioptra_estimation()" or "@dioptra_binfhe_estimation()").
+    decorated with "@dioptra_pke_estimation()" or
+    "@dioptra_binfhe_estimation()").
     """
     report_main(str(calibration_data), [str(file)])
 
@@ -85,7 +86,8 @@ def annotate(file: Path, calibration_data: Path, name: str, output: Path) -> Non
     """Annotate Python source files with estimated OpenFHE operation runtimes.
 
     FILE is the Python file in which to look for estimation cases (functions
-    decorated with "@dioptra_estimation()" or "@dioptra_binfhe_estimation()").
+    decorated with "@dioptra_pke_estimation()" or
+    "@dioptra_binfhe_estimation()").
     """
     annotate_main(str(calibration_data), str(file), name, str(output))
 
