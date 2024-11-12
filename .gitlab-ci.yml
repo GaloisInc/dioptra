@@ -4,7 +4,6 @@ cache:
   paths:
     - deps_cache
     - venv/
-    - openfhe-development
 
 .install_dependencies: &install_dependencies
   - apt-get update
@@ -39,7 +38,6 @@ before_script:
   - *install_openfhe_python
   - cd ../../../..
   - source setup_env.sh
-  - pip install mypy ruff pytest --cache-dir deps_cache
 
 stages:
   - Static Analysis
@@ -54,6 +52,5 @@ ruff:
 
 pytest:
   stage: Test
-  allow_failure: true
   script:
    - pytest
