@@ -1,3 +1,9 @@
+"""Dioptra estimation decorators.
+
+Definitions of the `@dioptra_estimation()` and `@dioptra_binfhe_estimation()`
+decorators used to mark estimation cases for Dioptra's command-line tools.
+"""
+
 import datetime
 import inspect
 from typing import Callable, OrderedDict
@@ -29,7 +35,17 @@ def _estimation_case_decorator(
 
 def dioptra_estimation(
     limit: datetime.timedelta | None = None, description: str | None = None
-) -> Callable:  # TODO better type
+) -> Callable:
+    """Mark a Dioptra PKE estimation case.
+
+    Keyword arguments:
+    limit -- the time limit for this estimation case (default: no limit)
+    description -- a description of the estimation case (default: none)
+
+    Note that the description can be used to disambiguate estimation cases with
+    the same function name.
+    """
+
     def decorator(f):
         _estimation_case_decorator(description, f, limit, SchemeType.PKE)
 
@@ -38,7 +54,17 @@ def dioptra_estimation(
 
 def dioptra_binfhe_estimation(
     limit: datetime.timedelta | None = None, description: str | None = None
-) -> Callable:  # TODO better type
+) -> Callable:
+    """Mark a Dioptra BinFHE estimation case.
+
+    Keyword arguments:
+    limit -- the time limit for this estimation case (default: no limit)
+    description -- a description of the estimation case (default: none)
+
+    Note that the description can be used to disambiguate estimation cases with
+    the same function name.
+    """
+
     def decorator(f):
         _estimation_case_decorator(description, f, limit, SchemeType.BINFHE)
 
