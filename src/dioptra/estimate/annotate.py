@@ -34,13 +34,27 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         analyzer = Analyzer([runtime_analysis], calibration.scheme)
         case.run_and_exit_if_unsupported(analyzer)
 
+        case_root = Path(
+            os.path.commonprefix([case[0] for case in annot_rpt.annotation_dicts()])
+        )
+
+        case_output = Path(output)
+        if os.path.isdir(case_root):
+            case_output = case_output.joinpath(case_root.stem)
+        os.makedirs(case_output, exist_ok=True)
+
         for fname, annotation in annot_rpt.annotation_dicts():
-            os.makedirs(Path(output).joinpath(Path(fname[1:]).parent), exist_ok=True)
+            if os.path.isdir(case_root):
+                fname_out = case_output.joinpath(Path(fname).relative_to(case_root))
+            else:
+                fname_out = case_output.joinpath(Path(fname).name)
+
+            os.makedirs(fname_out.parent, exist_ok=True)
 
             annotation = {line: format_ns(ns) for (line, ns) in annotation.items()}
             annotate_lines(
                 fname,
-                Path(output).joinpath(Path(fname[1:])),
+                fname_out,
                 annotation,
             )
 
@@ -54,13 +68,27 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         analyzer = BinFHEAnalyzer(calibration.params, est)
         case.run_and_exit_if_unsupported(analyzer)
 
+        case_root = Path(
+            os.path.commonprefix([case[0] for case in annot_rpt.annotation_dicts()])
+        )
+
+        case_output = Path(output)
+        if os.path.isdir(case_root):
+            case_output = case_output.joinpath(case_root.stem)
+        os.makedirs(case_output, exist_ok=True)
+
         for fname, annotation in annot_rpt.annotation_dicts():
-            os.makedirs(Path(output).joinpath(Path(fname[1:]).parent), exist_ok=True)
+            if os.path.isdir(case_root):
+                fname_out = case_output.joinpath(Path(fname).relative_to(case_root))
+            else:
+                fname_out = case_output.joinpath(Path(fname).name)
+
+            os.makedirs(fname_out.parent, exist_ok=True)
 
             annotation = {line: format_ns(ns) for (line, ns) in annotation.items()}
             annotate_lines(
                 fname,
-                Path(output).joinpath(Path(fname[1:])),
+                fname_out,
                 annotation,
             )
 
