@@ -1,6 +1,6 @@
 """Dioptra context decorators.
 
-Definition of the `@dioptra_context()` and `@dioptra_binfhe_context()`
+Definition of the `@dioptra_pke_context()` and `@dioptra_binfhe_context()`
 decorators used to mark FHE contexts for Dioptra's command-line tools.
 """
 
@@ -29,7 +29,7 @@ def _dioptra_context_decorator(
     return f
 
 
-def dioptra_context(description: str | None = None):
+def dioptra_pke_context(description: str | None = None):
     """Mark a Diotpra PKE context for calibration.
 
     Keyword arguments:
