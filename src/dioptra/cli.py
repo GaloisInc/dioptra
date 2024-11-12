@@ -131,7 +131,7 @@ def calibrate(file: Path, name: str, output: Path, sample_count: int):
     """Generate calibration data for a decorated context function.
 
     FILE is the Python file in which to look for contexts (functions decorated
-    with "@dioptra_context()" or "@dioptra_binfhe_context()".)
+    with "@dioptra_pke_context()" or "@dioptra_binfhe_context()".)
     """
     calibrate_main([str(file)], name, str(output), sample_count)
 
@@ -142,7 +142,7 @@ def list(file: Path):
     """List context functions.
 
     FILE is the python file in which to look for contexts (functions decorated
-    with "@dioptra_context()" or "@dioptra_binfhe_context()".)
+    with "@dioptra_pke_context()" or "@dioptra_binfhe_context()".)
     """
     list_main([str(file)])
 

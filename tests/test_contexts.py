@@ -1,9 +1,9 @@
 import openfhe as ofhe
 
-from dioptra.context import dioptra_context
+from dioptra.context import dioptra_pke_context
 
 
-@dioptra_context()
+@dioptra_pke_context()
 def ckks1() -> (
     tuple[
         ofhe.CryptoContext,
@@ -64,7 +64,7 @@ def ckks1() -> (
     return (cryptocontext, parameters, key_pair, features)
 
 
-@dioptra_context()
+@dioptra_pke_context()
 def bfv1() -> (
     tuple[
         ofhe.CryptoContext,
@@ -102,7 +102,7 @@ def bfv1() -> (
     return (crypto_context, parameters, key_pair, features)
 
 
-@dioptra_context()
+@dioptra_pke_context()
 def bgv1() -> (
     tuple[
         ofhe.CryptoContext,
