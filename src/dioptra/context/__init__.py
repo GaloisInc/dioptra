@@ -1,3 +1,9 @@
+"""Dioptra context decorators.
+
+Definition of the `@dioptra_context()` and `@dioptra_binfhe_context()`
+decorators used to mark FHE contexts for Dioptra's command-line tools.
+"""
+
 import inspect
 from typing import Callable, OrderedDict
 
@@ -24,6 +30,15 @@ def _dioptra_context_decorator(
 
 
 def dioptra_context(description: str | None = None):
+    """Mark a Diotpra PKE context for calibration.
+
+    Keyword arguments:
+    description -- a description of the context (default: none)
+
+    Note that the description can be used to disambiguate contexts with the same
+    function name.
+    """
+
     def decorator(f):
         return _dioptra_context_decorator(description, f, SchemeType.PKE)
 
@@ -31,6 +46,15 @@ def dioptra_context(description: str | None = None):
 
 
 def dioptra_binfhe_context(description: str | None = None):
+    """Mark a Diotpra PKE context for calibration.
+
+    Keyword arguments:
+    description -- a description of the context (default: none)
+
+    Note that the description can be used to disambiguate contexts with the same
+    function name.
+    """
+
     def decorator(f):
         return _dioptra_context_decorator(description, f, SchemeType.BINFHE)
 
