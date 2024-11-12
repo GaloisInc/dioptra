@@ -1,6 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=61.0",
+  "setuptools-scm>=8.0",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -9,6 +10,7 @@ name = "dioptra"
 version = "0.0.1"
 authors = [
   { name="Rawane Issa", email="rissa@galois.com" },
+  { name="James LaMar", email="james.lamar@galois.com"},
   { name="Chris Phifer", email="cphifer@galois.com" },
 ]
 description = "A platform for running and analyzing FHE applications."
@@ -21,29 +23,12 @@ classifiers = [
 ]
 dependencies = [
   "click",
-  "click-log",
-  "psutil"
+  "psutil",
+  "jinja2",
 ]
 
 [project.scripts]
 dioptra = "dioptra:cli.cli"
-
-[tool.mypy]
-files = [
-  "src",
-  "tests",
-]
-disallow_untyped_defs = true
-disallow_any_unimported = true
-no_implicit_optional = true
-check_untyped_defs = true
-warn_return_any = true
-show_error_codes = true
-warn_unused_ignores = true
-
-[[tool.mypy.overrides]]
-module = "click_log"
-ignore_missing_imports = true
 
 [tool.ruff]
 exclude = [
@@ -79,7 +64,7 @@ line-length = 88
 indent-width = 4
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "I"]
 ignore = []
 fixable = ["ALL"]
 unfixable = []
