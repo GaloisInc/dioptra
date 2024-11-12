@@ -1,5 +1,7 @@
 import importlib.resources as ilr
+import os
 import shutil
+import sys
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -26,67 +28,69 @@ def render_main(sample_file: str, file: str, test_case: str, output: str) -> Non
         shutil.copytree(p, output, dirs_exist_ok=True)
 
     calibration = load_calibration_data(sample_file)
-
     load_files([file])
+    case = estimation_cases.get(test_case)
+
+    if case is None:
+        print(
+            f"ERROR: Cound not find test case '{test_case}' in scope", file=sys.stderr
+        )
+        return
 
     runtime_analyses: dict[str, dict[int, str]] = {}
-    for case in estimation_cases.values():
-        if case.schemetype == SchemeType.PKE and isinstance(
-            calibration, PKECalibrationData
-        ):
-            annot_rpt = RuntimeAnnotation()
-            runtime_analysis = Runtime(calibration, annot_rpt)
+    if case.schemetype == SchemeType.PKE and isinstance(
+        calibration, PKECalibrationData
+    ):
+        annot_rpt = RuntimeAnnotation()
+        runtime_analysis = Runtime(calibration, annot_rpt)
 
-            with TraceLoc() as tloc:
-                analyzer = Analyzer([runtime_analysis], calibration.get_scheme(), tloc)
-                case.run_and_exit_if_unsupported(analyzer)
+        with TraceLoc() as tloc:
+            analyzer = Analyzer([runtime_analysis], calibration.get_scheme(), tloc)
+            case.run_and_exit_if_unsupported(analyzer)
 
-                # Map lines to time
+            for fname, annotation in annot_rpt.annotation_dicts():
                 time_lookup: dict[int, str] = {
-                    k - 1: format_ns(v)
-                    for (k, v) in annot_rpt.annotation_for(file).items()
+                    k - 1: format_ns(v) for k, v in annotation.items()
                 }
+                runtime_analyses[fname] = time_lookup
 
-                runtime_analyses[case.run.__name__] = time_lookup
-
-        elif case.schemetype == SchemeType.BINFHE and isinstance(
-            calibration, BinFHECalibrationData
-        ):
-            annot_rpt = RuntimeAnnotation()
-            est = RuntimeEstimate(
-                calibration.avg_case(), calibration.ciphertext_size, annot_rpt
+    elif case.schemetype == SchemeType.BINFHE and isinstance(
+        calibration, BinFHECalibrationData
+    ):
+        annot_rpt = RuntimeAnnotation()
+        est = RuntimeEstimate(
+            calibration.avg_case(), calibration.ciphertext_size, annot_rpt
+        )
+        with TraceLoc() as tloc:
+            analyzer = BinFHEAnalyzer(
+                calibration.params,
+                est,
+                tloc,
             )
-            with TraceLoc() as tloc:
-                analyzer = BinFHEAnalyzer(
-                    calibration.params,
-                    est,
-                    tloc,
-                )
-                case.run_and_exit_if_unsupported(analyzer)
+            case.run_and_exit_if_unsupported(analyzer)
 
-                # Map lines to time
+            for fname, annotation in annot_rpt.annotation_dicts():
                 time_lookup: dict[int, str] = {
-                    k - 1: format_ns(v)
-                    for (k, v) in annot_rpt.annotation_for(file).items()
+                    k - 1: format_ns(v) for k, v in annotation.items()
                 }
+                runtime_analyses[fname] = time_lookup
 
-                runtime_analyses[case.run.__name__] = time_lookup
-        else:
-            print(
-                f"[FAIL---] {case.description}: Cannot run case with this calibration data"
-            )
-            print(
-                f"          Calibration is for a {calibration_type(calibration).name} context"
-            )
-            print(f"          But estimation case requires a {case.schemetype} context")
-            continue
+    else:
+        print(
+            f"[FAIL---] {case.description}: Cannot run case with this calibration data"
+        )
+        print(
+            f"          Calibration is for a {calibration_type(calibration).name} context"
+        )
+        print(f"          But estimation case requires a {case.schemetype} context")
+        return
 
-    render_results(output, file, runtime_analyses)
+    render_results(output, test_case, runtime_analyses)
 
 
 def render_results(
     outdir: str,
-    file: str,
+    test_case: str,
     runtime_analyses: dict[str, dict[int, str]],
 ) -> None:
     env = Environment(
@@ -94,14 +98,26 @@ def render_results(
     )
     template = env.get_template("results_template.html")
 
-    with (
-        open(file, "r") as script,
-        open(Path(outdir).joinpath(f"{Path(file).name}.html"), "w") as rendered_html,
-    ):
+    case_root = Path(os.path.commonprefix(list(runtime_analyses.keys())))
+    sources = {}
+    analyses = {}
+    for fname in runtime_analyses:
+        with open(fname) as f:
+            f = f.read()
+
+        if os.path.isdir(case_root):
+            simple_name = str(Path(fname).relative_to(case_root))
+        else:
+            simple_name = str(Path(fname).name)
+
+        sources[simple_name] = f
+        analyses[simple_name] = runtime_analyses[fname]
+
+    with open(Path(outdir).joinpath(f"{test_case}.html"), "w") as rendered_html:
         rendered_html.write(
             template.render(
-                filename=Path(file).name,
-                source=script.read(),
-                analyses=runtime_analyses,
+                test_case=test_case,
+                sources=sources,
+                analyses=analyses,
             )
         )
