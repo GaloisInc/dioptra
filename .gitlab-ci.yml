@@ -38,6 +38,7 @@ before_script:
   - *install_openfhe_python
   - cd ../../../..
   - source setup_env.sh
+  - pip install ruff pytest --cache-dir deps_cache
 
 stages:
   - Static Analysis
