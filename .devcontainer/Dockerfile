@@ -12,12 +12,12 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     sudo \
+    time \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
   
 # Python tools we need
 RUN pip3 install --no-cache-dir \
                  "pybind11[global]" \
-                 mypy \
                  ruff \
                  pytest \
                  --break-system-packages

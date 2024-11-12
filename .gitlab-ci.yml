@@ -1,10 +1,9 @@
-image: "python:3.9-bookworm"
+image: "python:3.12-bookworm"
 
 cache:
   paths:
     - deps_cache
     - venv/
-    - openfhe-development
 
 .install_dependencies: &install_dependencies
   - apt-get update
@@ -28,37 +27,24 @@ cache:
   - cd build
   - cmake ..
   - make -j$(nproc)
-  - make install
+  - mkdir /usr/local/lib/openfhe-python
+  - chmod 755 *.so
+  - cp *.so /usr/local/lib/openfhe-python
+  - export PYTHONPATH=/usr/local/lib/openfhe-python
 
 before_script:
   - *install_dependencies
   - *install_openfhe_development
   - *install_openfhe_python
   - cd ../../../..
-  - python --version
-  - python -m venv venv
-  - source venv/bin/activate
-  - pip install mypy ruff pytest --cache-dir deps_cache
-  - pip install . --cache-dir deps_cache
+  - source setup_env.sh
 
 stages:
   - Static Analysis
   - Test
 
-mypy:
-  stage: Static Analysis
-  only:
-    - main
-    - merge_requests
-  allow_failure: true
-  script:
-    - mypy
-
 ruff:
   stage: Static Analysis
-  only:
-    - main
-    - merge_requests
   allow_failure: true
   script:
     - ruff format --check
@@ -66,9 +52,5 @@ ruff:
 
 pytest:
   stage: Test
-  only:
-    - main
-    - merge_requests
-  allow_failure: true
   script:
    - pytest

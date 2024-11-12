@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Analysis Results</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <h1>Dioptra Analysis Browser - {{ test_case }}</h1>
+    <div class="row">
+      <div class="column" id="editor"></div>
+      <div class="column" id="analysis">
+        {% for file in sources.keys() %}
+        <input name="file" type="radio" value={{ file }} onclick="onFileSelect(this);" autocomplete="off">{{ file }}<br>
+        {% endfor %}
+        <br>
+        <span id="file_select">Choose a file to explore, then place your cursor on a line containing an FHE operation used in {{ test_case }} to see its runtime.</span>
+        <p id="results"></p>
+      </div>
+    </div>
+
+    <script src="ace/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      var sources = new Map();
+      {% for f, source in sources.items() %}
+      sources.set("{{ f }}", {{ source|tojson }})
+      {% endfor %}
+
+      var analyses = new Map();
+      {% for f, v in analyses.items() %}
+      var inner = new Map();
+      {% for r, time in v.items() %}
+      inner.set("{{ r }}", "{{ time }}");
+      {% endfor %}
+      analyses.set("{{ f }}", inner);
+      {% endfor %}
+
+      var editor = ace.edit("editor");
+      editor.setTheme("ace/theme/github");
+      editor.setOption("minLines", 50);
+      editor.setOption("maxLines", 50);
+      editor.setHighlightActiveLine(false);
+      editor.setOption("showPrintMargin", false);
+      editor.setReadOnly(true);
+      editor.session.setMode("ace/mode/python");
+
+      var selectedFile;
+      function onFileSelect(fileOption) {
+          selectedFile = fileOption.value;
+          editor.session.setValue(sources.get(selectedFile), -1)
+      }
+
+      editor.session.selection.on("changeCursor", function(e) {
+          if (typeof selectedFile !== "undefined") {
+              document.getElementById("results").innerHTML = "";
+              var cursorRow = String(editor.selection.getCursor().row);
+              if (analyses.get(selectedFile).has(cursorRow)) {
+                  document.getElementById("results").innerHTML =
+                      "Estimated time of FHE operation(s): "
+                      + analyses.get(selectedFile).get(cursorRow);
+              }
+          }
+      });
+    </script>
+  </body>
+</html>

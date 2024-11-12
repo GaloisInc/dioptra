@@ -12,12 +12,12 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     sudo \
+    time \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Python tools we need
 RUN pip3 install --no-cache-dir \
                  "pybind11[global]" \
-                 mypy \
                  ruff \
                  pytest \
                  --break-system-packages
@@ -51,6 +51,8 @@ COPY dioptra_native ./dioptra/dioptra_native
 COPY examples ./dioptra/examples
 COPY pyproject.toml ./dioptra/pyproject.toml
 COPY README.md ./dioptra/README.md
-COPY setup_env.sh ./dioptra/setup_env.sh
 COPY src ./dioptra/src
 COPY tests ./dioptra/tests
+COPY setup_env.sh ./dioptra/setup_env.sh
+COPY calibrate.sh ./dioptra/calibrate.sh
+COPY run_examples.sh ./dioptra/run_examples.sh
