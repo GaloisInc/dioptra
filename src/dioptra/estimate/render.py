@@ -21,7 +21,7 @@ from dioptra.utils.scheme_type import SchemeType, calibration_type
 SKELETON_DIR = "analysis_site_skeleton"
 
 
-def render_main(sample_file: str, file: str, output: str) -> None:
+def render_main(sample_file: str, file: str, test_case: str, output: str) -> None:
     with ilr.as_file(ilr.files(dioptra.estimate).joinpath(SKELETON_DIR)) as p:
         shutil.copytree(p, output, dirs_exist_ok=True)
 
