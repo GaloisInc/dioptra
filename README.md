@@ -76,8 +76,8 @@ general, these will set up an OpenFHE `CryptoContext` with the proper parameters
 selected (e.g. ring dimension, multiplicative depth, security level).
 
 The following will search `/path/to/contexts.py` for functions decorated with
-`@dioptra_context()` (or `@dioptra_binfhe_context()`) in a given Python file,
-and report their names:
+`@dioptra_pke_context()` (or `@dioptra_binfhe_context()`) in a given Python
+file, and report their names:
 
 ```console
 > dioptra context list /path/to/contexts.py
@@ -142,7 +142,7 @@ We can write the following function, which uses a Dioptra `Analyzer` object
 where we might expect an `ofhe.CryptoContext`:
 
 ```python
-@dioptra_runtime()
+@dioptra_pke_estimation()
 def matrix_mult_5x5(cc: Analyzer):
     rows = 5
     cols = 5
@@ -173,7 +173,7 @@ Dioptra supports basic simulation of (homogeneous) network operations in
 estimation cases. Expanding on the matrix_mult example above::
 
 ```python
-@dioptra_runtime()
+@dioptra_pke_estimation()
 def matrix_mult_5x5_networked(cc: Analyzer):
     # Define the network parameters
     network = cc.MakeNetwork(
@@ -211,7 +211,8 @@ creating annotated versions of your Python scripts, where estimates are shown
 on a per-operation basis (per `Analyzer` operation, that is).
 
 Like calibration, this functionality is done on a per-function basis, so you
-must specify a `--name` of a function decorated with `@dioptra_runtime()`.
+must specify a `--name` of a function decorated with
+`@dioptra_pke_estimation()`.
 
 To invoke this functionality, run:
 
@@ -260,5 +261,3 @@ both technical and theoretical:
 - James LaMar
 - Hilder Vitor Lima Pereira
 - Chris Phifer
-
-TODO: NCSC distribution statement, if applicable?
