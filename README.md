@@ -236,6 +236,7 @@ To render an estimation website for the `matrix_mult` example above:
 ```console
 > dioptra estimate render --calibration-data /path/to/calibrations/my_ckks.dc \
                           --output /path/to/render/results # OK if the directory needs to be created \
+                          --name matrix_mult_5x5
                           /path/to/matrix_mult.py
 ```
 
