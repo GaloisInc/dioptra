@@ -160,10 +160,17 @@ def list(file: Path):
     type=click.Path(file_okay=False, dir_okay=True, writable=True, path_type=Path),
     help="Directory to which the rendered website should be written.",
 )
-def render(file: Path, calibration_data: Path, output: Path) -> None:
+@click.option(
+    "--name",
+    "-n",
+    type=str,
+    required=True,
+    help="Name of the estimation case to render.",
+)
+def render(file: Path, calibration_data: Path, name: str, output: Path) -> None:
     """Render a website for an estimation case.
 
     FILE is the Python file in which to look for estimation cases (functions
     decorated with "@diotpra_estimation()" or "@dioptra_binfhe_estimation()").
     """
-    render_main(str(calibration_data), str(file), str(output))
+    render_main(str(calibration_data), str(file), name, str(output))
