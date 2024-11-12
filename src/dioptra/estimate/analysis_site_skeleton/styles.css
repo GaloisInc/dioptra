@@ -1,0 +1,11 @@
+.row {
+    display: flex;
+    column-gap: 16px;
+}
+
+.column {
+    padding: 8px;
+    border-style: dotted;
+    border-width: medium;
+    flex: 50%;
+}

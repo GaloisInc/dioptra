@@ -40,7 +40,7 @@ will:
 
 (1) Create and enter a Python environment
 (2) Build and install `dioptra_native` in that environment
-(3) Install dioptra
+(3) Install dioptra and dioptra_examples
 
 Now, you can start using dioptra to perform FHE analyses. Note that you will
 only need to do this once as a typical user; developers should see the below
