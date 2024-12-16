@@ -14,8 +14,7 @@ from dioptra.utils.file_loading import load_calibration_data, load_files
 from dioptra.utils.measurement import format_ns
 from dioptra.utils.scheme_type import SchemeType
 
-
-def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> None:
+def annotate_main(sample_file: str, file: str, test_case: str, output: str, ann_root_str: str) -> None:
     calibration = load_calibration_data(sample_file)
     load_files([file])
     case = estimation_cases.get(test_case, None)
@@ -25,7 +24,19 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
             f"ERROR: Could not find test case '{test_case}' in scope", file=sys.stderr
         )
         return
+    
+    ann_root = Path(ann_root_str).absolute()
+    if not ann_root.exists():
+        print(f"Annotation root must be an existing directory - could not find '{ann_root_str}'", file=sys.stderr)
+        return
+    
+    if not ann_root.is_dir():
+        print(f"Annotation root must be an existing directory - '{ann_root_str}' is not a directory", file=sys.stderr)
+        return
 
+    case_output = Path(output)
+
+    annot_rpt = None
     if case.schemetype == SchemeType.PKE and isinstance(
         calibration, PKECalibrationData
     ):
@@ -34,29 +45,6 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         analyzer = Analyzer([runtime_analysis], calibration.scheme)
         case.run_and_exit_if_unsupported(analyzer)
 
-        case_root = Path(
-            os.path.commonprefix([case[0] for case in annot_rpt.annotation_dicts()])
-        )
-
-        case_output = Path(output)
-        if os.path.isdir(case_root):
-            case_output = case_output.joinpath(case_root.stem)
-        os.makedirs(case_output, exist_ok=True)
-
-        for fname, annotation in annot_rpt.annotation_dicts():
-            if os.path.isdir(case_root):
-                fname_out = case_output.joinpath(Path(fname).relative_to(case_root))
-            else:
-                fname_out = case_output.joinpath(Path(fname).name)
-
-            os.makedirs(fname_out.parent, exist_ok=True)
-
-            annotation = {line: format_ns(ns) for (line, ns) in annotation.items()}
-            annotate_lines(
-                fname,
-                fname_out,
-                annotation,
-            )
 
     elif case.schemetype == SchemeType.BINFHE and isinstance(
         calibration, BinFHECalibrationData
@@ -68,21 +56,18 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
         analyzer = BinFHEAnalyzer(calibration.params, est)
         case.run_and_exit_if_unsupported(analyzer)
 
-        case_root = Path(
-            os.path.commonprefix([case[0] for case in annot_rpt.annotation_dicts()])
+
+    else:
+        print(
+            f"Calibration data '{sample_file}' is not compatible with estimation case '{test_case}'"
         )
+        return
 
-        case_output = Path(output)
-        if os.path.isdir(case_root):
-            case_output = case_output.joinpath(case_root.stem)
-        os.makedirs(case_output, exist_ok=True)
-
-        for fname, annotation in annot_rpt.annotation_dicts():
-            if os.path.isdir(case_root):
-                fname_out = case_output.joinpath(Path(fname).relative_to(case_root))
-            else:
-                fname_out = case_output.joinpath(Path(fname).name)
-
+    for fname, annotation in annot_rpt.annotation_dicts():
+        fpath = Path(fname).absolute()
+        if ann_root in fpath.parents:
+            fname_out = case_output.joinpath(fpath.relative_to(ann_root))
+            print(fname_out)
             os.makedirs(fname_out.parent, exist_ok=True)
 
             annotation = {line: format_ns(ns) for (line, ns) in annotation.items()}
@@ -91,12 +76,8 @@ def annotate_main(sample_file: str, file: str, test_case: str, output: str) -> N
                 fname_out,
                 annotation,
             )
-
-    else:
-        print(
-            f"Calibration data '{sample_file}' is not compatible with estimation case '{test_case}'"
-        )
-
+        else:
+            print(f"Skipping {fname} - not in scope wrt {ann_root}.")
 
 def annotate_lines(infile: str, outfile: str, annotation: dict[int, str]):
     line_number = 1

@@ -82,14 +82,21 @@ def report(file: Path, calibration_data: Path) -> None:
     required=True,
     help="Name of the estimation case to annotate.",
 )
-def annotate(file: Path, calibration_data: Path, name: str, output: Path) -> None:
+@click.option(
+    "--annotation-root",
+    "-r",
+    type=click.Path(file_okay=False, dir_okay=True, readable=True, path_type=Path),
+    default=Path("."),
+    help="Root directory of files to annotate - files outside this root are not annotated."    
+)
+def annotate(file: Path, calibration_data: Path, name: str, output: Path, annotation_root: Path) -> None:
     """Annotate Python source files with estimated OpenFHE operation runtimes.
 
     FILE is the Python file in which to look for estimation cases (functions
     decorated with "@dioptra_pke_estimation()" or
     "@dioptra_binfhe_estimation()").
     """
-    annotate_main(str(calibration_data), str(file), name, str(output))
+    annotate_main(str(calibration_data), str(file), name, str(output), str(annotation_root))
 
 
 @cli.group()
