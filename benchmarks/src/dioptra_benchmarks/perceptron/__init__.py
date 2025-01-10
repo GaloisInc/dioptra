@@ -5,7 +5,7 @@ import time
 import dioptra
 from dioptra.estimate import dioptra_pke_estimation
 from dioptra.pke.analyzer import Analyzer, Ciphertext, Plaintext
-from dioptra_examples.contexts import ckks_small1
+from dioptra_examples.contexts import ckks1
 from openfhe import CryptoContext
 
 import random
@@ -55,7 +55,7 @@ class DisplayTime:
 def run_single_perception_cc(input_size: int):
     cc = None
     with DisplayTime("setup") as _:
-        (cc, _, kp, _) = ckks_small1()
+        (cc, _, kp, _) = ckks1()
 
     inputs = []
     with DisplayTime("encrypt") as _:
