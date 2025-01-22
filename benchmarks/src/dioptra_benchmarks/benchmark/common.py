@@ -5,6 +5,7 @@ import dioptra.utils.measurement
 
 class DisplayTime:
     def __init__(self, p: str, display: bool = True):
+        self.display = display
         self.p = p
 
     def __enter__(self):
@@ -13,4 +14,5 @@ class DisplayTime:
 
     def __exit__(self, *arg):
         end = time.time_ns()
-        print(f"{self.p}: {dioptra.utils.measurement.format_ns_approx(end - self.start)}")
+        if self.display:
+            print(f"{self.p}: {dioptra.utils.measurement.format_ns_approx(end - self.start)}")
