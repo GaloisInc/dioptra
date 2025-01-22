@@ -3,7 +3,7 @@ import argparse
 import re
 import sys
 from typing import Any
-from benchmarks.src.dioptra_benchmarks.matrix.matrix import MatrixBuilder
+from matrix import MatrixBuilder
 import contexts
 import benchmark.common as common
 
@@ -43,7 +43,8 @@ def main():
   (rows2, cols2) = decode_dim(config.dim2)
 
   with common.DisplayTime("setup", not config.no_setup_runtime) as _:
-    (cinfo, mk_builder) = contexts.contexts[config.context]()
+    (cfn, mk_builder) = contexts.contexts[config.context]
+    cinfo = cfn()
     if len(cinfo) == 4:
       (cc, _, kp, _) = cinfo
       enc_key = kp.publicKey
