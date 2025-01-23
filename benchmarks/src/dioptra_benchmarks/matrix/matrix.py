@@ -137,6 +137,6 @@ class BinBuilder(MatrixBuilder[Circuit, ofhe.LWEPrivateKey]):
   def random(self, sk: ofhe.LWEPrivateKey) -> Circuit:
     encoder = BinFHEEncoder(self.cc, sk)
     ptxt = random.randrange(0, 256)
-    return encoder.encode_int(ptxt, sk)
+    return encoder.encode_int(ptxt, 8)
 
   
