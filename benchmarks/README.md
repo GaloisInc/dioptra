@@ -5,12 +5,9 @@ Dioptra's performance.
 
 ## Installation
 
-The easiest way to install this package and run all benchmarks is by
-following the
+To be able to run the benchmarks you must first follow the following installation instructions
 [`dioptra` installation instructions](../README.md#installation) and
-[`dioptra_examples` installation instructions](../examples/README.md#installation), then running
-[`./run_benchmarks.sh <estimate|execute>`](../run_examples.sh) in the resulting
-Docker container.
+[`dioptra_examples` installation instructions](../examples/README.md#installation).
 
 If you have in some other way found yourself in a Python environment where
 `dioptra` is installed, you can simply run:
@@ -19,23 +16,19 @@ If you have in some other way found yourself in a Python environment where
 > pip install .
 ```
 
-In the directory containing this `README`. This will install `dioptra_benchmarks`
-to the Python environment.
+## Available Benchmarks
 
-## Running the executable benchmarks
+The examples available for benchmarking so far:
 
-A number of the examples are intended for benchmarking, and thus can be run in a
-true FHE context for comparison against Dioptra's estimates after installation.
+- A single percepteron: A single percepteron with a variable number of inputs.
+- A matrix x vector: A matrix vector multiplication with variable dimensions.
 
-The examples providing such executables are:
+## Running the benchmarks
 
-- `dioptra_benchmarks.perceptron <NUM_INPUTS>`
+Each of the benchmarks has its own CLI and script that allow users to run thebenchmarks using the user specified settings.
 
-The executable form that runs in OpenFHE can be run using, for example:
-
-```console
-> python -m dioptra_benchmarks.perceptron <NUM_INPUTS>
+For example, for the Matrix x Vector benchmark you can run:
 ```
-
-Where <NUM_INPUTS> refers to the number of inputs to the benchmark specified by the user.
-
+python benchmarks/src/matrix_vector/run_benchmarks.py -h
+```
+to find the different settings that are available. Each benchmarks has a similar script and can be run in a similar fashion.
