@@ -57,4 +57,3 @@ COPY setup_env.sh ./dioptra/setup_env.sh
 COPY calibrate.sh ./dioptra/calibrate.sh
 COPY run_examples.sh ./dioptra/run_examples.sh
 COPY benchmarks ./dioptra/benchmarks
-COPY run_benchmarks.sh ./dioptra/run_benchmarks.sh
