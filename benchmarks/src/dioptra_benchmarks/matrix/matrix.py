@@ -1,11 +1,9 @@
-import sys
 from typing import Iterable
+import unittest
 import benchmark.contexts as contexts
 import benchmark.common as common
 import random
 import openfhe as ofhe
-import argparse
-import re
 
 from dioptra.context import dioptra_binfhe_context, dioptra_pke_context
 from dioptra.estimate import dioptra_pke_estimation
@@ -139,4 +137,48 @@ class BinBuilder(MatrixBuilder[Circuit, ofhe.LWEPrivateKey]):
     ptxt = random.randrange(0, 256)
     return encoder.encode_int(ptxt, 8)
 
+class IntMath(CiphertextMath[int]):
+  def mul_elt(self, e1: int, e2: int) -> int:
+    return e1 * e2
   
+  def add_elt(self, e1: int, e2: int) -> int:
+    return e1 + e2
+  
+class IntBuilder(MatrixBuilder[int, int]):
+  def get_math(self) -> CiphertextMath[int]:
+    return IntMath()
+  
+  def random(self, key: int) -> int:
+    return random.randrange(0, 256)
+  
+class MatrixTest(unittest.TestCase):
+  def test_dotprod(self):
+    x = range(10)
+    y = [2 for _ in x]
+
+    r = CiphertextMatrix([[1]], IntMath()).dotprod(x, y)
+    self.assertEqual(r, sum([x[i] * y[i] for i in range(10)] ))
+
+  def test_mul(self):
+    rows1 = [ [0, 6]
+            , [-1, -4]
+            , [2, 4]
+            , [5, 7]
+            ]
+  
+    rows2 = [ [-3, 1, -2, 0]
+            , [3, 6, -1, 8]
+            ]
+    
+    m1 = CiphertextMatrix(rows1, IntMath())
+    m2 = CiphertextMatrix(rows2, IntMath())
+
+    r = m1 * m2
+
+    expected = [ [18, 36, -6, 48  ]
+               , [-9, -25, 6, -32 ]
+               , [ 6, 26, -8, 32  ]
+               , [ 6, 47, -17, 56 ]
+               ]
+    
+    self.assertEqual(r.rows, expected)
