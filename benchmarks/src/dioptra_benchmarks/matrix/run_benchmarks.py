@@ -68,12 +68,15 @@ def run_all_benchmarks():
 
   print("Actual Runtime:")
 
-  for ctx in ["bfv_128", "bgv_128"]:
-    for dim in [4, 16, 64]:
-      dioptra_execute(ctx, dim)
+  run_schema = [
+    ("bfv_128", [4, 8, 16, 64, 256]),
+    ("bgv_128", [4, 8, 16, 64]),
+    ("ckks_128", [4, 8, 16]),
+    ("binfhe_128", [4, 8, 16])
+  ]
 
-  for ctx in ["ckks_128", "binfhe_128"]:
-    for dim in [4, 16]:
+  for (ctx, dims) in run_schema:
+    for dim in dims:
       dioptra_execute(ctx, dim)
 
   print()
@@ -89,7 +92,7 @@ def main():
   est_parser.add_argument('-cd','--ctxt', help='The context name to use for the benchmark', choices=context_choices, required=True, type=str)
 
   exe_parser = subparsers.add_parser("execute", help='Run the benchmark in OpenFHE')
-  exe_parser.add_argument('-d','--dimension', help='The dimension of the matrix and vector to benchmark', required='--execute' in sys.argv, type=int)
+  exe_parser.add_argument('-d','--dimension', help='The dimension of the matrix and vector to benchmark', required=True, type=int)
   exe_parser.add_argument('-cd','--ctxt', help='The context name to use for the benchmark', choices=context_choices, required=True, type=str)
 
   all_parser = subparsers.add_parser("runall", help='Run and estimate all the benchmarks with defaults')

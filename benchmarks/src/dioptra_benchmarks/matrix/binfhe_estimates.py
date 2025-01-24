@@ -21,6 +21,8 @@ def mul16x16matrix_by_vector(cc: BinFHEAnalyzer):
 def mul64x64matrix_by_vector(cc: BinFHEAnalyzer):
   _ = mk_arbitrary_matrix(cc, 64, 64) * mk_arbitrary_matrix(cc, 64, 1)
 
+# Running the analysis for 64x64 takes a long time, so this might take a REALLY long time
+
 # @dioptra_binfhe_estimation(description="multiply 256x256 matrix by a vector")
 # def mul256x256matrix_by_vector(cc: BinFHEAnalyzer):
 #   _ = mk_arbitrary_matrix(cc, 256, 256) * mk_arbitrary_matrix(cc, 256, 1)
