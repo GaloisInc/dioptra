@@ -8,7 +8,7 @@ python calibrate.py
 
 This will add calibration data to the `context` subdirectory located here.  The existing calibration data is included as an example.
 
-To run pre-configured use the `run_benchmarks.py` script located in this directory.
+To run pre-configured benchmarks and estimates use the `run_benchmarks.py` script located in this directory.
 
 Other files of interest:
 
