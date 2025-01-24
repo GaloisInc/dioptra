@@ -8,6 +8,10 @@ def mk_arbitrary_matrix(cc: Analyzer, rows: int, cols: int):
 def mul4x4matrix_by_vector(cc: Analyzer):
   _ = mk_arbitrary_matrix(cc, 4, 4) * mk_arbitrary_matrix(cc, 4, 1)
 
+@dioptra_pke_estimation(description="multiply 8x8 matrix by a vector")
+def mul8x8matrix_by_vector(cc: Analyzer):
+  _ = mk_arbitrary_matrix(cc, 8, 8) * mk_arbitrary_matrix(cc, 8, 1)
+
 @dioptra_pke_estimation(description="multiply 16x16 matrix by a vector")
 def mul16x16matrix_by_vector(cc: Analyzer):
   _ = mk_arbitrary_matrix(cc, 16, 16) * mk_arbitrary_matrix(cc, 16, 1)
