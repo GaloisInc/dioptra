@@ -15,7 +15,7 @@ def mul4x4matrix_by_vector(cc: BinFHEAnalyzer):
 
 @dioptra_binfhe_estimation(description="multiply 8x8 matrix by a vector")
 def mul8x8matrix_by_vector(cc: BinFHEAnalyzer):
-  _ = mk_arbitrary_matrix(cc, 16, 16) * mk_arbitrary_matrix(cc, 16, 1)
+  _ = mk_arbitrary_matrix(cc, 8, 8) * mk_arbitrary_matrix(cc, 8, 1)
 
 @dioptra_binfhe_estimation(description="multiply 16x16 matrix by a vector")
 def mul16x16matrix_by_vector(cc: BinFHEAnalyzer):
