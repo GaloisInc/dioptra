@@ -71,23 +71,36 @@ def dioptra_execute(ctx_name: str, n: int):
   print("-------------------------------")
   sys.stdout.flush()
 
-def run_all_benchmarks():
+def run_all_benchmarks(mode: str):
   print("Estimates:")
 
   for context, estimates in contexts:
-    dioptra_estimate(context, estimates)
+    dioptra_estimate(context, estimates(mode))
 
   print()
   print()
 
   print("Actual Runtime:")
 
-  run_schema = [
-    ("bfv_128", [4, 8, 16, 64, 256]),
-    ("bgv_128", [4, 8, 16, 64]),
-    ("ckks_128", [4, 8, 16]),
-    ("binfhe_128", [4, 8, 16])
-  ]
+  if mode == "vector":
+    def expand(ns):
+      return list((n,n), (n,1) for n in ns)
+
+    run_schema = [
+      ("bfv_128", expand([4, 8, 16, 64, 256])),
+      ("bgv_128", expand([4, 8, 16, 64])),
+      ("ckks_128", expand([4, 8, 16])),
+      ("binfhe_128", expand([4, 8, 16]))
+    ]
+  if mode == "matrix":
+    matricies =
+      [((y,x),(x,y)) for x in [4, 8, 16, 32]
+                     for y in [4, 8, 16, 32] ]
+    run_schema = [
+
+    ]
+
+
 
   for (ctx, dims) in run_schema:
     for dim in dims:
