@@ -9,19 +9,19 @@ def mk_arbitrary_circuit(cc: BinFHEAnalyzer) -> Circuit:
 def mk_arbitrary_matrix(cc: BinFHEAnalyzer, rows: int, cols: int):
   return CiphertextMatrix(list(list(mk_arbitrary_circuit(cc) for _ in range(cols)) for _ in range(rows)), BinMath())
 
-@dioptra_binfhe_estimation(description="multiply 4x4 matrix by a vector")
+@dioptra_binfhe_estimation(description="multiply 4x4 matrix by a 4x4 matrix")
 def mul4x4matrix_by_vector(cc: BinFHEAnalyzer):
-  _ = mk_arbitrary_matrix(cc, 4, 4) * mk_arbitrary_matrix(cc, 4, 1)
+  _ = mk_arbitrary_matrix(cc, 4, 4) * mk_arbitrary_matrix(cc, 4, 4)
 
-@dioptra_binfhe_estimation(description="multiply 8x8 matrix by a vector")
+@dioptra_binfhe_estimation(description="multiply 8x8 matrix by an 8x8 matrix")
 def mul8x8matrix_by_vector(cc: BinFHEAnalyzer):
-  _ = mk_arbitrary_matrix(cc, 8, 8) * mk_arbitrary_matrix(cc, 8, 1)
+  _ = mk_arbitrary_matrix(cc, 8, 8) * mk_arbitrary_matrix(cc, 8, 8)
 
-@dioptra_binfhe_estimation(description="multiply 16x16 matrix by a vector")
+@dioptra_binfhe_estimation(description="multiply 16x16 matrix by a 16x16 matrix")
 def mul16x16matrix_by_vector(cc: BinFHEAnalyzer):
-  _ = mk_arbitrary_matrix(cc, 16, 16) * mk_arbitrary_matrix(cc, 16, 1)
+  _ = mk_arbitrary_matrix(cc, 16, 16) * mk_arbitrary_matrix(cc, 16, 16)
 
-@dioptra_binfhe_estimation(description="multiply 64x64 matrix by a vector")
+@dioptra_binfhe_estimation(description="multiply 64x64 matrix by a 64x64 matrix")
 def mul64x64matrix_by_vector(cc: BinFHEAnalyzer):
   _ = mk_arbitrary_matrix(cc, 64, 64) * mk_arbitrary_matrix(cc, 64, 1)
 
