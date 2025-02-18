@@ -11,9 +11,23 @@ mem_pattern = re.compile("^Max memory used: ([0-9]+)K", flags=re.MULTILINE)
 
 loc = pathlib.Path(__file__).parent
 calibration_loc = loc.joinpath("calibration").absolute()
-pke_estimates = loc.joinpath("pke_estimates.py").absolute()
-binfhe_estimates = loc.joinpath("binfhe_estimates.py").absolute()
 main_loc = loc.joinpath("main.py").absolute()
+
+def pke_estimates(mode: str) -> str:
+  if mode == "matrix":
+    return loc.joinpath("pke_matrixmatrix_estimates.py").absolute()
+  elif mode == "vector":
+    return loc.joinpath("pke_matrixvector_estimates.py").absolute()
+  else:
+    raise ValueError(f"Mode {mode} does not exist")
+
+def binfhe_estimates(mode: str) -> str:
+  if mode == "matrix":
+    return loc.joinpath("binfhe_matrixmatrix_estimates.py").absolute()
+  elif mode == "vector":
+    return loc.joinpath("binfhe_matrixvector_estimates.py").absolute()
+  else:
+    raise ValueError(f"Mode {mode} does not exist")
 
 contexts = [("bfv_128", pke_estimates)
            ,("bgv_128", pke_estimates)
@@ -86,8 +100,10 @@ def main():
   parser = argparse.ArgumentParser(
                     prog='Dioptra Matrix x Vector Benchmarks',
                     description='Benchmarks for Multiplication of degree-256 polynomial matrix X vector')
+  parser.add_argument('-m', "--mode",  help='The choice of benchmark, i.e. matrix or vector', choices=["matrix", "vector"], required=True, type=str)
 
   subparsers = parser.add_subparsers(dest="command", required=True)
+
   est_parser = subparsers.add_parser("estimate", help='Run estimates using Dioptra')
   est_parser.add_argument('-cd','--ctxt', help='The context name to use for the benchmark', choices=context_choices, required=True, type=str)
 
@@ -101,7 +117,7 @@ def main():
   if args.command == "execute":
     dioptra_execute(args.ctxt, args.dimension)
   elif args.command == "estimate":
-    dioptra_estimate(args.ctxt, dict(contexts)[args.ctxt])
+    dioptra_estimate(args.ctxt, dict(contexts)[args.ctxt](args.mode))
   elif args.command == "runall":
     run_all_benchmarks()
   else:
