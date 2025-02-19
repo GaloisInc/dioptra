@@ -111,10 +111,8 @@ def run_all_benchmarks(mode: str):
   print()
 
 def main():
-  parser = argparse.ArgumentParser(
-                    prog='Dioptra Matrix x Vector Benchmarks',
-                    description='Benchmarks for Multiplication of degree-256 polynomial matrix X vector')
-  parser.add_argument('-m', "--mode",  help='The choice of benchmark, i.e. matrix or vector', choices=["matrix", "vector"], required=True, type=str)
+  parser = argparse.ArgumentParser(description='Dioptra Matrix Benchmarks')
+  parser.add_argument('-m', "--mode",  help='The choice of benchmark, i.e. matrix multiplication or matrix-vector multiplication', choices=["matrix", "vector"], required=True, type=str)
 
   subparsers = parser.add_subparsers(dest="command", required=True)
 
