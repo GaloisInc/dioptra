@@ -13,7 +13,7 @@ loc = pathlib.Path(__file__).parent
 calibration_loc = loc.joinpath("calibration").absolute()
 main_loc = loc.joinpath("main.py").absolute()
 
-def pke_estimates(mode: str) -> str:
+def pke_estimates(mode: str) -> pathlib.Path:
   if mode == "matrix":
     return loc.joinpath("pke_matrixmatrix_estimates.py").absolute()
   elif mode == "vector":
@@ -21,7 +21,7 @@ def pke_estimates(mode: str) -> str:
   else:
     raise ValueError(f"Mode {mode} does not exist")
 
-def binfhe_estimates(mode: str) -> str:
+def binfhe_estimates(mode: str) -> pathlib.Path:
   if mode == "matrix":
     return loc.joinpath("binfhe_matrixmatrix_estimates.py").absolute()
   elif mode == "vector":
@@ -34,7 +34,7 @@ contexts = [("bfv_128", pke_estimates)
            ,("ckks_128", pke_estimates)
            ,("binfhe_128", binfhe_estimates)]
 
-context_choices = [x for (x, y) in contexts]
+context_choices = [x for (x, _) in contexts]
 
 def dioptra_estimate(ctx_name: str, est_loc: pathlib.Path):
   print(f"-- estimates for {ctx_name} --")
@@ -60,9 +60,10 @@ def rewrite_memory(blob: str) -> str:
   return blob
 
 
-def dioptra_execute(ctx_name: str, n: int):
-  print(f"Running main.py with context {ctx_name} and matrix size {n}x{n}")
-  cmd = f"python {main_loc} --dim1 {n}x{n} --dim2 {n}x1 --context {ctx_name} --no-setup-runtime"
+def dioptra_execute(ctx_name: str, dims: tuple[tuple[int, int], tuple[int, int]]):
+  ((r1, c1), (r2, c2)) = dims
+  print(f"Running main.py with context {ctx_name} and matrix sizes {r1}x{c1} and {r2}x{c2}")
+  cmd = f"python {main_loc} --dim1 {r1}x{c1} --dim2 {r2}x{c2} --context {ctx_name} --no-setup-runtime"
   cmd = with_mem_usage(cmd)
   print(f"Running: {cmd}")
   sys.stdout.flush()
@@ -83,24 +84,24 @@ def run_all_benchmarks(mode: str):
   print("Actual Runtime:")
 
   if mode == "vector":
-    def expand(ns):
-      return list((n,n), (n,1) for n in ns)
+    def expand_vec(ns):
+      return list(((n,n), (n,1)) for n in ns )
 
     run_schema = [
-      ("bfv_128", expand([4, 8, 16, 64, 256])),
-      ("bgv_128", expand([4, 8, 16, 64])),
-      ("ckks_128", expand([4, 8, 16])),
-      ("binfhe_128", expand([4, 8, 16]))
+      ("bfv_128", expand_vec([4, 8, 16, 32, 64, 128, 256])),
+      ("bgv_128", expand_vec([4, 8, 16, 32, 64, 128])),
+      ("ckks_128", expand_vec([4, 8, 16, 32])),
+      ("binfhe_128", expand_vec([4, 8, 16]))
     ]
   if mode == "matrix":
-    matricies =
-      [((y,x),(x,y)) for x in [4, 8, 16, 32]
-                     for y in [4, 8, 16, 32] ]
+    def expand_mat(ns):
+      return list(((y,x),(x,y)) for x in ns for y in ns if y <= x)
     run_schema = [
-
+      ("bfv_128", expand_mat([4, 8, 16, 32, 64, 128, 256])),
+      ("bgv_128", expand_mat([4, 8, 16, 32, 64, 128])),
+      ("ckks_128", expand_mat([4, 8, 16, 32])),
+      ("binfhe_128", expand_mat([4, 8, 16]))
     ]
-
-
 
   for (ctx, dims) in run_schema:
     for dim in dims:
@@ -132,7 +133,7 @@ def main():
   elif args.command == "estimate":
     dioptra_estimate(args.ctxt, dict(contexts)[args.ctxt](args.mode))
   elif args.command == "runall":
-    run_all_benchmarks()
+    run_all_benchmarks(args.mode)
   else:
     raise NotImplementedError
 
