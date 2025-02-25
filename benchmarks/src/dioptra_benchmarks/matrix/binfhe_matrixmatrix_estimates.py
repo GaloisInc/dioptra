@@ -20,7 +20,7 @@ def do_mul(dim1: tuple[int, int], dim2: tuple[int, int]) -> Callable:
 
 @dioptra_custom_estimation()
 def matrix_mul(ec: EstimationCases):
-  dims = [4, 8, 16, 32]
+  dims = [2, 4, 6, 8]
   for x in dims:
     for y in [d for d in dims if d <= x]:
       desc = f"multiply {y}x{x} matrix by {x}x{y} matrix"

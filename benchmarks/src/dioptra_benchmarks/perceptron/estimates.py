@@ -1,5 +1,6 @@
+from dioptra.estimate import dioptra_pke_estimation
 from dioptra.pke.analyzer import Analyzer
-from dioptra_benchmarks.perceptron import *
+from perceptron import *
 
 
 # Estimation cases

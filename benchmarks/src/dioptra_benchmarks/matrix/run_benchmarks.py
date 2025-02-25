@@ -4,7 +4,6 @@ import re
 import sys
 import subprocess
 import argparse
-
 import dioptra.utils.measurement
 
 mem_pattern = re.compile("^Max memory used: ([0-9]+)K", flags=re.MULTILINE)
@@ -60,10 +59,9 @@ def rewrite_memory(blob: str) -> str:
   return blob
 
 
-def dioptra_execute(ctx_name: str, dims: tuple[tuple[int, int], tuple[int, int]]):
-  ((r1, c1), (r2, c2)) = dims
-  print(f"Running main.py with context {ctx_name} and matrix sizes {r1}x{c1} and {r2}x{c2}")
-  cmd = f"python {main_loc} --dim1 {r1}x{c1} --dim2 {r2}x{c2} --context {ctx_name} --no-setup-runtime"
+def dioptra_execute_strdims(ctx_name: str, dim1: str, dim2: str):
+  print(f"Running main.py with context {ctx_name} and matrix sizes {dim1} and {dim2}")
+  cmd = f"python {main_loc} --dim1 {dim1} --dim2 {dim2} --context {ctx_name} --no-setup-runtime"
   cmd = with_mem_usage(cmd)
   print(f"Running: {cmd}")
   sys.stdout.flush()
@@ -71,6 +69,12 @@ def dioptra_execute(ctx_name: str, dims: tuple[tuple[int, int], tuple[int, int]]
   print(rewrite_memory(output))
   print("-------------------------------")
   sys.stdout.flush()
+
+def dioptra_execute(ctx_name: str, dims: tuple[tuple[int, int], tuple[int, int]]):
+  ((r1, c1), (r2, c2)) = dims
+  dim1 = f"{r1}x{c1}"
+  dim2 = f"{r2}x{c2}"
+  diopta_execute_strdims(ctx_name, dim1, dim2)
 
 def run_all_benchmarks(mode: str):
   print("Estimates:")
@@ -112,22 +116,25 @@ def run_all_benchmarks(mode: str):
 
 def main():
   parser = argparse.ArgumentParser(description='Dioptra Matrix Benchmarks')
-  parser.add_argument('-m', "--mode",  help='The choice of benchmark, i.e. matrix multiplication or matrix-vector multiplication', choices=["matrix", "vector"], required=True, type=str)
+
 
   subparsers = parser.add_subparsers(dest="command", required=True)
 
   est_parser = subparsers.add_parser("estimate", help='Run estimates using Dioptra')
   est_parser.add_argument('-cd','--ctxt', help='The context name to use for the benchmark', choices=context_choices, required=True, type=str)
+  est_parser.add_argument('-m', "--mode",  help='The choice of benchmark, i.e. matrix multiplication or matrix-vector multiplication', choices=["matrix", "vector"], required=True, type=str)
 
   exe_parser = subparsers.add_parser("execute", help='Run the benchmark in OpenFHE')
-  exe_parser.add_argument('-d','--dimension', help='The dimension of the matrix and vector to benchmark', required=True, type=int)
+  exe_parser.add_argument('-d1','--dimension1', help='The dimensions of the first matrix to benchmark (ex. 5x4)', required=True, type=str)
+  exe_parser.add_argument('-d2','--dimension2', help='The dimensions of the second matrix to benchmark (use an Nx1 matrix for vector multiplication)', required=True, type=str)
   exe_parser.add_argument('-cd','--ctxt', help='The context name to use for the benchmark', choices=context_choices, required=True, type=str)
 
   all_parser = subparsers.add_parser("runall", help='Run and estimate all the benchmarks with defaults')
+  all_parser.add_argument('-m', "--mode",  help='The choice of benchmark, i.e. matrix multiplication or matrix-vector multiplication', choices=["matrix", "vector"], required=True, type=str)
   args = parser.parse_args()
 
   if args.command == "execute":
-    dioptra_execute(args.ctxt, args.dimension)
+    dioptra_execute_strdims(args.ctxt, args.dimension1, args.dimension2)
   elif args.command == "estimate":
     dioptra_estimate(args.ctxt, dict(contexts)[args.ctxt](args.mode))
   elif args.command == "runall":

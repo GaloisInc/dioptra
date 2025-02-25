@@ -13,7 +13,7 @@ def bgv_128():
 
 @dioptra_pke_context()
 def bfv_128():
-  return ctxts.mk_bfv(pt_mod=65537, sec_level=ofhe.SecurityLevel.HEStd_256_classic, mult_depth=3)
+  return ctxts.mk_bfv(pt_mod=65537, sec_level=ofhe.SecurityLevel.HEStd_128_classic, mult_depth=3)
 
 @dioptra_binfhe_context()
 def binfhe_128():
