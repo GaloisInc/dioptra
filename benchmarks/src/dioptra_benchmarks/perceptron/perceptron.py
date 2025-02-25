@@ -1,16 +1,10 @@
 
-from functools import reduce
-import sys
-import time
-import dioptra
-from dioptra.estimate import dioptra_pke_estimation
+from benchmark.common import DisplayTime
 from dioptra.pke.analyzer import Analyzer, Ciphertext, Plaintext
-from dioptra_examples.contexts import ckks1
 from openfhe import CryptoContext
+import context
 
 import random
-import dioptra.utils.measurement
-
 
 # Class representing a single perceptron
 class Perceptron:
@@ -35,27 +29,13 @@ class Perceptron:
         # Acrivation function
         return cc.EvalMult(sum, sum)
 
-# Class for displaying runtime of a chunk of code
-# To be used with python's `with` syntax
-class DisplayTime:
-    def __init__(self, p: str):
-        self.p = p
-
-    def __enter__(self):
-        self.start = time.time_ns()
-        return self
-
-    def __exit__(self, *arg):
-        end = time.time_ns()
-        print(f"{self.p}: {dioptra.utils.measurement.format_ns_approx(end - self.start)}")
-
 # Run a single perceptron using the `ckks1` context from `dioptra_examples`
 # Outputs labelled runtimes - the last of which is the same runtime as should
 # be estimated by the estimator
 def run_single_perception_cc(input_size: int):
     cc = None
     with DisplayTime("setup") as _:
-        (cc, _, kp, _) = ckks1()
+        (cc, _, kp, _) = context.ckks_128()
 
     inputs = []
     with DisplayTime("encrypt") as _:
