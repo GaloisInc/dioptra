@@ -74,7 +74,7 @@ def dioptra_execute(ctx_name: str, dims: tuple[tuple[int, int], tuple[int, int]]
   ((r1, c1), (r2, c2)) = dims
   dim1 = f"{r1}x{c1}"
   dim2 = f"{r2}x{c2}"
-  diopta_execute_strdims(ctx_name, dim1, dim2)
+  dioptra_execute_strdims(ctx_name, dim1, dim2)
 
 def run_all_benchmarks(mode: str):
   print("Estimates:")
@@ -101,10 +101,10 @@ def run_all_benchmarks(mode: str):
     def expand_mat(ns):
       return list(((y,x),(x,y)) for x in ns for y in ns if y <= x)
     run_schema = [
-      ("bfv_128", expand_mat([4, 8, 16, 32, 64, 128, 256])),
-      ("bgv_128", expand_mat([4, 8, 16, 32, 64, 128])),
-      ("ckks_128", expand_mat([4, 8, 16, 32])),
-      ("binfhe_128", expand_mat([4, 8, 16]))
+      ("bfv_128", expand_mat([4, 8, 16, 32, 64, 128])),
+      ("bgv_128", expand_mat([4, 8, 16, 32, 64])),
+      ("ckks_128", expand_mat([4, 8, 12, 16])),
+      ("binfhe_128", expand_mat([2,4,6,8]))
     ]
 
   for (ctx, dims) in run_schema:
