@@ -1,4 +1,4 @@
-Matrix-vector multiplication benchmark:
+Matrix multiplication benchmarks:
 
 To calibrate all contexts used in this benchmark, run:
 
@@ -14,7 +14,7 @@ Other files of interest:
 
 - `main.py` contains the code for running the benchmark code in OpenFHE - use this for more fine grained control than `run_benchmarks.py`
 - `matrix.py` contains the actual benchmark code
-- `binfhe_estimates.py` and `pke_estimates.py` contain the dioptra estimates for selected matrix (and vector) sizes
+- `binfhe_matrixmatrix_estimates.py`, `pke_matrixmatrix_estimates.py`, `pke_matrixvector_estimates.py` and `binfhe_matrixvector_estimates.py`  contain the dioptra estimates for selected matrix (and vector) sizes
 - `contexts.py` contains configuration information for each of the contexts used and allows new contexts to be added easily
 - `benchmark/circuit.py` (which is a symlink to `../benchmark/circuit.py`) contains the code for building circuits with binfhe (including such things as modular addition and multiplication)
 
