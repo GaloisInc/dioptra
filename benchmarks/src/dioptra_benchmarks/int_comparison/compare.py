@@ -11,7 +11,7 @@ def any_eq(cs1: list[Circuit], cs2: list[Circuit]) -> Wire:
 # Determine if everything in `cs1` is pointwise less than everything in `cs2`
 def zip_lt(cs1: list[Circuit], cs2: list[Circuit]) -> Wire:
   return Wire.all(c1.lt(c2) for (c1, c2) in zip(cs1, cs2))
-      
+     
 class Tests(TestCase):
   def any_eq_correct(self, l1: list[int], l2: list[int]):
     expected = any(e1 == e2 for e1 in l1 for e2 in l2)
