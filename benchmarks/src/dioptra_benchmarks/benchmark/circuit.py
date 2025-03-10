@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, Iterable
 from unittest import TestCase
 import unittest
 from xmlrpc.client import Boolean
@@ -59,6 +59,30 @@ class Wire:
     
   def one(self) -> 'Wire':
     return self | -self
+  
+  @staticmethod
+  def any(ws: Iterable['Wire']) -> 'Wire':
+    result = None
+    for w in ws:
+      if result is None:
+        result = w
+      else:
+        result = w | result
+
+    assert(result is not None)
+    return result
+  
+  @staticmethod
+  def all(ws: Iterable['Wire']) -> 'Wire':
+    result = None
+    for w in ws:
+      if result is None:
+        result = w
+      else:
+        result = w & result
+
+    assert(result is not None)
+    return result
   
 # --- pt version ----------------------------------------------------------
 
@@ -232,7 +256,6 @@ class Circuit:
       result = result + self.derive_circuit(addend)
 
     return result
-  
       
 class TestImpl(TestCase):
   def setUp(self) -> None:
