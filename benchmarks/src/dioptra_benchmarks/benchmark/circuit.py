@@ -47,8 +47,19 @@ class Wire:
 
   def eq(self, other: 'Wire') -> 'Wire':
     return -(self ^ other)
-
-
+  
+  def cond(self, then: 'Circuit', els: 'Circuit') -> 'Circuit':
+    assert(len(then.wires) == len(els.wires))
+    return Circuit(list((self & thenwire) | (-(self & elswire)) 
+                          for (thenwire,elswire) in zip(then.wires,els.wires)))
+  
+  # return a zero wire of the same type as this wire
+  def zero(self) -> 'Wire':
+    return self & -self
+    
+  def one(self) -> 'Wire':
+    return self | -self
+  
 # --- pt version ----------------------------------------------------------
 
 class PlainEncoder(Encoder):
@@ -67,13 +78,19 @@ class PlainWire(Wire):
     return PlainWire(not self.wire)
 
   def __and__(self, other: 'PlainWire') -> 'PlainWire':
-    return PlainWire(self.wire and other.wire)
+    return PlainWire(self.wire & other.wire)
 
   def __or__(self, other: 'PlainWire') -> 'PlainWire':
-    return PlainWire(self.wire or other.wire)
+    return PlainWire(self.wire | other.wire)
 
   def __xor__(self, other: 'PlainWire') -> 'PlainWire':
     return PlainWire(self.wire ^ other.wire)
+  
+  def zero(self) -> 'PlainWire':
+    return PlainWire(False)
+  
+  def one(self) -> 'PlainWire':
+    return PlainWire(True)
 
 
 # --- binfhe version ----------------------------------------------------------
@@ -89,8 +106,10 @@ class BinFHEEncoder(Encoder):
     assert isinstance(wire, BinFHEWire)
     return self.cc.Decrypt(self.sk, wire.wire) != 0
 
-
 class BinFHEWire(Wire):
+  zerowire: 'BinFHEWire|None' = None
+  onewire: 'BinFHEWire|None' = None
+
   def __init__(self, cc: openfhe.BinFHEContext, l: openfhe.LWECiphertext):
     self.cc = cc
     self.wire = l
@@ -115,6 +134,7 @@ class BinFHEWire(Wire):
       return -self
 
     return BinFHEWire(self.cc, self.cc.EvalBinGate(openfhe.XOR, self.wire, other.wire))
+  
 
 # -- circuits -----------------------------------------------------------------
 
@@ -122,24 +142,52 @@ class Circuit:
   def __init__(self, wires: list[Wire]):
     assert(len(wires) > 0)
     self.wires = wires
+    self.onewire = None
+    self.zerowire = None
 
-  # TODO: it's kind of inefficient to keep recomputing this
+  def derive_circuit(self, wires: list[Wire]) -> 'Circuit':
+    assert(len(wires) > 0)
+    circuit = Circuit(wires)
+    circuit.zerowire = self.zerowire
+    circuit.onewire = self.onewire
+    return circuit
+
   def zero(self) -> Wire:
-    return self.wires[0] & -self.wires[0]
-
+    if self.zerowire is None:
+      self.zerowire = self.wires[0] & -self.wires[0]
+    
+    return self.zerowire
+  
   def one(self) -> Wire:
-    return self.wires[0] | -self.wires[0]
+    if self.onewire is None:
+      self.onewire = self.wires[0] | -self.wires[0]
+    
+    return self.onewire
 
   def lt(self, other: 'Circuit') -> Wire:
     assert len(self.wires) == len(other.wires)
-    is_lt = self.zero()
-    for i in range(0, len(self.wires)):
-      w_i = self.wires[i]
-      o_i = other.wires[i]
+    is_lt = None
+    for (w_i, o_i) in zip(self.wires, other.wires):
       bit_lt = (-w_i & o_i)
-      is_lt =  bit_lt | (w_i.eq(o_i) & is_lt)
+      if is_lt is None:
+        is_lt = bit_lt
+      else:
+        is_lt = bit_lt | (w_i.eq(o_i) & is_lt)
 
+    assert(is_lt is not None)
     return is_lt
+  
+  def eq(self, other: 'Circuit') -> Wire:
+    assert len(self.wires) == len(other.wires)
+    result = None
+    for (w_i, o_i) in zip(self.wires, other.wires):
+      if result is None:
+        result = w_i.eq(o_i)
+      else:
+        result = w_i.eq(o_i) & result
+    
+    assert(result is not None)
+    return result
   
   def __add__(self, other: 'Circuit') -> 'Circuit':
     assert len(self.wires) == len(other.wires)
@@ -150,7 +198,7 @@ class Circuit:
       wires.append(b | carry_in)
       carry_in = carry_out
 
-    return Circuit(wires)
+    return self.derive_circuit(wires)
   
   def __rshift__(self, shift: int) -> 'Circuit':
     wires = []
@@ -168,12 +216,12 @@ class Circuit:
       val = self.wires[i - shift] if i - shift >= 0 else z
       wires.append(val)
 
-    return Circuit(wires)
+    return self.derive_circuit(wires)
   
   def __mul__(self, other: 'Circuit') -> 'Circuit':
     assert(len(self.wires) == len(other.wires))
     z = self.zero()
-    result = Circuit(list(z for _ in self.wires))
+    result = self.derive_circuit(list(z for _ in self.wires))
 
     for i in range(0, len(self.wires)):
       w = other.wires[i]
@@ -181,9 +229,10 @@ class Circuit:
       for j in range(0, len(self.wires)):
         addend.append(self.wires[j - i] & w if j - i >= 0 else z)
       
-      result = result + Circuit(addend)
+      result = result + self.derive_circuit(addend)
 
     return result
+  
       
 class TestImpl(TestCase):
   def setUp(self) -> None:
@@ -213,9 +262,10 @@ class TestImpl(TestCase):
       self.assertEqual(not b1.wire, enc.decode_bit(-b1))
 
       for b2 in [t, f]:
-        self.assertEqual(b1.wire and b2.wire, enc.decode_bit(b1 & b2))
-        self.assertEqual(b1.wire or b2.wire, enc.decode_bit(b1 | b2))
+        self.assertEqual(b1.wire & b2.wire, enc.decode_bit(b1 & b2))
+        self.assertEqual(b1.wire | b2.wire, enc.decode_bit(b1 | b2))
         self.assertEqual(b1.wire ^ b2.wire, enc.decode_bit(b1 ^ b2))
+        self.assertEqual(b1.wire == b2.wire, enc.decode_bit(b1.eq(b2)))
 
   def run_program(self, f: Callable[[Encoder], None]):
     for enc in self.encs:
@@ -233,6 +283,15 @@ class TestImpl(TestCase):
     for (v1, c1) in [five, ten]:
       for (v2, c2) in [five, ten]:
         self.assertEqual(v1 < v2, enc.decode_bit(c1.lt(c2)))
+
+  def eq_program(self, enc: Encoder):
+    five = (5, enc.encode_int(5, 8))
+    ten = (10, enc.encode_int(10, 8))
+
+    for (v1, c1) in [five, ten]:
+      for (v2, c2) in [five, ten]:
+        self.assertEqual(v1 == v2, enc.decode_bit(c1.eq(c2)))
+
 
   def add_program(self, enc: Encoder):
     five = enc.encode_int(5, 8)
@@ -271,6 +330,9 @@ class TestImpl(TestCase):
 
   def test_mul(self):
     self.run_program(self.mul_program)
+
+  def test_eq(self):
+    self.run_program(self.eq_program)
 
 if __name__ == '__main__':
     unittest.main()
