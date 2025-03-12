@@ -10,10 +10,10 @@ def mk_arbitrary_circuit(cc: BinFHEAnalyzer, sz: int) -> Circuit:
 def mk_estimation_case(
     op: Callable[[list[Circuit], list[Circuit]], Wire],
     int_sz: int,
-    num_fields: int):
+    list_size: int):
   def case(cc: BinFHEAnalyzer):
-    cs1 = [mk_arbitrary_circuit(cc, int_sz) for _ in range(0, num_fields)]
-    cs2 = [mk_arbitrary_circuit(cc, int_sz) for _ in range(0, num_fields)]
+    cs1 = [mk_arbitrary_circuit(cc, int_sz) for _ in range(0, list_size)]
+    cs2 = [mk_arbitrary_circuit(cc, int_sz) for _ in range(0, list_size)]
     op(cs1, cs2)
   
   return case
@@ -22,6 +22,6 @@ def mk_estimation_case(
 def estimates(ec: EstimationCases):
   for (name, op) in [("any_eq", any_eq), ("zip_lt", zip_lt)]:
     for int_sz in [8, 16, 32, 64]:
-      for num_fields in [8, 16, 32]:
-        desc = f"{name} int_sz: {int_sz} num_fields: {num_fields}"
-        ec.add_binfhe_case(mk_estimation_case(op, int_sz, num_fields), desc)
+      for list_size in [8, 16, 32]:
+        desc = f"{name} int_sz: {int_sz} list_size: {list_size}"
+        ec.add_binfhe_case(mk_estimation_case(op, int_sz, list_size), desc)

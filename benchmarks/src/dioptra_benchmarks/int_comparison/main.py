@@ -28,22 +28,22 @@ def main():
     parser = argparse.ArgumentParser(description="List comparison in binfhe"
                                                             , epilog=f"allowed contexts: binfhe")
 
-    parser.add_argument("-is", "--insize", required=True, type=int, help="Size of the integers in the list")
+    parser.add_argument("-is", "--intsize", required=True, type=int, help="Size of the integers in the list")
     parser.add_argument("-ls", "--listsize", required=True, type=int, help="Size of the list of integers")
     parser.add_argument("-op", "--op", required=True, help="Program choices: Zip Less than or At least one equality", choices=["zip_lt", "any_eq"])
     parser.add_argument("--no-setup-runtime", default=False, action='store_true')
 
     config = parser.parse_args()
 
-    list1 = make_randomlist(config.insize, config.listsize)
-    list2 = make_randomlist(config.insize, config.listsize)
+    list1 = make_randomlist(config.intsize, config.listsize)
+    list2 = make_randomlist(config.intsize, config.listsize)
 
     with common.DisplayTime("setup", not config.no_setup_runtime) as _:
         (cc, sk) = context.binfhe_128()
         enc = BinFHEEncoder(cc, sk)
 
-        cs1 = encrypt_list(enc, config.insize, list1)
-        cs2 = encrypt_list(enc, config.insize, list2)
+        cs1 = encrypt_list(enc, config.intsize, list1)
+        cs2 = encrypt_list(enc, config.intsize, list2)
 
     with common.DisplayTime(f"runtime of {config.op}") as _:
         if config.op == "zip_lt":
