@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+from operator import sub
 import os
 import pathlib
 import re
 import sys
 import subprocess
 import argparse
+from unittest import expectedFailure
 
 from benchmark.common import rewrite_memory, with_mem_usage
 import dioptra.utils.measurement
@@ -58,14 +60,16 @@ def main():
   subparsers = parser.add_subparsers(dest="command", required=True)
 
   est_parser = subparsers.add_parser("estimate", help='Run estimates using Dioptra')
-  # exe_parser = subparsers.add_parser("execute", help='Run the benchmark in OpenFHE')
-  # exe_parser.add_argument('-s','--size', help='The input size of the perceptron', required=True, type=int)
+  exe_parser = subparsers.add_parser("execute", help='Run the benchmark in OpenFHE')
+  exe_parser.add_argument("-is", "--intsize", required=True, type=int, help="Size of the integers in the list")
+  exe_parser.add_argument("-ls", "--listsize", required=True, type=int, help="Size of the list of integers")
+  exe_parser.add_argument("-op", "--op", required=True, help="Program choices: zip-less-than or at-least-one equality", choices=["zip_lt", "any_eq"])
 
   subparsers.add_parser("runall", help='Run and estimate all the benchmarks with defaults')
   args = parser.parse_args()
 
   if args.command == "execute":
-    raise NotImplementedError("execute not implemented")
+    dioptra_execute(args.op, args.intsize, args.listsize)
   elif args.command == "estimate":
     dioptra_estimate()
   elif args.command == "runall":

@@ -1,4 +1,4 @@
-Matrix multiplication benchmarks:
+# Matrix multiplication benchmarks:
 
 To calibrate all contexts used in this benchmark, run:
 
