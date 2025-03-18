@@ -30,7 +30,7 @@ def main():
 
     parser.add_argument("-is", "--intsize", required=True, type=int, help="Size of the integers in the list")
     parser.add_argument("-ls", "--listsize", required=True, type=int, help="Size of the list of integers")
-    parser.add_argument("-op", "--op", required=True, help="Program choices: Zip Less than or At least one equality", choices=["zip_lt", "any_eq"])
+    parser.add_argument("-op", "--op", required=True, help="Program choices: zip-less-than or at-least-one equality", choices=["zip_lt", "any_eq"])
     parser.add_argument("--no-setup-runtime", default=False, action='store_true')
 
     config = parser.parse_args()
