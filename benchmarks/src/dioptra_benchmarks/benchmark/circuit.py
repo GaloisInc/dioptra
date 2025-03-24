@@ -1,3 +1,15 @@
+#
+# Implementation of simple circuits for BinFHE
+#
+# This module is intended to implement integer/bitwise operations in OpenFHE's 
+# BinFHE for demonstration purposes.  A more "real" version of this
+# API would probably be written in C++ to leverage CPU parallelism and 
+# consequently be much faster.
+#
+# It implements both secure and plaintext versions of these operations
+# to simplify the writing of unit tests and similar.
+#
+
 import os
 from typing import Callable, Iterable
 from unittest import TestCase
@@ -6,13 +18,20 @@ from xmlrpc.client import Boolean
 import openfhe
 
 class Encoder:
+  """Base class for encoding and encrypting values."""
+
   def encode_bit(self, bit: bool) -> 'Wire':
+    """Encode and encrypt a bit if applicable, returning a Wire"""
     raise NotImplementedError("encode_bit")
 
   def decode_bit(self, wire: 'Wire') -> bool:
+    """Decrypt and decode a bit, returning a boolean"""
     raise NotImplementedError("decode_bit")
 
   def encode_int(self, i: int, sz: int) -> 'Circuit':
+    """Encode and encrypt an integer, returning a Circuit representing
+    the integer `i` with bit width `sz`   
+    """
     bits = []
     s = i
     for _ in range(0, sz):
@@ -22,6 +41,7 @@ class Encoder:
     return Circuit(bits)
 
   def decode_int(self, c: 'Circuit') -> int:
+    """Decrypt and decode a Circuit to an int"""
     v = 0
     for i in range(0, len(c.wires)):
       if self.decode_bit(c.wires[i]):
@@ -30,6 +50,7 @@ class Encoder:
     return v
 
 class Wire:
+  """Represents a single encrypted boolean value"""
   def __neg__(self) -> 'Wire':
     raise NotImplementedError("__neg__")
 
@@ -43,18 +64,22 @@ class Wire:
     raise NotImplementedError("__xor__")
 
   def adc(self, other: 'Wire') -> tuple['Wire', 'Wire']:
+    """Add with carry with `other` returning a tuple of (sum of self and other, carry bit)"""
     return (self ^ other, self & other)
 
   def eq(self, other: 'Wire') -> 'Wire':
+    """Is this wire equal to `other`"""
     return -(self ^ other)
   
   def cond(self, then: 'Circuit', els: 'Circuit') -> 'Circuit':
+    """If this Wire is 1, returns the result of the `then` 
+    Circuit - otherwise returns the `els` Circuit"""
     assert(len(then.wires) == len(els.wires))
     return Circuit(list((self & thenwire) | (-(self & elswire)) 
                           for (thenwire,elswire) in zip(then.wires,els.wires)))
   
-  # return a zero wire of the same type as this wire
   def zero(self) -> 'Wire':
+    """Return a zero wire of the same type as this wire"""
     return self & -self
     
   def one(self) -> 'Wire':
@@ -62,6 +87,7 @@ class Wire:
   
   @staticmethod
   def any(ws: Iterable['Wire']) -> 'Wire':
+    """Results in 1 if any of `ws` is 1 otherwise 0"""
     result = None
     for w in ws:
       if result is None:
@@ -74,6 +100,7 @@ class Wire:
   
   @staticmethod
   def all(ws: Iterable['Wire']) -> 'Wire':
+    """Results in 1 if all of `ws` are 1 otherwise 0"""
     result = None
     for w in ws:
       if result is None:
@@ -87,6 +114,9 @@ class Wire:
 # --- pt version ----------------------------------------------------------
 
 class PlainEncoder(Encoder):
+  """Plaintext version of the `Encoder` class - does not do encoding or encrypting,
+  but is useful for unit testing
+  """
   def encode_bit(self, bit: bool) -> Wire:
     return PlainWire(bit)
 
@@ -95,6 +125,9 @@ class PlainEncoder(Encoder):
     return wire.wire
 
 class PlainWire(Wire):
+  """Plaintext version of the `Encoder` class - does not do encoding or encrypting,
+  but is useful for unit testing
+  """
   def __init__(self, b: bool):
     self.wire = b
 
@@ -119,6 +152,7 @@ class PlainWire(Wire):
 
 # --- binfhe version ----------------------------------------------------------
 class BinFHEEncoder(Encoder):
+  """BinFHE backed version of `Encoder`"""
   def __init__(self, cc: openfhe.BinFHEContext, sk: openfhe.PrivateKey):
     self.cc = cc
     self.sk = sk
@@ -131,6 +165,7 @@ class BinFHEEncoder(Encoder):
     return self.cc.Decrypt(self.sk, wire.wire) != 0
 
 class BinFHEWire(Wire):
+  """BinFHE version of `Wire`"""
   zerowire: 'BinFHEWire|None' = None
   onewire: 'BinFHEWire|None' = None
 
@@ -163,13 +198,24 @@ class BinFHEWire(Wire):
 # -- circuits -----------------------------------------------------------------
 
 class Circuit:
+  """A Circuit is a group of Wires along with operations that
+  deal with these Wires as a group such as integer addition.
+
+  The integer operations assume that the least significant bit appears 
+  first in the list and for the time being operate on every integer as if
+  it is unsigned.  In other words, `wires[x]` refers to the bit corresponding
+  to the value of `2 ** x`
+  """
   def __init__(self, wires: list[Wire]):
+    """Create a Circuit with a list of Wires"""
     assert(len(wires) > 0)
     self.wires = wires
     self.onewire = None
     self.zerowire = None
 
   def derive_circuit(self, wires: list[Wire]) -> 'Circuit':
+    """Effectively the same as __init__ but also copy a reference to 
+    any cached one or zero wires"""
     assert(len(wires) > 0)
     circuit = Circuit(wires)
     circuit.zerowire = self.zerowire
@@ -177,18 +223,21 @@ class Circuit:
     return circuit
 
   def zero(self) -> Wire:
+    """Get or create a zero valued Wire"""
     if self.zerowire is None:
       self.zerowire = self.wires[0] & -self.wires[0]
     
     return self.zerowire
   
   def one(self) -> Wire:
+    """Get or create a Wire with a value of one"""
     if self.onewire is None:
       self.onewire = self.wires[0] | -self.wires[0]
     
     return self.onewire
 
   def lt(self, other: 'Circuit') -> Wire:
+    """Returns a Wire of value 1 is `self` is less than `other`, 0 otherwise"""
     assert len(self.wires) == len(other.wires)
     is_lt = None
     for (w_i, o_i) in zip(self.wires, other.wires):
@@ -202,6 +251,7 @@ class Circuit:
     return is_lt
   
   def eq(self, other: 'Circuit') -> Wire:
+    """Return a Wire of value 1 if `self` is equal to `other`, 0 otherwise"""
     assert len(self.wires) == len(other.wires)
     result = None
     for (w_i, o_i) in zip(self.wires, other.wires):
@@ -214,6 +264,7 @@ class Circuit:
     return result
   
   def __add__(self, other: 'Circuit') -> 'Circuit':
+    """Add two Circuits - any overflow wraps around"""
     assert len(self.wires) == len(other.wires)
     wires = []
     carry_in = self.zero()
@@ -225,6 +276,7 @@ class Circuit:
     return self.derive_circuit(wires)
   
   def __rshift__(self, shift: int) -> 'Circuit':
+    """Perform an unsigned right shift"""
     wires = []
     z = self.zero()
     for i in range(0, len(self.wires)):
@@ -234,6 +286,7 @@ class Circuit:
     return Circuit(wires)
   
   def __lshift__(self, shift: int) -> 'Circuit':
+    """Perform an unsigned left shift"""
     wires = []
     z = self.zero()
     for i in range(0, len(self.wires)):
@@ -243,6 +296,7 @@ class Circuit:
     return self.derive_circuit(wires)
   
   def __mul__(self, other: 'Circuit') -> 'Circuit':
+    """Multiply two Circuits - any overflow wraps around"""
     assert(len(self.wires) == len(other.wires))
     z = self.zero()
     result = self.derive_circuit(list(z for _ in self.wires))
@@ -256,7 +310,10 @@ class Circuit:
       result = result + self.derive_circuit(addend)
 
     return result
-      
+
+
+# -- unit testing -------------------------------------------------------------
+
 class TestImpl(TestCase):
   def setUp(self) -> None:
     self.encs: list[Encoder] = [PlainEncoder()]
