@@ -111,6 +111,8 @@ Suppose we have the following Python function implementing matrix multiplication
 under FHE, using CKKS:
 
 ```python
+import openfhe as ofhe
+
 def matrix_mult(
     cc: ofhe.CryptoContext,
     x: list[list[ofhe.Ciphertext]],
@@ -142,6 +144,9 @@ We can write the following function, which uses a Dioptra `Analyzer` object
 where we might expect an `ofhe.CryptoContext`:
 
 ```python
+from dioptra.estimate import dioptra_pke_estimation
+from dioptra.pke.analyzer import Analyzer
+
 @dioptra_pke_estimation()
 def matrix_mult_5x5(cc: Analyzer):
     rows = 5
