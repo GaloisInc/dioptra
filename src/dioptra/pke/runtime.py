@@ -89,6 +89,9 @@ class Runtime(AnalysisBase):
     ) -> None:
         self.report_event(Event(EventKind.EVAL_BOOTSTRAP), call_loc)
 
+    def trace_sum_ct(self, dest: Ciphertext, ct: Ciphertext, bs: int, call_loc: Frame | None) -> None:
+        self.report_event(Event(EventKind.EVAL_SUM, ct.level), call_loc)
+
     def trace_send_ct(
         self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
     ) -> None:
