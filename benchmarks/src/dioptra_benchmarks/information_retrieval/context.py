@@ -4,4 +4,3 @@ import benchmark.contexts as ctxts
 
 def ckks_128():
   return ctxts.mk_ckks(ofhe.SecurityLevel.HEStd_128_classic)
-å
