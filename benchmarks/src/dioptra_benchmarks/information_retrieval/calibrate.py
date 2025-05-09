@@ -1,14 +1,16 @@
 import os
 import sys
 import pathlib
+import contexts
 
 loc = pathlib.Path(__file__).parent
 calibration_loc = loc.joinpath("calibration").absolute()
 contexts_loc = loc.joinpath("context.py")
 
-def calibrate():
-  output_loc = calibration_loc.joinpath(f"ckks_128.cd")
-  cmd = f"dioptra context calibrate --name ckks_128 -o \"{output_loc}\" \"{contexts_loc}\""
+def calibrate(ctxt):
+  for (contextName, _) in contexts.contexts:
+    output_loc = calibration_loc.joinpath(f"{ctxt}.cd")
+    cmd = f"dioptra context calibrate --name {ctxt} -o \"{output_loc}\" \"{contexts_loc}\""
   print(cmd)
   os.system(cmd)
   
