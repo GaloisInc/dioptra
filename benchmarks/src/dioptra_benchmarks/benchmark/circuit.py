@@ -51,8 +51,8 @@ class Encoder:
 
 class Wire:
   """Represents a single encrypted boolean value"""
-  def __neg__(self) -> 'Wire':
-    raise NotImplementedError("__neg__")
+  def __invert__(self) -> 'Wire':
+    raise NotImplementedError("__invert__")
 
   def __and__(self, other: 'Wire') -> 'Wire':
     raise NotImplementedError("__and__")
@@ -69,21 +69,21 @@ class Wire:
 
   def eq(self, other: 'Wire') -> 'Wire':
     """Is this wire equal to `other`"""
-    return -(self ^ other)
+    return ~(self ^ other)
   
   def cond(self, then: 'Circuit', els: 'Circuit') -> 'Circuit':
     """If this Wire is 1, returns the result of the `then` 
     Circuit - otherwise returns the `els` Circuit"""
     assert(len(then.wires) == len(els.wires))
-    return Circuit(list((self & thenwire) | (-(self & elswire)) 
+    return Circuit(list((self & thenwire) | (~(self & elswire)) 
                           for (thenwire,elswire) in zip(then.wires,els.wires)))
   
   def zero(self) -> 'Wire':
     """Return a zero wire of the same type as this wire"""
-    return self & -self
+    return self & ~self
     
   def one(self) -> 'Wire':
-    return self | -self
+    return self | ~self
   
   @staticmethod
   def any(ws: Iterable['Wire']) -> 'Wire':
@@ -131,7 +131,7 @@ class PlainWire(Wire):
   def __init__(self, b: bool):
     self.wire = b
 
-  def __neg__(self) -> 'PlainWire':
+  def __invert__(self) -> 'PlainWire':
     return PlainWire(not self.wire)
 
   def __and__(self, other: 'PlainWire') -> 'PlainWire':
@@ -173,7 +173,7 @@ class BinFHEWire(Wire):
     self.cc = cc
     self.wire = l
 
-  def __neg__(self) -> 'BinFHEWire':
+  def __invert__(self) -> 'BinFHEWire':
     return BinFHEWire(self.cc, self.cc.EvalNOT(self.wire))
 
   def __and__(self, other: 'BinFHEWire') -> 'BinFHEWire':
@@ -190,7 +190,7 @@ class BinFHEWire(Wire):
 
   def __xor__(self, other: 'BinFHEWire') -> 'BinFHEWire':
     if self == other:
-      return -self
+      return ~self
 
     return BinFHEWire(self.cc, self.cc.EvalBinGate(openfhe.XOR, self.wire, other.wire))
   
@@ -225,14 +225,14 @@ class Circuit:
   def zero(self) -> Wire:
     """Get or create a zero valued Wire"""
     if self.zerowire is None:
-      self.zerowire = self.wires[0] & -self.wires[0]
+      self.zerowire = self.wires[0] & ~self.wires[0]
     
     return self.zerowire
   
   def one(self) -> Wire:
     """Get or create a Wire with a value of one"""
     if self.onewire is None:
-      self.onewire = self.wires[0] | -self.wires[0]
+      self.onewire = self.wires[0] | ~self.wires[0]
     
     return self.onewire
 
@@ -241,7 +241,7 @@ class Circuit:
     assert len(self.wires) == len(other.wires)
     is_lt = None
     for (w_i, o_i) in zip(self.wires, other.wires):
-      bit_lt = (-w_i & o_i)
+      bit_lt = (~w_i & o_i)
       if is_lt is None:
         is_lt = bit_lt
       else:
@@ -310,6 +310,45 @@ class Circuit:
       result = result + self.derive_circuit(addend)
 
     return result
+  
+  def __and__(self, other: 'Circuit') -> 'Circuit':
+    """Bitwise AND of two circuits - resulting circuit is equal in size to the smaller of the two"""
+    result = []
+    for (x, y) in zip(self.wires, other.wires):
+      result.append(x & y)
+
+    return self.derive_circuit(result)
+  
+  def __or__(self, other: 'Circuit') -> 'Circuit':
+    """Bitwise OR of two circuits - resulting circuit is equal in size to the smaller of the two"""
+    result = []
+    for (x, y) in zip(self.wires, other.wires):
+      result.append(x | y)
+
+    return self.derive_circuit(result)
+  
+  def __invert__(self) -> 'Circuit':
+    return self.derive_circuit(list(~w for w in self.wires))    
+
+  def plain(self, val: int, sz: int | None = None) -> 'Circuit':
+    if sz is None:
+      sz = len(self.wires)
+
+    """Make a circuit of the same size with all zeroes - any overflow is discarded"""
+    assert i > 0
+    new_wires = []
+    for i in sz:
+      if val & 1:
+        new_wires.append(self.one())
+      else:
+        new_wires.append(self.zero())
+
+      val = val >> 1
+
+    return self.derive_circuit(new_wires)
+
+        
+
 
 
 # -- unit testing -------------------------------------------------------------
@@ -339,13 +378,14 @@ class TestImpl(TestCase):
     self.assertFalse(enc.decode_bit(f))
     
     for b1 in [t, f]:
-      self.assertEqual(not b1.wire, enc.decode_bit(-b1))
+      self.assertEqual(not b1.wire, enc.decode_bit(~b1))
 
       for b2 in [t, f]:
         self.assertEqual(b1.wire & b2.wire, enc.decode_bit(b1 & b2))
         self.assertEqual(b1.wire | b2.wire, enc.decode_bit(b1 | b2))
         self.assertEqual(b1.wire ^ b2.wire, enc.decode_bit(b1 ^ b2))
         self.assertEqual(b1.wire == b2.wire, enc.decode_bit(b1.eq(b2)))
+    
 
   def run_program(self, f: Callable[[Encoder], None]):
     for enc in self.encs:
@@ -392,6 +432,15 @@ class TestImpl(TestCase):
     v254 = enc.encode_int(254, 8)
     self.assertEqual(5 * 10, enc.decode_int(v5 * v10))
     self.assertEqual((254 * 10) % 2**8, enc.decode_int(v254 * v10))
+
+  def cond_program(self, enc: Encoder):
+    v5 = enc.encode_int(5, 8)
+    v10 = enc.encode_int(10, 8)
+    t = enc.encode_bit(True)
+    f = enc.encode_bit(False)
+
+    self.assertEqual(5, enc.decode_int(t.cond(v5, v10)))
+    self.assertEqual(10, enc.decode_int(f.cond(v5, v10)))
 
   def test_enc_dec(self):
     self.run_program(self.enc_dec)
