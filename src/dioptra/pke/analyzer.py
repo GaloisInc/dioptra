@@ -396,6 +396,8 @@ class Analyzer:
         for analysis in self.analysis_list:
             analysis.trace_sum_ct(new, ciphertext, bs, call_loc)
 
+        return new
+
     def EvalBootstrap(
         self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0
     ) -> Ciphertext:

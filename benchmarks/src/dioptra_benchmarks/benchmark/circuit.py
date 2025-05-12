@@ -75,8 +75,8 @@ class Wire:
     """If this Wire is 1, returns the result of the `then` 
     Circuit - otherwise returns the `els` Circuit"""
     assert(len(then.wires) == len(els.wires))
-    return Circuit(list((self & thenwire) | (~(self & elswire)) 
-                          for (thenwire,elswire) in zip(then.wires,els.wires)))
+    lst: list[Wire] = list((self & thenwire) | (~self & elswire) for (thenwire,elswire) in zip(then.wires,els.wires))
+    return Circuit(lst)
   
   def zero(self) -> 'Wire':
     """Return a zero wire of the same type as this wire"""
@@ -331,13 +331,13 @@ class Circuit:
     return self.derive_circuit(list(~w for w in self.wires))    
 
   def plain(self, val: int, sz: int | None = None) -> 'Circuit':
+    """Make a circuit of the same size with all zeroes - any overflow is discarded"""
     if sz is None:
       sz = len(self.wires)
 
-    """Make a circuit of the same size with all zeroes - any overflow is discarded"""
-    assert i > 0
+    assert sz > 0
     new_wires = []
-    for i in sz:
+    for i in range(sz):
       if val & 1:
         new_wires.append(self.one())
       else:
@@ -442,6 +442,11 @@ class TestImpl(TestCase):
     self.assertEqual(5, enc.decode_int(t.cond(v5, v10)))
     self.assertEqual(10, enc.decode_int(f.cond(v5, v10)))
 
+  def plain_program(self, enc: Encoder):
+    v5 = enc.encode_int(5, 8)
+    v10 = v5.plain(10, 16)
+    self.assertEqual(10, enc.decode_int(v10))
+
   def test_enc_dec(self):
     self.run_program(self.enc_dec)
 
@@ -462,6 +467,12 @@ class TestImpl(TestCase):
 
   def test_eq(self):
     self.run_program(self.eq_program)
+
+  def test_plain(self):
+    self.run_program(self.plain_program)
+
+  def test_cond(self):
+    self.run_program(self.cond_program)
 
 if __name__ == '__main__':
     unittest.main()
