@@ -380,6 +380,11 @@ class Analyzer:
         caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
         return self._mk_ct(lv, None, caller_loc)
+    
+    def ArbitraryPT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
+        caller_loc = code_loc.calling_frame()
+        lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
+        return self._mk_pt(lv, None, caller_loc)
 
     def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> Network:
         """Create a simulated network with the given parameters."""
