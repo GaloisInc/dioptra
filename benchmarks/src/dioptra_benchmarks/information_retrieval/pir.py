@@ -6,7 +6,7 @@ from benchmark.circuit import Circuit, Wire
 
 # Compute the number of slots in a ciphertext
 def num_slots(cc: ofhe.CryptoContext, params) -> int:
-  if isinstance(params, ofhe.CryptoParamsCKKSRNS):
+  if isinstance(params, ofhe.CCParamsCKKSRNS):
     return cc.GetRingDimension() / 2
   else:
     return cc.GetRingDimension()
