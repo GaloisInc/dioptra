@@ -21,7 +21,7 @@ def ith_array(cc: ofhe.CryptoContext, q: ofhe.Ciphertext, i: int, ct_slots: int)
   return cc.EvalSum(q_2, ct_slots)
 
 # Compute the number of slots in a ciphertext
-def num_slots(cc: ofhe.CryptoContext, params: ofhe.CryptoParams) -> int:
+def num_slots(cc: ofhe.CryptoContext, params) -> int:
   if isinstance(params, ofhe.CryptoParamsCKKSRNS):
     return cc.GetRingDimension() / 2
   else:
@@ -30,16 +30,17 @@ def num_slots(cc: ofhe.CryptoContext, params: ofhe.CryptoParams) -> int:
 def pir_pke_lookup(cc: ofhe.CryptoContext, database: list[int|float], query: ofhe.Ciphertext, ct_slots: int) -> ofhe.Ciphertext:
   result = None
   for idx in range(0, len(database)):
+    rowEnc = cc.MakePackedPlaintext([database[idx]])
     ith = ith_array(cc, query, idx, ct_slots)
     if result is None:
-      result = cc.EvalMult(ith, database[idx])
+      result = cc.EvalMult(ith, rowEnc)
     else:
-      result = cc.EvalAdd(cc.EvalMult(ith, database[idx]), result)
+      result = cc.EvalAdd(cc.EvalMult(ith, rowEnc), result)
   
   return result
 
 # Takes a conjunction of queries 
-def pir_binfhe_lookup(database: list[(list[int], int)], query: list[Circuit]) -> (Wire, Circuit):
+def pir_binfhe_lookup(database: list[tuple[list[int], int]], query: list[Circuit]) -> tuple[Wire, Circuit]:
   assert(len(query) > 0)
   zero = query[0].zero()
   
@@ -47,7 +48,7 @@ def pir_binfhe_lookup(database: list[(list[int], int)], query: list[Circuit]) ->
   result: Circuit = query[0].plain(0, 16)
   
   criteria: list[int]
-  data: list[int]
+  data: int
   for (criteria, data) in database:
     assert(len(criteria) == len(query))
 
@@ -57,7 +58,7 @@ def pir_binfhe_lookup(database: list[(list[int], int)], query: list[Circuit]) ->
       criteriaMatch = q.eq(c_circuit) if criteriaMatch is None else q.eq(c_circuit) & criteriaMatch
 
     # if this is the first result, return it
-    result = (~match & criteriaMatch).cond(data, result)
+    result = (~match & criteriaMatch).cond(result.plain(data), result)
     match = criteriaMatch & match
 
   return (match, result)
