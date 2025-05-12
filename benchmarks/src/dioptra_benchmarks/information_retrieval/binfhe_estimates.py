@@ -21,5 +21,5 @@ def binfhe_retrieve_case(bits: int) -> Callable[[BinFHEAnalyzer], None]:
 
 @dioptra_custom_estimation()
 def binfhe_pir_estimates(ec: EstimationCases):
-  for bits in [4, 6, 8, 10, 12]:
+  for bits in [4, 6, 8, 10]:
     ec.add_binfhe_case(binfhe_retrieve_case(bits), f"pir_binfhe_lookup [database size {2**bits}]")

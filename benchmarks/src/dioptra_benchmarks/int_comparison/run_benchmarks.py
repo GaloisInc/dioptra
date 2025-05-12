@@ -55,7 +55,7 @@ def run_all_benchmarks():
   print()
 
 def main():
-  parser = argparse.ArgumentParser(description='Dioptra Perceptron Benchmarks')
+  parser = argparse.ArgumentParser(description='Dioptra integer comparison Benchmarks')
 
   subparsers = parser.add_subparsers(dest="command", required=True)
 

@@ -158,7 +158,7 @@ contexts = {
 }
 
 def is_binfhe(ctx: str) -> bool:
-    str == "binfhe_128"
+    return ctx == "binfhe_128"
 
 def is_ckks(ctx: str) -> bool:
-    str == "ckks_128"
+    return ctx == "ckks_128"

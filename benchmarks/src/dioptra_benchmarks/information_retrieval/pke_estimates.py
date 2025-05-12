@@ -21,5 +21,5 @@ def pke_pir_weighted(cc: Analyzer):
 
 @dioptra_custom_estimation()
 def pke_pir_retrieve_estimates(ec: EstimationCases):
-  for sz in [512,1024,2048]:
+  for sz in [16,64,256,1024]:
     ec.add_pke_case(pke_pir_case(sz), f"pke retrieve [database size {sz}]")
