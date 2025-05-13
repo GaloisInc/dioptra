@@ -4,6 +4,7 @@ import benchmark.contexts as ctxts
 
 # in the case of PKE, we need contexts for this that can run evalsum
 # which is why slightly similar contexts (wrt benchmark/contexts.py) have been defined here 
+# we also omit bootstrapping since it is not needed here
 
 @dioptra_pke_context()
 def ckks_128() -> (
@@ -37,34 +38,25 @@ def ckks_128() -> (
     parameters.SetScalingTechnique(rescale_tech)
     parameters.SetFirstModSize(first_mod)
 
-    level_budget = [4, 4]
 
-    levels_available_after_bootstrap = 10
+    parameters.SetMultiplicativeDepth(3)
 
-    depth = levels_available_after_bootstrap + ofhe.FHECKKSRNS.GetBootstrapDepth(
-        level_budget, secret_key_dist
-    )
-
-    parameters.SetMultiplicativeDepth(depth)
 
     cryptocontext = ofhe.GenCryptoContext(parameters)
+
 
     features = [
         ofhe.PKESchemeFeature.PKE,
         ofhe.PKESchemeFeature.KEYSWITCH,
         ofhe.PKESchemeFeature.LEVELEDSHE,
-        ofhe.PKESchemeFeature.ADVANCEDSHE,
-        ofhe.PKESchemeFeature.FHE,
+        ofhe.PKESchemeFeature.ADVANCEDSHE
     ]
 
     for feature in features:
         cryptocontext.Enable(feature)
 
-    cryptocontext.EvalBootstrapSetup(level_budget)
-
     key_pair = cryptocontext.KeyGen()
     cryptocontext.EvalMultKeyGen(key_pair.secretKey)
-    cryptocontext.EvalBootstrapKeyGen(key_pair.secretKey, parameters.GetRingDim() >> 1)
     cryptocontext.EvalSumKeyGen(key_pair.secretKey)
     return (cryptocontext, parameters, key_pair, features)
 

@@ -28,7 +28,7 @@ def dioptra_estimate(ctx: str):
   print()
 
 
-def dioptra_execute(context: str, benchmark: str, db_size: int | None):
+def dioptra_execute(context: str, benchmark: str, db_size: int | None = None):
   print(f"Running main.py with {benchmark}")
   size_arg = "" if db_size is None else f"--database-size {db_size} "
   cmd = f"python {main_loc} --no-setup-runtime --context {context} {benchmark} {size_arg}"
@@ -50,7 +50,7 @@ def run_all_benchmarks(ctx: str):
 
   print("Actual Runtime:")
   
-  if not contexts.is_binfhe(contexts):
+  if not contexts.is_binfhe(ctx):
     dioptra_execute(ctx, "private_weighting")
 
   for sz in [16,64,256,1024]:
