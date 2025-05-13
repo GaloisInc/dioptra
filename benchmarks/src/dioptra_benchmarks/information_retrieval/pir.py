@@ -7,21 +7,26 @@ from benchmark.circuit import Circuit, Wire
 # Compute the number of slots in a ciphertext
 def num_slots(cc: ofhe.CryptoContext, params) -> int:
   if isinstance(params, ofhe.CCParamsCKKSRNS):
-    return cc.GetRingDimension() / 2
+    return cc.GetRingDimension() // 2
   else:
     return cc.GetRingDimension()
 
 class PKE_PIR:
-  def __init__(self, cc: ofhe.CryptoContext, slots: int) -> None:
+  def __init__(self, cc: ofhe.CryptoContext, slots: int, is_ckks: bool) -> None:
     self.cc = cc
     self.num_slots = slots
+    self.is_ckks = is_ckks
 
   # Step 1: private weighting
   def private_weighting(self, q: ofhe.Ciphertext, i: int) -> ofhe.Ciphertext:
     """make a plaintext consisting of the array with q[i] for all of its entries"""
     one_arr = [0] * self.num_slots
     one_arr[i] = 1
-    one_arr_pt = self.cc.MakePackedPlaintext(one_arr)
+
+    if self.is_ckks:
+      one_arr_pt = self.cc.MakeCKKSPackedPlaintext(one_arr)
+    else:
+      one_arr_pt = self.cc.MakePackedPlaintext(one_arr)
 
     # What follows is a essentially a dot product between the query and one_arr.
     # First we multiply q with one_arr_pt pointwise, resulting in q_2 - an array 
@@ -51,7 +56,7 @@ def pir_binfhe_retrieve(database: list[int], query: Circuit, result_size: int) -
   result: Circuit = query.plain(0, result_size)
 
   for idx in range(0, len(database)):
-    entry_value = query.plain(database[idx])
+    entry_value = query.plain(database[idx], result_size)
     is_query_entry = query.eq(query.plain(idx))
     result = is_query_entry.cond(entry_value, result)
 

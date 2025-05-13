@@ -9,7 +9,7 @@ import openfhe as ofhe
 import random
 
 def size_bits(n: int) -> int:
-  return math.ceil(math.lg2(n))
+  return math.ceil(math.log2(n))
 
 def encode_plaintext(cc: ofhe.CryptoContext, arr: list[int|float], is_ckks: bool) -> ofhe.Plaintext:
   if is_ckks:
@@ -58,7 +58,7 @@ def main():
       query_pt = random_pke_plaintext(cc, slots, contexts.is_ckks(args.context))
       query_ct = cc.Encrypt(keys.publicKey, query_pt)
 
-    pke_pir = pir.PKE_PIR(cc, slots)
+    pke_pir = pir.PKE_PIR(cc, slots, contexts.is_ckks(args.context))
 
     with common.DisplayTime("Runtime:"):
       pke_pir.private_weighting(query_ct, 0)
@@ -76,16 +76,16 @@ def main():
       bits = size_bits(args.database_size)
 
       with common.DisplayTime("Setup", not args.no_setup_runtime):
-        (cc, keys) = contexts.contexts[args.context]()
-        database = list(random.randint(0, 2**args.binfhe_result_size - 1) for _ in args.database_size)
+        (cc, key) = contexts.contexts[args.context]()
+        database = list(random.randint(0, 2**args.binfhe_result_size - 1) for _ in range(args.database_size))
 
       with common.DisplayTime("Encode/Encrypt Query", not args.no_setup_runtime):
-        enc = circuit.BinFHEEncoder(cc, keys.privateKey)
+        enc = circuit.BinFHEEncoder(cc, key)
         query_pt = random.randint(0, args.database_size - 1)
         query_circuit = enc.encode_int(query_pt, bits)
       
       with common.DisplayTime("Runtime:"):
-        pir.pir_binfhe_retrieve(database, query_circuit)
+        pir.pir_binfhe_retrieve(database, query_circuit, args.binfhe_result_size)
 
     else:  # PKE context 
       with common.DisplayTime("Setup", not args.no_setup_runtime) as _:
@@ -105,7 +105,7 @@ def main():
         query_ct = cc.Encrypt(keys.publicKey, query_pt)
 
       slots = pir.num_slots(cc, cfg)
-      pke_pir = pir.PKE_PIR(cc, slots)
+      pke_pir = pir.PKE_PIR(cc, slots, contexts.is_ckks(args.context))
 
       database: list[ofhe.Plaintext] = []
       with common.DisplayTime("Make database", not args.no_setup_runtime) as _:
