@@ -29,6 +29,7 @@ class EventKind(enum.Enum):
     EVAL_MULT_CTPT = 9
     EVAL_ADD_CTPT = 10
     EVAL_SUB_CTPT = 11
+    EVAL_SUM = 12
 
 
 class Event:
@@ -416,6 +417,9 @@ class PKECalibration:
 
                 with measure(EventKind.DECODE, level):
                     self.decode(pt)
+
+                with measure(EventKind.EVAL_SUM, level):
+                    cc.EvalSum(ct, self.num_slots())
 
                 if level.level not in ct_mem:
                     ct_size = dioptra_native.ciphertext_size(ct)

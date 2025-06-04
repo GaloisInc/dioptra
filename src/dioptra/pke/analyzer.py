@@ -1,5 +1,6 @@
 import dis
 import weakref
+import math
 from typing import Any, Iterable, Self
 
 from dioptra.pke.scheme import LevelInfo, SchemeModelPke
@@ -167,6 +168,11 @@ class AnalysisBase:
 
     def trace_sub_ctpt(
         self, dest: Ciphertext, ct: Ciphertext, pt: Plaintext, call_loc: Frame | None
+    ) -> None:
+        pass
+
+    def trace_sum_ct(
+        self, dest: Ciphertext, ct: Ciphertext, bs: int, call_loc: Frame | None
     ) -> None:
         pass
 
@@ -364,6 +370,33 @@ class Analyzer:
         raise NotSupportedException(
             "EvalAdd: analyzer does not implement this overload", caller_loc
         )
+    
+    def EvalSum(
+        self, ciphertext: Ciphertext, bs: int
+    ) -> Ciphertext:
+        call_loc = code_loc.calling_frame()
+
+        new_val = None
+        if ciphertext.value is not None:
+            new_val = [0] * len(ciphertext.value)
+            for i in range(0, len(ciphertext.value)):
+                if bs == 0:
+                    clog2 = 0
+                else:
+                    clog2 = (len(ciphertext.value) - 1).bit_length()
+                for j in range(0, clog2):
+                    new_val[i] = ciphertext.value[(i + j) % len(ciphertext.value)]
+
+        new = self._mk_ct(
+            level=ciphertext.level,
+            value=new_val, # TODO: incorrect
+            loc=call_loc,
+        )
+
+        for analysis in self.analysis_list:
+            analysis.trace_sum_ct(new, ciphertext, bs, call_loc)
+
+        return new
 
     def EvalBootstrap(
         self, ciphertext: Ciphertext, _numIterations: int = 1, _precision: int = 0
@@ -384,6 +417,11 @@ class Analyzer:
         caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
         return self._mk_ct(lv, None, caller_loc)
+    
+    def ArbitraryPT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
+        caller_loc = code_loc.calling_frame()
+        lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
+        return self._mk_pt(lv, None, caller_loc)
 
     def MakeNetwork(self, send_bps: BPS, recv_bps: BPS, latency_ms: int) -> Network:
         """Create a simulated network with the given parameters."""
@@ -500,7 +538,6 @@ class Analyzer:
             "EvalSubInPlace",
             "EvalSubMutable",
             "EvalSubMutableInPlace",
-            "EvalSum",
             "EvalSumCols",
             "EvalSumColsKeyGen",
             "EvalSumKeyGen",

@@ -63,7 +63,7 @@ class Neuron:
             weights_ckks.append(scheme.make_plaintext(cc, [w]))
         return cls(cc, scheme, weights_ckks, bias)
 
-    def train(
+    def classify(
         self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]
     ) -> ofhe.Ciphertext:
         if len(inputs) != self.num_inputs:
@@ -119,16 +119,16 @@ class Layer:
         """Insert a bootstrapping layers into the NN that bootstraps every output of the prior layer if the scheme requires it"""
         return [self.scheme.bootstrap(cc, input) for input in inputs]
 
-    def train(
+    def classify(
         self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]
     ) -> list[ofhe.Ciphertext]:
         self.check_correctness(len(inputs))
 
         layer_out = []
         # propagate the output of the prior layer's neurons into
-        # the current layer's neurons and train it
+        # the current layer's neurons
         for i, neuron in enumerate(self.neurons):
-            neuron_out = neuron.train(cc, inputs)
+            neuron_out = neuron.classify(cc, inputs)
             layer_out.append(neuron_out)
         return layer_out
 
@@ -161,19 +161,19 @@ class NN:
         bias=None,
     ) -> Self:
         # propagate the output of the prior layer into
-        # the current layer and train it
+        # the current layer
         layers = []
         for weights_layer in weights_nn:
             layer = Layer.layer_from_plaintexts(cc, scheme, weights_layer)
             layers.append(layer)
         return cls(cc, scheme, layers)
 
-    def train(
+    def classify(
         self, cc: ofhe.CryptoContext, inputs: list[ofhe.Ciphertext]
     ) -> ofhe.Ciphertext:
         layer_input = inputs
         for i, layer in enumerate(self.layers):
-            layer_input = layer.train(cc, layer_input)
+            layer_input = layer.classify(cc, layer_input)
             # Add a bootstrapping layer after every 5th layer
             # if the scheme requires it
             if i % 5 == 0:
