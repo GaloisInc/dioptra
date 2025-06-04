@@ -70,3 +70,21 @@ def dioptra_binfhe_estimation(
         _estimation_case_decorator(description, f, limit, SchemeType.BINFHE)
 
     return decorator
+
+class EstimationCases:
+    """Allow the addition of estimation cases using the `dioptra_custom_estimation` 
+    decorator.
+    """
+    def add_binfhe_case(self, f: Callable, description: str, limit: datetime.timedelta | None = None):
+        """Add a binfhe estimation case"""      
+        _estimation_case_decorator(description, f, limit, SchemeType.BINFHE)
+
+    def add_pke_case(self, f: Callable, description: str, limit: datetime.timedelta | None = None):
+        """Add a pke estimation case"""
+        _estimation_case_decorator(description, f, limit, SchemeType.PKE)
+
+def dioptra_custom_estimation() -> Callable:
+    def decorator(f):
+        f(EstimationCases())
+
+    return decorator

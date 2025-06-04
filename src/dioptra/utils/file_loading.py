@@ -1,5 +1,7 @@
 import json
+from os import path
 import runpy
+import sys
 
 from dioptra.binfhe.calibration import BinFHECalibrationData
 from dioptra.pke.calibration import PKECalibrationData
@@ -7,7 +9,10 @@ from dioptra.pke.calibration import PKECalibrationData
 
 def load_files(files: list[str]) -> None:
     for file in files:
+        p = list(sys.path)
+        sys.path.append(path.dirname(file))
         runpy.run_path(file)
+        sys.path = p
 
 
 def load_calibration_data(file: str) -> PKECalibrationData | BinFHECalibrationData:

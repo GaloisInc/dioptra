@@ -16,4 +16,4 @@ def nn_11_input_5_layer(cc: Analyzer):
     nn_weights = [layer_weights for _ in range(num_layers)]
     nn = NN.nn_from_plaintexts(cc, BFV(), nn_weights)
 
-    nn.train(cc, xs_ct)
+    nn.classify(cc, xs_ct)

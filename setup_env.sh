@@ -24,3 +24,4 @@ cd ../..
 echo "Installing dioptra..."
 pip install --editable .
 pip install --editable ./examples
+pip install --editable ./benchmarks
