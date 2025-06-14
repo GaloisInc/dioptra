@@ -192,43 +192,6 @@ class AnalysisBase:
     ) -> None:
         pass
 
-    def trace_send_ct(
-        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
-    ) -> None:
-        pass
-
-    def trace_recv_ct(
-        self, ct: Ciphertext, nm: NetworkModel, call_loc: Frame | None
-    ) -> None:
-        pass
-
-    def anotate_metric(self) -> None:
-        anotated_files: dict[str, list[str]] = dict()
-        for metrics in self.where.values():
-            (_value, value_formated, file_name, position) = metrics
-            if os.path.exists(file_name):
-                lines = []
-                if file_name in anotated_files.keys():
-                    lines = anotated_files[file_name]
-                else:
-                    with open(file_name, "r") as file:
-                        lines = file.readlines()
-                lines[position.lineno - 1] = (
-                    lines[position.lineno - 1].replace("\n", "")
-                    + " # "
-                    + type(self).__name__
-                    + ": "
-                    + str(value_formated)
-                    + "\n"
-                )
-                anotated_files[file_name] = lines
-
-        for file_name in anotated_files.keys():
-            anotated_files[file_name] = lines
-            file_name_anotated = file_name.replace(".py", "") + "_anotated.py"
-            with open(file_name_anotated, "w") as file_edited:
-                file_edited.writelines(lines)
-
 
 class Network:
     """This class represents a simulated nework and should only ever be
