@@ -25,7 +25,7 @@ nn = NN.nn_from_plaintexts(cc, BFV(), nn_weights)
 
 # time and run the program
 start_ns = time.time_ns()
-results = nn.train(cc, xs_ct)
+results = nn.classify(cc, xs_ct)
 end_ns = time.time_ns()
 
 # decrypt the results
