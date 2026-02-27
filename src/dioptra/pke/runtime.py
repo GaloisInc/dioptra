@@ -33,8 +33,8 @@ class Runtime(AnalysisBase):
     def trace_encrypt(
         self,
         dest: Ciphertext,
-        publicKey: PublicKey,
         plaintext: Plaintext,
+        publicKey: PublicKey,
         call_loc: Frame,
     ) -> None:
         self.report_event(Event(EventKind.ENCRYPT, plaintext.level), call_loc)
@@ -42,8 +42,8 @@ class Runtime(AnalysisBase):
     def trace_decrypt(
         self,
         dest: Plaintext,
-        publicKey: PublicKey,
         ciphertext: Ciphertext,
+        publicKey: PublicKey,
         call_loc: Frame,
     ) -> None:
         self.report_event(Event(EventKind.DECRYPT, ciphertext.level), call_loc)

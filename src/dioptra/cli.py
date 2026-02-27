@@ -16,6 +16,7 @@ from dioptra.context.list import list_main
 from dioptra.estimate.annotate import annotate_main
 from dioptra.estimate.render import render_main
 from dioptra.estimate.report import report_main
+from dioptra.estimate.timeline import timeline_main
 
 
 @click.group()
@@ -183,3 +184,9 @@ def render(file: Path, calibration_data: Path, name: str, output: Path) -> None:
     decorated with "@diotpra_estimation()" or "@dioptra_binfhe_estimation()").
     """
     render_main(str(calibration_data), str(file), name, str(output))
+
+@estimate.command()
+@click.argument("file", type=click.Path(exists=True, dir_okay=False), required=True)
+@click.option("--env", "-e", type=click.Path(exists=True, dir_okay=False), required=True)
+def timeline(file: Path, env: Path):
+    timeline_main(Path(env), [Path(file)])

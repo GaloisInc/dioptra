@@ -4,9 +4,9 @@ from typing import Callable
 
 from dioptra.binfhe.analyzer import BinFHEAnalyzer
 from dioptra.pke.analyzer import Analyzer
+from dioptra.estimate.env import Environments
 from dioptra.utils.error import NotSupportedException
 from dioptra.utils.scheme_type import SchemeType
-
 
 class EstimationCase:
     def __init__(
@@ -22,6 +22,23 @@ class EstimationCase:
         self.limit = limit
 
     def run_and_exit_if_unsupported(self, a: Analyzer | BinFHEAnalyzer) -> None:
+        try:
+            self.run(a)
+        except NotSupportedException as e:
+            print("Analysis failed:")
+            print(f"  { e.display()}")
+            sys.exit(1)
+
+class EnvEstimationCase:
+    def __init__(
+            self,
+            desc: str,
+            f: Callable,
+    ):
+        self.description = desc
+        self.run = f
+
+    def run_and_exit_if_unsupported(self, a: Environments) -> None:
         try:
             self.run(a)
         except NotSupportedException as e:

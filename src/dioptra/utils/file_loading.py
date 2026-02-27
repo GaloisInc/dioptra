@@ -22,3 +22,4 @@ def load_calibration_data(file: str) -> PKECalibrationData | BinFHECalibrationDa
             return BinFHECalibrationData.from_dict(obj)
         else:
             return PKECalibrationData.from_dict(obj)
+        

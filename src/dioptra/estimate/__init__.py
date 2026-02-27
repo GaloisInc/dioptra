@@ -9,11 +9,11 @@ import datetime
 import inspect
 from typing import Callable, OrderedDict
 
-from dioptra.estimate.estimation_case import EstimationCase
+from dioptra.estimate.estimation_case import EnvEstimationCase, EstimationCase
 from dioptra.utils.scheme_type import SchemeType
 
 estimation_cases: OrderedDict[str, EstimationCase] = OrderedDict()
-
+env_estimation_cases: OrderedDict[str, EnvEstimationCase] = OrderedDict()
 
 def _estimation_case_decorator(
     description: str | None,
@@ -71,6 +71,33 @@ def dioptra_binfhe_estimation(
 
     return decorator
 
+def dioptra_env_estimation(
+    description: str | None = None
+) -> Callable:
+    """Mark a Dioptra estimation case that uses multiple environments.
+
+    Keyword arguments:
+    description -- a description of the estimation case (default: none)
+
+    Note that the description can be used to disambiguate estimation cases with
+    the same function name.
+    """
+
+    def decorator(f):    
+        d = f.__name__ if description is None else description
+        if d in env_estimation_cases:
+            other = env_estimation_cases[d]
+            file = inspect.getfile(other.run)
+            (_, line) = inspect.getsourcelines(other.run)
+            raise ValueError(
+                f"Estimation case {d} has been defined earlier (at  ={file}:{line}) - use 'description' in decorator to rename?"
+            )
+
+        env_estimation_cases[d] = EnvEstimationCase(d, f)
+        return f
+
+    return decorator
+
 class EstimationCases:
     """Allow the addition of estimation cases using the `dioptra_custom_estimation` 
     decorator.
@@ -88,3 +115,5 @@ def dioptra_custom_estimation() -> Callable:
         f(EstimationCases())
 
     return decorator
+
+

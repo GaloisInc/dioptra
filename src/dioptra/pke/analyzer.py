@@ -381,7 +381,7 @@ class Analyzer:
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
         return self._mk_ct(lv, None, caller_loc)
     
-    def ArbitraryPT(self, level=0, noiseScaleDeg=1) -> Ciphertext:
+    def ArbitraryPT(self, level=0, noiseScaleDeg=1) -> Plaintext:
         caller_loc = code_loc.calling_frame()
         lv = LevelInfo(level, noiseScaleDeg).max(self.scheme.min_level())
         return self._mk_pt(lv, None, caller_loc)
