@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import enum
 import json
 import time
@@ -145,6 +146,7 @@ class PKECalibrationData:
         self.ct_mem: dict[int, int] = {}
         self.pt_mem: dict[int, int] = {}
         self.setup_memory_size = 0
+        self.metadata: str|None = None
 
     def set_memory_tables(
         self, pt_data: dict[int, int] = {}, ct_data: dict[int, int] = {}
@@ -172,7 +174,7 @@ class PKECalibrationData:
         evts = [(evt.to_dict(), ts) for (evt, ts) in self.runtime_samples.items()]
         ct_mems = list(self.ct_mem.items())
         pt_mems = list(self.pt_mem.items())
-        return {
+        obj = {
             "scheme": self.scheme.to_dict(),
             "runtime": evts,
             "memory": {
@@ -181,6 +183,11 @@ class PKECalibrationData:
                 "setup": self.setup_memory_size,
             },
         }
+
+        if self.metadata is not None:
+            obj["metadata"] = self.metadata
+
+        return obj
 
     @staticmethod
     def from_dict(obj: dict[str, Any]) -> "PKECalibrationData":
@@ -192,6 +199,10 @@ class PKECalibrationData:
         cal.ct_mem = dict(obj["memory"]["ciphertext"])
         cal.setup_memory_size = obj["memory"]["setup"]
         cal.scheme = scheme
+
+        if "metadata" in obj:
+            cal.metadata = obj["metadata"]
+
         return cal
 
     def write_json(self, f: str):
@@ -356,6 +367,26 @@ class PKECalibration:
                 for j in range(i, len(all)):
                     yield (all[i], all[j])
 
+    def gen_metadata(self) -> OrderedDict[str, Any]:
+        meta = OrderedDict()
+        meta["scheme"] = "Unknown?"
+        if self.is_bfv():
+            meta["scheme"] = "BFV"
+
+        if self.is_bgv():
+            meta["scheme"] = "BGV"
+
+        if self.is_ckks():
+            meta["scheme"] = "CKKS"
+
+        meta["security level"] = self.params.GetSecurityLevel().name
+        meta["features"] = ", ".join([feat.name for feat in self.features])
+        meta["multiplicative depth"] = self.params.GetMultiplicativeDepth()
+        meta["plaintext modulus"] = self.params.GetPlaintextModulus()
+        meta["ring dimension"] = self.params.GetRingDim()
+        meta["num slots"] = self.num_slots()
+        return meta
+
     def calibrate_base(self) -> PKECalibrationData:
         setup_size = psutil.Process().memory_info().rss
         samples = PKECalibrationData(self.scheme)
@@ -419,7 +450,10 @@ class PKECalibration:
                     self.decode(pt)
 
                 with measure(EventKind.EVAL_SUM, level):
-                    cc.EvalSum(ct, self.num_slots())
+                    try:
+                        cc.EvalSum(ct, self.num_slots())
+                    except:
+                        self.log(f"EvalSum threw exception, skipping!")
 
                 if level.level not in ct_mem:
                     ct_size = dioptra_native.ciphertext_size(ct)

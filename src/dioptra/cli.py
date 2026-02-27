@@ -50,14 +50,15 @@ def estimate() -> None:
     required=True,
     help="Calibration data file to use for estimates.",
 )
-def report(file: Path, calibration_data: Path) -> None:
+@click.option("--print-meta", is_flag=True, help="Print calibration metadata before report (if available)")
+def report(file: Path, calibration_data: Path, print_meta: bool) -> None:
     """Report runtime and memory performance estimates for all estimation cases.
 
     FILE is the Python file in which to look for estimation cases (functions
     decorated with "@dioptra_pke_estimation()" or
     "@dioptra_binfhe_estimation()").
     """
-    report_main(str(calibration_data), [str(file)])
+    report_main(str(calibration_data), [str(file)], print_meta)
 
 
 @estimate.command()
@@ -135,13 +136,20 @@ def context() -> None:
     default=5,
     help="Number of samples to take (default: 5).",
 )
-def calibrate(file: Path, name: str, output: Path, sample_count: int):
+@click.option(
+    "--meta-file",
+    type=click.Path(exists=True),
+    required=False,
+    help="Text file of metadata to add to the resulting calibration file"
+)
+def calibrate(file: Path, name: str, output: Path, sample_count: int, meta_file: Path|None):
     """Generate calibration data for a decorated context function.
 
     FILE is the Python file in which to look for contexts (functions decorated
     with "@dioptra_pke_context()" or "@dioptra_binfhe_context()".)
     """
-    calibrate_main([str(file)], name, str(output), sample_count)
+    meta_file_arg = str(meta_file) if meta_file is not None else None
+    calibrate_main([str(file)], name, str(output), sample_count, meta_file=meta_file_arg)
 
 
 @context.command()

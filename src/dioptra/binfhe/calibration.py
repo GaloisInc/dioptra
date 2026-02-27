@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import time
 from typing import IO, Any, Callable
@@ -17,6 +18,7 @@ class BinFHECalibrationData:
         self.params = params
         self.ciphertext_size: int = 0
         self.setup_memory_size: int = 0
+        self.metadata: str|None = None
 
     def set_ciphertext_size(self, ctsize: int):
         self.ciphertext_size = ctsize
@@ -37,7 +39,7 @@ class BinFHECalibrationData:
         scheme = {"name": "BINFHE", "params": self.params.to_dict()}
         runtime_samples = [(e.to_dict(), s) for (e, s) in self.runtime_samples.items()]
 
-        return {
+        obj = {
             "scheme": scheme,
             "runtime_samples": runtime_samples,
             "memory": {
@@ -45,6 +47,11 @@ class BinFHECalibrationData:
                 "setup": self.setup_memory_size,
             },
         }
+
+        if self.metadata is not None:
+            obj["metadata"] = self.metadata
+
+        return obj
 
     @staticmethod
     def from_dict(d: dict[str, Any]) -> "BinFHECalibrationData":
@@ -56,6 +63,10 @@ class BinFHECalibrationData:
         )
         cd.ciphertext_size = d["memory"]["ciphertext"]
         cd.setup_memory_size = d["memory"]["setup"]
+
+        if "metadata" in d:
+            cd.metadata = d["metadata"]
+
         return cd
 
     def write_json(self, file: str) -> None:
@@ -107,6 +118,11 @@ class BinFHECalibration:
     def log(self, s: str):
         if self.log_out is not None:
             print(s, file=self.log_out)
+
+    def gen_metadata(self) -> OrderedDict[str, str]:
+        result = OrderedDict()
+        result["scheme"] = "binfhe"
+        return result
 
     def run(self) -> BinFHECalibrationData:
         params = BinFHEParams(self.cc.Getn(), self.cc.Getq(), self.cc.GetBeta())

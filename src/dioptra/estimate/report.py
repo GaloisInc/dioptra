@@ -15,8 +15,15 @@ from dioptra.utils.measurement import format_bytes, format_ns_approx, timedelta_
 from dioptra.utils.scheme_type import SchemeType, calibration_type
 
 
-def report_main(sample_file: str, files: list[str]) -> None:
+def report_main(sample_file: str, files: list[str], print_meta: bool) -> None:
     calibration = load_calibration_data(sample_file)
+    if print_meta:
+        if calibration.metadata is not None:
+            print("--- Calibration metadata ---")
+            print(calibration.metadata)
+            print("--- End calibration metadata ---")
+        else:
+            print("No calibration metadata found!")
 
     load_files(files)
 
